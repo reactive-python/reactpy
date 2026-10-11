@@ -38,10 +38,3 @@ jobs:
         with:
             job-name: "Publish to NPM"
             run-cmd: "hatch run javascript:publish_client"
-
-    publish-event-to-object:
-        if: startsWith(github.event.release.name, 'event-to-object ') || startsWith(github.event.release.tag_name, 'event-to-object-')
-        uses: ./.github/workflows/.hatch-run.yml
-        with:
-            job-name: "Publish to NPM"
-            run-cmd: "hatch run javascript:publish_event_to_object"

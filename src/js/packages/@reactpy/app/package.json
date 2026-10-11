@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "@reactpy/client": "catalog:",
-    "event-to-object": "catalog:",
     "preact": "catalog:"
   },
   "description": "ReactPy's client-side entry point. This is strictly for internal use and is not designed to be distributed.",

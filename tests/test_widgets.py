@@ -1,8 +1,12 @@
 from base64 import b64encode
 from pathlib import Path
 
+import pytest
+
 import reactpy
 from reactpy.testing import DEFAULT_TYPE_DELAY, DisplayFixture, poll
+
+from tests.tooling.common import TYPE_DELAYS
 
 HERE = Path(__file__).parent
 
@@ -29,7 +33,8 @@ async def test_image_from_bytes(display: DisplayFixture):
     assert BASE64_IMAGE_SRC in (await client_img.get_attribute("src"))
 
 
-async def test_use_linked_inputs(display: DisplayFixture):
+@pytest.mark.parametrize("delay", TYPE_DELAYS)
+async def test_use_linked_inputs(display: DisplayFixture, delay: int):
     @reactpy.component
     def SomeComponent():
         i_1, i_2 = reactpy.widgets.use_linked_inputs([{"id": "i_1"}, {"id": "i_2"}])
@@ -40,16 +45,24 @@ async def test_use_linked_inputs(display: DisplayFixture):
     input_1 = await display.page.wait_for_selector("#i_1")
     input_2 = await display.page.wait_for_selector("#i_2")
 
-    await input_1.type("hello", delay=DEFAULT_TYPE_DELAY)
+    async def values():
+        return (
+            await input_1.evaluate("e => e.value"),
+            await input_2.evaluate("e => e.value"),
+        )
 
-    assert (await input_1.evaluate("e => e.value")) == "hello"
-    assert (await input_2.evaluate("e => e.value")) == "hello"
+    await input_1.type("hello", delay=delay)
+
+    # Only the server mirrors one input into the other, so both values depend on a
+    # round trip which has no fixed duration. Reading them the instant typing ends
+    # is what made this test flaky; waiting for the pair to agree tests the thing
+    # which is actually promised.
+    await poll(values).until_equals(("hello", "hello"), timeout=10)
 
     await input_2.focus()
-    await input_2.type(" world", delay=DEFAULT_TYPE_DELAY)
+    await input_2.type(" world", delay=delay)
 
-    assert (await input_1.evaluate("e => e.value")) == "hello world"
-    assert (await input_2.evaluate("e => e.value")) == "hello world"
+    await poll(values).until_equals(("hello world", "hello world"), timeout=10)
 
 
 async def test_use_linked_inputs_on_change(display: DisplayFixture):

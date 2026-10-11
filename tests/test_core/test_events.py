@@ -1,10 +1,11 @@
 import asyncio
+import json
 from functools import partial
 
 import pytest
 
 import reactpy
-from reactpy import component, html, use_state
+from reactpy import component, html, use_effect, use_state
 from reactpy.core.events import (
     EventHandler,
     event,
@@ -13,8 +14,14 @@ from reactpy.core.events import (
     to_event_handler_function,
 )
 from reactpy.core.layout import Layout
-from reactpy.testing import DEFAULT_TYPE_DELAY, DisplayFixture, poll
+from reactpy.testing import (
+    DEFAULT_TYPE_DELAY,
+    DisplayFixture,
+    StaticEventHandler,
+    poll,
+)
 from reactpy.types import Event
+from tests.tooling.common import TYPE_DELAYS, event_message
 
 
 def test_event_handler_repr():
@@ -177,6 +184,25 @@ async def test_merge_event_handler_funcs():
     merged_handler = merge_event_handler_funcs([some_func, some_other_func])
     await merged_handler([])
     assert calls == ["some_func", "some_other_func"]
+
+
+def test_merge_event_handlers_event_proxy():
+    """Merging never has to settle an argument about live access
+
+    Whether the browser object behind an event should be kept alive is not something
+    two handlers can contradict each other over - one of them simply wants it. The
+    merged handler asks for it whenever any of the originals did, and states nothing
+    at all when none of them said either way.
+    """
+    plain = EventHandler(lambda data: None)
+    wants = EventHandler(lambda data: None, event_proxy=True)
+    declines = EventHandler(lambda data: None, event_proxy=False)
+    other_plain = EventHandler(lambda data: None)
+
+    assert merge_event_handlers([plain, other_plain]).event_proxy is None
+    assert merge_event_handlers([plain, wants]).event_proxy is True
+    assert merge_event_handlers([plain, declines]).event_proxy is False
+    assert merge_event_handlers([declines, wants]).event_proxy is True
 
 
 async def test_can_prevent_event_default_operation(display: DisplayFixture):
@@ -784,54 +810,182 @@ async def test_event_targeting_with_index_shifting(display: DisplayFixture):
     assert clicked_items == ["B"]
 
 
-async def test_controlled_input_rapid_typing(display: DisplayFixture):
+MARKER = "|"
+
+
+@reactpy.component
+def _ControlledInputWithMirror():
+    """A controlled input whose model is also rendered somewhere un-clobberable"""
+    value, set_value = use_state("")
+
+    def on_change(event):
+        set_value(event["target"]["value"])
+
+    def append_marker(event):
+        set_value(lambda old: old + MARKER)
+
+    return reactpy.html.div(
+        reactpy.html.input(
+            {
+                "value": value,
+                "onChange": on_change,
+                "id": "controlled-input",
+            },
+        ),
+        reactpy.html.button({"onClick": append_marker, "id": "append"}, "append"),
+        # A <pre> is never rewritten behind the user's back the way a focused
+        # input can be, so this reflects the model as the server holds it.
+        reactpy.html.pre({"id": "server-value"}, value),
+    )
+
+
+@pytest.mark.parametrize("delay", TYPE_DELAYS)
+async def test_controlled_input_rapid_typing(display: DisplayFixture, delay: int):
+    """Typing into a controlled input keeps the component live end to end
+
+    This is the browser level counterpart of the latch tests in
+    ``tests/test_core/test_hooks.py``, which pin the ``_scheduled_render`` race
+    directly. That race window is far too narrow to hit reliably through a real
+    browser, so what is checked here is the property a stranded component violates
+    from the outside: after a burst of keystrokes it must still converge with what
+    is on screen, and must still respond to a later state change. Which characters
+    end up on screen is a separate concern covered by
+    :func:`test_controlled_input_rapid_typing_preserves_every_character`.
     """
-    Test that a controlled input updates correctly even with rapid typing.
-    This validates that user inputs are properly debounced by the client.
-    """
-
-    @reactpy.component
-    def ControlledInput():
-        value, set_value = use_state("")
-
-        def on_change(event):
-            set_value(event["target"]["value"])
-
-        return reactpy.html.div(
-            reactpy.html.input(
-                {
-                    "value": value,
-                    "onChange": on_change,
-                    "id": "controlled-input",
-                },
-            ),
-            reactpy.html.pre({"id": "server-value"}, value),
-        )
-
-    await display.show(ControlledInput)
+    await display.show(_ControlledInputWithMirror)
 
     inp = await display.page.wait_for_selector("#controlled-input")
+    await inp.type("hello world this is a test", delay=delay)
 
-    # Use a moderate per-character delay so the browser's native input
-    # event system has time to update ``event.target.value`` between
-    # keystrokes. With ``delay=0`` or very low delays adjacent
-    # keystrokes get coalesced by the browser, causing onChange events
-    # to carry incorrect values. This is a well-known Playwright
-    # limitation — the per-handler ``debounce=N`` kwarg remains
-    # available for server-side flood control on real high-speed
-    # inputs.
+    async def values():
+        return (
+            await inp.evaluate("node => node.value"),
+            await display.page.locator("#server-value").text_content(),
+        )
+
+    # A keystroke is handled by a server side handler which has to round trip to the
+    # browser for the value it reads, so the server may trail what is on screen for a
+    # moment. Wait until it has caught up rather than settling for a fixed delay, which
+    # only ever passes when the machine happens to be fast enough. A component stranded
+    # by the latch bug would be pinned to a stale prefix forever, timing this out.
+    await poll(values).until(
+        lambda client_and_server: client_and_server[0] == client_and_server[1],
+        timeout=10,
+        description="the server to catch up with what was typed",
+    )
+
+    # Converging once is not sufficient: the latch only stranded a component *after*
+    # the burst, once no further render was ever going to be scheduled. Prove the
+    # component is still live by driving a fresh state change and requiring the
+    # rendered model to follow it.
+    value_after_typing = await display.page.locator("#server-value").text_content()
+    await display.page.locator("#append").click()
+
+    await poll(values).until(
+        lambda client_and_server: client_and_server[1] == value_after_typing + MARKER,
+        timeout=10,
+        description="the state change after the burst to reach the rendered model",
+    )
+
+
+@pytest.mark.parametrize("delay", TYPE_DELAYS)
+async def test_controlled_input_rapid_typing_preserves_every_character(
+    display: DisplayFixture,
+    delay: int,
+):
+    """Every keystroke of a burst survives into both the model and the DOM
+
+    The client may only write the server's value over what the user has typed once
+    the server has acknowledged every event sent from that element. The numbers the
+    two sides compare have to be the same number line, and the acknowledgement has
+    to describe events the rendered value actually reflects; when the client counted
+    events one way and the server acknowledged them another, the element took a
+    snapshot of the previous keystroke for the current one and deleted the newest
+    character from the middle of the text.
+    """
     target_text = "hello world this is a test"
-    await inp.type(target_text, delay=25)
 
-    # Wait a bit for all events to settle
-    await asyncio.sleep(0.5)
+    await display.show(_ControlledInputWithMirror)
 
-    # Ensure all characters stayed within the client, even if server updates were in-flight
-    assert (await inp.evaluate("node => node.value")) == target_text
+    inp = await display.page.wait_for_selector("#controlled-input")
+    await inp.type(target_text, delay=delay)
 
-    # Ensure the server and client are in sync
-    server_value = await display.page.locator("#server-value").text_content()
+    async def values():
+        return (
+            await inp.evaluate("node => node.value"),
+            await display.page.locator("#server-value").text_content(),
+        )
+
+    await poll(values).until(
+        lambda client_and_server: client_and_server[0] == client_and_server[1],
+        timeout=10,
+        description="the server to catch up with what was typed",
+    )
+
+    client_value, server_value = await values()
+    assert client_value == target_text
     assert server_value == target_text
+
+
+@reactpy.component
+def _ControlledInputWhichClearsOnKeyDown():
+    """A controlled input which also handles ``onKeyDown``, to clear the field
+
+    An element which binds more than one event is the case a single ack figure for
+    the whole element cannot serve. The keystrokes arrive through ``onChange`` while
+    the deliberate clear arrives through ``onKeyDown``, so acknowledging the element
+    as a whole either trusts the server with keystrokes it has not seen yet (taking
+    the highest) or refuses an update it has already handled (taking the lowest).
+    """
+    value, set_value = use_state("")
+
+    def on_change(event):
+        set_value(event["target"]["value"])
+
+    def on_key_down(event):
+        set_value("")
+
+    return reactpy.html.div(
+        reactpy.html.input(
+            {
+                "value": value,
+                "onChange": on_change,
+                "onKeyDown": on_key_down,
+                "id": "controlled-input",
+            }
+        ),
+        reactpy.html.pre({"id": "server-value"}, value),
+    )
+
+
+@pytest.mark.parametrize("delay", TYPE_DELAYS)
+async def test_controlled_input_clear_from_second_handler_reaches_the_dom(
+    display: DisplayFixture,
+    delay: int,
+):
+    """A deliberate clear arriving on another event still reaches the input
+
+    The clear lands on an element whose value the server has no reason to change
+    again, so nothing else would ever carry the acknowledgement the client is
+    waiting for. Without it the input keeps displaying text the server has moved
+    past.
+    """
+    await display.show(_ControlledInputWhichClearsOnKeyDown)
+
+    inp = await display.page.wait_for_selector("#controlled-input")
+    await inp.click()
+    await inp.type("abc", delay=delay)
+    await inp.press("Enter")
+
+    async def current_value():
+        return await inp.evaluate("node => node.value")
+
+    await poll(current_value).until(
+        lambda value: value == "",
+        timeout=10,
+        description="the server's clear to reach the input",
+    )
+    assert await display.page.locator("#server-value").text_content() == ""
 
 
 async def test_controlled_input_respects_custom_debounce(display: DisplayFixture):
@@ -918,3 +1072,259 @@ async def test_controlled_input_default_debounce_reconciles_server_value(
     )
     assert (await inp.evaluate("node => node.value")) == "A"
     assert await display.page.locator("#server-value").text_content() == "A"
+
+
+# ===========================================================================
+# The acknowledgement which says the server has caught up with the keyboard
+# ===========================================================================
+
+
+def _ack_seq_of(update):
+    """Read the acknowledgement off the input rendered by a single-input layout"""
+    model = update["model"]["children"][0]
+    return model["attributes"].get("_reactpy_ack_seq")
+
+
+async def test_ack_seq_is_a_map_keyed_by_event():
+    """What the server sends back is per event, and is the client's own number
+
+    An element may only write the server's value over what the user has typed once
+    the server has acknowledged every event sent from it. To decide that the two
+    sides have to be counting on one number line: the client assigns a sequence
+    number to each event as it writes it to the wire, and the server echoes back
+    the highest one it has finished handling - per event, because an element with
+    more than one handler is catching up on each of them separately. One figure
+    across all handlers lets a render which predates the newest keystroke of one
+    event look up to date because a different event happened to be further along,
+    and a figure the server counts for itself, rather than repeating the client's,
+    is a number the client can never be satisfied by.
+    """
+    change = StaticEventHandler()
+    key_down = StaticEventHandler()
+    handled = asyncio.Event()
+
+    async def note_handled(event):
+        handled.set()
+
+    @component
+    def Root():
+        value, _ = use_state("text")
+        return html.input(
+            {
+                "value": value,
+                "onChange": EventHandler(note_handled, target=change.target),
+                "onKeyDown": EventHandler(note_handled, target=key_down.target),
+            }
+        )
+
+    async with Layout(Root()) as layout:
+        await layout.render()
+
+        await layout.deliver({**event_message(change.target), "seq": 4})
+        await handled.wait()
+        assert _ack_seq_of(await layout.render()) == {"onChange": 4}
+
+        # The other event is on a number line of its own, and the first
+        # acknowledgement has to survive alongside it rather than be displaced.
+        handled.clear()
+        await layout.deliver({**event_message(key_down.target), "seq": 9})
+        await handled.wait()
+        assert _ack_seq_of(await layout.render()) == {"onChange": 4, "onKeyDown": 9}
+
+
+async def test_ack_never_goes_to_the_wire(display: DisplayFixture):
+    """The acknowledgement travels to the client, never back from it
+
+    The number belongs to the client, which assigns it as it sends; all the server
+    is entitled to know is the number it was given. Were the acknowledgement to be
+    sent up with the event rather than sent down inside the model, the server would
+    be acknowledging whatever the client happened to last report instead of what it
+    actually finished handling, and an element waiting on that figure would be
+    waiting on a number which tells it nothing about whether the value about to be
+    written over its own is any good.
+    """
+    await display.show(_ControlledInputWithMirror)
+
+    inp = await display.page.wait_for_selector("#controlled-input")
+
+    # Anything already in flight is not of interest; what matters is what the
+    # client puts on the wire in answer to the keystrokes which follow.
+    await display.page.evaluate(
+        """
+        () => {
+            window.__sent = [];
+            const send = WebSocket.prototype.send;
+            WebSocket.prototype.send = function (data) {
+                window.__sent.push(String(data));
+                return send.call(this, data);
+            };
+        }
+        """
+    )
+
+    async def server_value():
+        return await display.page.locator("#server-value").text_content()
+
+    await inp.type("abc", delay=0)
+
+    await poll(server_value).until(
+        lambda text: text == "abc",
+        timeout=5,
+        description="the server to catch up with what was typed",
+    )
+
+    sent = await display.page.evaluate("() => window.__sent")
+    events = [json.loads(msg) for msg in sent]
+    events = [msg for msg in events if msg.get("type") == "layout-event"]
+    assert events, f"the client never told the server anything: {sent}"
+    assert all("_reactpy_ack_seq" not in msg for msg in events), (
+        f"the acknowledgement leaked into an event: {events}"
+    )
+
+
+async def test_ack_never_reaches_the_dom(display: DisplayFixture):
+    """The acknowledgement is a protocol field, not something to put on screen
+
+    It arrives inside the element's attributes, and whatever is left there once the
+    element has read it would otherwise be written onto the element as one more
+    attribute for the user to find in their markup.
+    """
+    await display.show(_ControlledInputWithMirror)
+
+    inp = await display.page.wait_for_selector("#controlled-input")
+
+    async def server_value():
+        return await display.page.locator("#server-value").text_content()
+
+    await inp.type("abc", delay=0)
+
+    # Wait until the server has caught up, otherwise there would be nothing to
+    # catch leaking even if something were.
+    await poll(server_value).until(
+        lambda text: text == "abc",
+        timeout=5,
+        description="the server to catch up with what was typed",
+    )
+
+    markup = await inp.evaluate("node => node.outerHTML")
+    assert "_reactpy_ack_seq" not in markup
+
+
+async def test_a_clear_is_not_written_back_over_by_what_came_before_it(
+    display: DisplayFixture,
+):
+    """A render too old to describe the field cannot resurrect what it held
+
+    The keystrokes and the clear are racing. The field is emptied by an event which
+    reaches the server while the text typed into it is still on its way there, so
+    renders carrying that text are queued up behind the clear. A render is entitled
+    to write over what the user has in the field only once its acknowledgement
+    covers the events the field has already moved past; a render which cannot claim
+    that, and writes anyway, arrives after the clear and puts the text from before
+    it back on screen.
+    """
+    await display.show(_ControlledInputWhichClearsOnKeyDown)
+
+    inp = await display.page.wait_for_selector("#controlled-input")
+    await inp.click()
+
+    async def field_value():
+        return await inp.evaluate("node => node.value")
+
+    async def server_value():
+        return await display.page.locator("#server-value").text_content()
+
+    # Fill the field and empty it without pausing between, so the clear overtakes
+    # the keystrokes instead of following them.
+    await inp.type("hello", delay=0)
+    await inp.press("Enter")
+
+    await poll(field_value).until(
+        lambda value: value == "",
+        timeout=10,
+        description="the clear to reach the field",
+    )
+    await poll(server_value).until(
+        lambda value: value == "",
+        timeout=10,
+        description="the clear to reach the model",
+    )
+
+    # Whatever is still in flight, none of it may put the earlier text back.
+    for _ in range(20):
+        await asyncio.sleep(0.05)
+        assert await field_value() == "", (
+            "a render carrying the text from before the clear overwrote it"
+        )
+
+
+@reactpy.component
+def _HeavyPage():
+    """A page which re-renders constantly while the user is typing at it"""
+    value, set_value = use_state("")
+    ticks, set_ticks = use_state(0)
+
+    def on_change(event):
+        set_value(event["target"]["value"])
+
+    def keep_rendering():
+        """Re-render on a timer, so renders are always in flight behind the typing"""
+        loop = asyncio.get_running_loop()
+        left = [400]
+
+        def tick():
+            set_ticks(lambda old: old + 1)
+            left[0] -= 1
+            if left[0]:
+                handle[0] = loop.call_later(0.005, tick)
+
+        handle = [loop.call_later(0.005, tick)]
+        # Cancelled through the cell, not captured directly, because every tick
+        # replaces the handle with a fresh one.
+        return lambda: handle[0].cancel()  # noqa: PLW0108
+
+    use_effect(keep_rendering)
+
+    return reactpy.html.div(
+        reactpy.html.input(
+            {"value": value, "onChange": on_change, "id": "controlled-input"}
+        ),
+        reactpy.html.pre({"id": "server-value"}, value),
+        reactpy.html.pre({"id": "ticks"}, str(ticks)),
+    )
+
+
+async def test_controlled_input_drops_no_character_under_a_heavy_page(
+    display: DisplayFixture,
+):
+    """A page churning while the user types still ends up with what they typed
+
+    Every re-render is a chance to write the server's value over the field, and the
+    renders which follow the last keystroke carry a value read before it. Only the
+    acknowledgement tells the element which of them are too old to write with, so
+    under a load which multiplies the renders in flight that property is the only
+    thing standing between the user and a vanished character.
+    """
+    target_text = "the quick brown fox jumps over the lazy dog"
+
+    await display.show(_HeavyPage)
+
+    inp = await display.page.wait_for_selector("#controlled-input")
+
+    await inp.type(target_text, delay=0)
+
+    async def values():
+        return (
+            await inp.evaluate("node => node.value"),
+            await display.page.locator("#server-value").text_content(),
+        )
+
+    await poll(values).until(
+        lambda pair: pair[0] == pair[1] == target_text,
+        timeout=15,
+        description="the field and the model to hold everything which was typed",
+    )
+
+    assert int(await display.page.locator("#ticks").text_content()) > 1, (
+        "the page never re-rendered, so this exercised nothing"
+    )

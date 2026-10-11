@@ -1,14 +1,14 @@
 """Client-backed ("live") proxies for browser events.
 
 Historically an event handler was handed a plain :class:`reactpy.types.Event` - a
-snapshot of the JavaScript ``Event`` object built by the ``event-to-object`` package.
-Snapshots are cheap and never block, but they are frozen at the moment the event was
-dispatched: methods such as ``focus()`` or ``composedPath()`` cannot be called from
-Python, and any property that the snapshot left out is simply gone.
+snapshot of the JavaScript ``Event`` object. Snapshots are cheap and never block, but
+they are frozen at the moment the event was dispatched: methods such as ``focus()`` or
+``composedPath()`` cannot be called from Python, and any property that the snapshot left
+out is simply gone.
 
 This module implements the machinery which lets a handler reach *live* into the browser
-instead. When the client supports it, each item of a ``layout-event`` message carries a
-small marker next to the usual snapshot::
+instead. Alongside the snapshot it serialized, the client marks every object it kept
+alive with an id::
 
     {
         "type": "layout-event",
@@ -413,7 +413,7 @@ def serialize_argument(value: Any) -> Any:
     except (TypeError, ValueError) as error:
         msg = f"cannot pass {value!r} to the client: {error}"
         raise EventProxyAccessError(msg) from error
-    return value
+    return value  # nocov - json.dumps only accepts types already handled above
 
 
 def deserialize_value(

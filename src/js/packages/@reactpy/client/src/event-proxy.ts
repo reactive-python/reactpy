@@ -1,9 +1,9 @@
 /**
  * Live ("event proxy") access to the objects which triggered a ReactPy event.
  *
- * When a VDOM event handler is flagged with ``eventProxy``, the client keeps a short
- * lived reference to the object which was dispatched (usually a JavaScript ``Event``)
- * and tags the snapshot it sends to the server with an identifier:
+ * Every object dispatched by a VDOM event handler is registered here, so the server
+ * can reach back into whatever actually triggered the event. What the client sends
+ * alongside the ``layout-event`` is the serializable half of that object plus an id:
  *
  * ```js
  * { type: "click", target: { tagName: "INPUT" }, __reactpy_event__: { id: "..." } }
@@ -75,8 +75,8 @@ export class ProxyAccessError extends Error {}
 /**
  * Properties which must never leave the page. Anything which could be used to reach
  * the wider document, walk a prototype chain, or evaluate code is refused. Ordinary
- * data properties (``value``, ``checked``, ``key``, ``className``, ...) are fine - the
- * snapshot the client sends alongside already contains those.
+ * data properties (``value``, ``checked``, ``key``, ``className``, ...) are fine - they
+ * are what the snapshot the client sends up front is made of.
  */
 const BLOCKED_MEMBERS = new Set<string>([
   // reaching the rest of the document, or the browser itself
@@ -275,6 +275,36 @@ export function serializeValue(
     result[name] = next(properties[name], name, depth + 1);
   }
   return result;
+}
+
+/**
+ * Replace every reference in a serialized value with ``null``.
+ *
+ * ``serializeValue`` leans on references for whatever JSON cannot carry - a function,
+ * a DOM node, something too deep or already seen. Those are only worth sending to a
+ * server which can ask about them afterwards, which in turn needs the object to still
+ * be held here. A snapshot taken for a handler which never asked for live access has
+ * nothing behind it, so the references are emptied rather than handed over as
+ * something nobody will ever be able to answer.
+ */
+export function dropReferences(value: any): any {
+  if (Array.isArray(value)) return value.map(dropReferences);
+  if (value === null || typeof value !== "object") return value;
+  if (readReference(value)) return null;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, dropReferences(item)]),
+  );
+}
+
+/**
+ * Serialize an event for a handler which will not be reaching back into the page.
+ *
+ * The object is not registered, so dispatching it costs the page nothing to remember,
+ * and the snapshot carries no references which could only be answered by a lookup that
+ * would never succeed. The empty event id is never resolved against the registry.
+ */
+export function serializeSnapshot(value: any): any {
+  return dropReferences(serializeValue(value, ""));
 }
 
 /** Read a single property of a live object, refusing anything blocked */

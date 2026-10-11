@@ -219,14 +219,12 @@ function StandardElement({ model }: { model: ReactPyVdom }) {
 function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   const client = useContext(ClientContext);
   const props = createAttributes(model, client);
-  // ``_reactpy_ack_seq`` is set by the server to the highest sequence
-  // number it has received from this element's event handlers. We use
-  // it (instead of a time-based debounce) to decide whether the server
-  // has caught up to the user's keystrokes.
-  const serverAckSeq =
-    typeof model.attributes?.["_reactpy_ack_seq"] === "number"
-      ? (model.attributes["_reactpy_ack_seq"] as number)
-      : -1;
+  // The server reports, per event name, the highest sequence number it has
+  // finished handling for that event's target. Together with ``sentSeqByEvent``
+  // below this decides whether the value carried by a render may be written over
+  // what the user has typed.
+  const ackSeqByEvent: Record<string, number> =
+    (model.attributes?.["_reactpy_ack_seq"] as Record<string, number>) ?? {};
   // Strip the internal key from props so it never reaches the DOM.
   delete (props as Record<string, unknown>)["_reactpy_ack_seq"];
 
@@ -239,47 +237,35 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   const inputRef = useRef<
     HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null
   >(null);
-  // Per-element (NOT per-handler) monotonic counter for outgoing
-  // events. The wrapper below installs this counter onto every
-  // handler via ``_reactpy_set_seq`` so the counter survives
-  // handler recreation on every server re-render. Each handler
-  // has its own per-handler ``outgoingSeq`` (used as the default
-  // when no wrapper is installed), but we override it here so the
-  // element owns a single monotonic counter across handlers.
+  // Per-element monotonic allocator for outgoing sequence numbers. The wrapper
+  // below hands each handler the next number through ``_reactpy_set_seq``, so one
+  // counter owned by the element numbers every event it emits and survives the
+  // handlers being recreated on each server re-render. It allocates for every user
+  // event - including ones a debounce later coalesces away - so it is a counter,
+  // not a record of what the server has actually been given.
   const sharedOutgoingSeq = useRef(0);
-  // Highest sequence number actually sent. The server's
-  // ``_reactpy_ack_seq`` will catch up to this. ``sharedOutgoingSeq``
-  // is incremented optimistically in the wrapper; ``lastSentSeq``
-  // is the high-water mark.
-  const lastSentSeq = useRef(-1);
+  // Per event name, the highest sequence number actually written to the wire.
+  // Only the send path can know that, so it reports back through
+  // ``_reactpy_mark_sent``. Comparing the server's ack against this, rather than
+  // against how many times a handler fired, is what stops the element from
+  // mistaking a snapshot of the previous keystroke for an up to date one.
+  const sentSeqByEvent = useRef<Record<string, number>>({});
 
   // honor changes to value from the client via props
   useEffect(() => {
-    // The sequence number is the single source of truth for whether
-    // to apply the server's value. Time-based heuristics (debounce
-    // windows, submit-event detection) are not used here because they
-    // cannot reliably distinguish a server snapshot from before some
-    // keystrokes were processed from a snapshot taken after all
-    // keystrokes were processed. The sequence number can,
-    // deterministically.
-    //
-    // If the server has acknowledged every event the user has sent
-    // (``serverAckSeq >= lastSentSeq.current``), the server's value
-    // is the authoritative one and is applied directly. This
-    // includes clears (Enter handlers that reset the input),
-    // normalizations, and same-value confirmations.
-    // If the server is behind, its value is necessarily a stale
-    // snapshot and is ignored; the next layout-update will be
-    // applied once the server catches up.
-    //
-    // We additionally compare against the DOM's actual current
-    // value via ``inputRef`` — when the server is supposedly
-    // caught up but its snapshot is shorter than what the user
-    // has in the DOM (a stale snapshot racing with the user's
-    // most recent keystroke), skip applying so we don't clobber
-    // the user's text. This handles the realistic case where the
-    // user types faster than the server can ack.
-    if (serverAckSeq < lastSentSeq.current) {
+    // The sequence numbers are the single source of truth for whether the
+    // server's value may be written over what the user has typed. Time based
+    // heuristics cannot tell a snapshot taken before some keystrokes were handled
+    // apart from one taken after all of them were; the sequence numbers can. The
+    // server acknowledges each event of this element separately, so the element is
+    // caught up only once every event it has sent has been acknowledged. That
+    // lets a deliberate change through - an Enter handler resetting the field, a
+    // normalization, a same value confirmation - while a snapshot which predates
+    // the newest keystroke is ignored and retried by the next layout update.
+    const isCaughtUp = Object.entries(sentSeqByEvent.current).every(
+      ([event, sentSeq]) => (ackSeqByEvent[event] ?? -1) >= sentSeq,
+    );
+    if (!isCaughtUp) {
       return;
     }
     // Apply server's value to the DOM directly via the ref, NOT
@@ -310,7 +296,7 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
       inputRef.current.value = props.value;
     }
     setValue(props.value);
-  }, [props.value, serverAckSeq]);
+  }, [props.value, model.attributes?.["_reactpy_ack_seq"]]);
 
   for (const [name, prop] of Object.entries(props)) {
     if (typeof prop !== "function") {
@@ -341,38 +327,29 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
       wrapped = debounceHandler(wrapped, handlerDebounce as number);
     }
 
+    // Only the send path knows which sequence number genuinely reaches the
+    // server, so let it report back under this event's name. Handlers are
+    // recreated on every re-render, but they always close over this same ref.
+    givenHandler._reactpy_mark_sent = (seq: number) => {
+      if (seq > (sentSeqByEvent.current[name] ?? -1)) {
+        sentSeqByEvent.current[name] = seq;
+      }
+    };
+
     props[name] = (event: TargetedEvent<any>) => {
-      // Use a per-element (shared across all handlers on this
-      // element) monotonic counter for outgoing events. We
-      // overwrite the handler's own ``outgoingSeq`` with this
-      // counter so the wire-format seq number reflects the
-      // element-wide sequence. The handler closure's own
-      // ``outgoingSeq`` is unused for sequencing purposes now
-      // (it still exists as a default for non-wrapped callers).
-      //
-      // Critically, we increment the seq counter and update
-      // ``lastSentSeq`` on every *user* event, not on every
-      // server dispatch. If the handler is wrapped in a
-      // debounce that coalesces several events into one server
-      // dispatch, ``lastSentSeq`` will be higher than the seq
-      // actually sent to the server, which is fine — the seq
-      // we sent is the LATEST user-typed value, which is the
-      // one the server actually processed.
-      const seq = sharedOutgoingSeq.current++;
-      if (seq > lastSentSeq.current) {
-        lastSentSeq.current = seq;
-      }
-      const taggedHandler = givenHandler as TaggedEventHandler & {
-        _reactpy_set_seq?: (n: number) => void;
-      };
-      if (typeof taggedHandler._reactpy_set_seq === "function") {
-        // Push the handler's internal counter past our seq so
-        // the next (possibly debounced) dispatch uses a seq
-        // number that matches what the user just typed, not
-        // whatever stale value the handler closure happened
-        // to have left over.
-        taggedHandler._reactpy_set_seq(seq + 1);
-      }
+      // Allocate from the counter owned by the element rather than the one owned
+      // by the handler, so numbering survives handlers being recreated on each
+      // server re-render and stays monotonic across every event of this element -
+      // ``onChange`` and ``onKeyDown`` included. Handing the number to the handler
+      // through ``_reactpy_set_seq`` makes the number written to the wire exactly
+      // the number allocated here, so what the server echoes back per event name
+      // and what ``_reactpy_mark_sent`` recorded live on one number line. This is
+      // the invariant the reconcile effect depends on: comparing a per-element
+      // allocation against a per-handler send left the two one apart, and the
+      // element then took a snapshot of the previous keystroke for the current one
+      // and typed over the user's newest character.
+      const seq = ++sharedOutgoingSeq.current;
+      givenHandler._reactpy_set_seq?.(seq);
 
       // ``onKeyPress`` fires before the DOM has been updated with
       // the new keystroke — ``event.target.value`` is the value
@@ -396,12 +373,13 @@ function UserInputElement({ model }: { model: ReactPyVdom }): JSX.Element {
   // is a known DOM property), racing with the browser's own
   // mutations of the DOM value during fast typing and silently
   // dropping keystrokes. We instead update the DOM value via the
-  // ``inputRef`` in the reconcile effect above, only when the
-  // server has caught up and the proposed value is not shorter
-  // than what the user has already typed.
+  // ``inputRef`` in the reconcile effect above, and only once the
+  // server has acknowledged every event sent from this element.
+  // ``_reactpy_ack_seq`` goes the same way: it is a protocol field, not
+  // something the DOM should ever carry.
   const controlledProps: Record<string, any> = {};
   for (const key of Object.keys(props as Record<string, any>)) {
-    if (key !== "value") {
+    if (key !== "value" && key !== "_reactpy_ack_seq") {
       controlledProps[key] = (props as Record<string, any>)[key];
     }
   }

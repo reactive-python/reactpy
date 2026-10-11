@@ -925,16 +925,6 @@ class JsonEventTarget(TypedDict):
     preventDefault: bool
     stopPropagation: bool
     stopImmediatePropagation: NotRequired[bool]
-    eventProxy: NotRequired[bool]
-    """Whether the client should keep the event around for live access
-
-    When present and ``true`` the client registers the dispatched JavaScript ``Event``
-    with its live object registry and tags it with
-    :data:`~reactpy._event_proxy.EVENT_MARKER_KEY` in the ``layout-event`` message.
-    This lets the corresponding handler read properties from, and call methods on, the
-    real browser object. When absent ReactPy is talking to a client which cannot do
-    this and only the snapshot is sent.
-    """
     debounce: NotRequired[int]
     throttle: NotRequired[int]
 
@@ -987,15 +977,6 @@ class BaseEventHandler:
     ``event.stopImmediatePropagation()`` inside the handler.
     """
 
-    event_proxy: bool | None
-    """Whether this handler is handed a live client backed event object
-
-    :data:`None` (the default) defers to :data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`.
-    Set this to ``False`` for handlers which only ever look at the data the client
-    already sent along, since live access requires a round trip to the browser for
-    anything the snapshot is missing.
-    """
-
     debounce: int | None
     """Server-→client debounce window in milliseconds.
 
@@ -1025,6 +1006,20 @@ class BaseEventHandler:
     Distinct from :attr:`debounce`, which limits server-→client value
     updates on input elements. ``throttle`` defaults to ``None`` (no
     throttling)."""
+
+    event_proxy: bool | None
+    """Whether this handler wants the event's originating browser object kept alive.
+
+    :data:`True` asks the client to hold on to the object the event fired from, so the
+    handler can read properties from it and call methods on it past what the snapshot
+    carried. :data:`False` takes the snapshot and nothing else - the browser is not
+    asked to remember anything for this handler.
+
+    The default, :data:`None`, leaves the choice to the server: a handler is given
+    live objects when the client has marked the event data as something it is still
+    holding, and otherwise gets the plain :class:`~reactpy.types.Event` snapshot.
+    Setting :data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY` asks for live objects
+    on every handler."""
 
     target: str | None
     """Typically left as ``None`` except when a static target is useful.
@@ -1170,7 +1165,6 @@ class ReactPyConfig(TypedDict, total=False):
     debug: bool
     max_queue_size: int
     tests_default_timeout: int
-    enable_event_proxy: bool
     event_proxy_timeout: float
     event_proxy_max_depth: int
     event_proxy_max_timeouts: int
@@ -1200,10 +1194,10 @@ class Event(dict):
     """
     A light `dict` wrapper for event data passed to event handler functions.
 
-    This is what handlers receive when the client cannot (or is not asked to) keep the
-    original JavaScript ``Event`` around. See :class:`SyncEvent` and
-    :class:`AsyncEvent` for the live, client backed variants which additionally allow
-    reading arbitrary properties from and calling methods on the browser object.
+    This is what handlers receive for data which is not a browser object. Anything
+    which actually came out of the page is kept alive by the client and handed over as
+    a :class:`SyncEvent` or :class:`AsyncEvent`, which can additionally be read from
+    and called into.
     """
 
     debounce: int | None
@@ -1215,17 +1209,15 @@ class Event(dict):
     def preventDefault(self) -> None:
         """Prevent the default action of the event.
 
-        This is a no-op on a plain snapshot - use :func:`reactpy.event`'s
-        ``prevent_default=True``, or a live event
-        (:data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`) to actually call it.
+        This is a no-op here - use :func:`reactpy.event`'s ``prevent_default=True``
+        instead, which asks the browser to do it before the event reaches the server.
         """
 
     def stopPropagation(self) -> None:
         """Stop the event from propagating.
 
-        This is a no-op on a plain snapshot - use :func:`reactpy.event`'s
-        ``stop_propagation=True``, or a live event
-        (:data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`) to actually call it.
+        This is a no-op here - use :func:`reactpy.event`'s ``stop_propagation=True``
+        instead, which asks the browser to do it before the event reaches the server.
         """
 
 

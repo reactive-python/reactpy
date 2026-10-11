@@ -35,7 +35,7 @@ from tests.tooling.aio import Event
 from tests.tooling.common import event_message, update_message
 from tests.tooling.hooks import use_force_render, use_toggle
 from tests.tooling.layout import layout_runner
-from tests.tooling.select import element_exists, find_element
+from tests.tooling.select import element_exists, find_element, find_elements
 
 
 @pytest.fixture(autouse=True, params=[True, False])
@@ -1692,6 +1692,139 @@ async def test_inject_ack_seq_on_input_without_attributes():
             await layout.render()
 
 
+def _ack_seq_of(update):
+    """The per-event ``_reactpy_ack_seq`` carried by the rendered input, if any"""
+    matches = [
+        element["attributes"]["_reactpy_ack_seq"]
+        for element, _ in find_elements(
+            update["model"],
+            lambda element, info: (
+                "_reactpy_ack_seq" in (element.get("attributes") or {})
+            ),
+        )
+    ]
+    assert len(matches) <= 1, f"expected at most one ack sequence, found {matches}"
+    return matches[0] if matches else None
+
+
+async def test_ack_seq_waits_for_the_handler_to_catch_up():
+    """A render made while a handler is still running does not advertise that handler's
+    event as having been handled.
+
+    The value carried by such a render was read before the event was handled, so a
+    client which applied it on top of what the user has typed since then would throw
+    away those keystrokes. The sequence number is only recorded once the handler which
+    read the event has actually returned.
+    """
+    handler_has_started = Event()
+    handler_may_finish = Event()
+    handler_has_finished = Event()
+    set_state = Ref()
+    static = StaticEventHandler()
+
+    async def on_change(event):
+        handler_has_started.set()
+        await handler_may_finish.wait()
+        handler_has_finished.set()
+
+    handler = EventHandler(on_change, target=static.target)
+
+    @component
+    def Root():
+        value, set_state.current = use_state("first")
+        return html.input({"value": value, "onChange": handler})
+
+    async with Layout(Root()) as layout:
+        await layout.render()
+
+        await layout.deliver({**event_message(static.target), "seq": 5})
+        await handler_has_started.wait()
+
+        # The handler is still running, so this render carries a value which predates
+        # the event it would be acknowledging.
+        set_state.current("second")
+        assert _ack_seq_of(await layout.render()) is None
+
+        handler_may_finish.set()
+        await handler_has_finished.wait()
+        await poll(lambda: layout._last_event_seq_by_target).until(
+            lambda seq_by_target: seq_by_target.get(static.target) == 5,
+            description="the sequence number of the handled event",
+        )
+
+        set_state.current("third")
+        assert _ack_seq_of(await layout.render()) == {"onChange": 5}
+
+
+async def test_ack_reaches_the_client_even_when_the_handler_changed_nothing():
+    """An event whose handler leaves the model alone is still acknowledged
+
+    The ack sequence travels inside the model of the element it describes, and the
+    element waits on it before it will write the server's value over what the user
+    has typed. A handler which changes no state schedules no render of its own, so
+    were it not for the render prompted on the event's own behalf the newer ack
+    would never be sent, and the element would wait forever on a figure only that
+    render could carry.
+    """
+    handler_has_run = Event()
+    static = StaticEventHandler()
+
+    def on_change(event):
+        handler_has_run.set()
+
+    handler = EventHandler(on_change, target=static.target)
+
+    @component
+    def Root():
+        value, _ = use_state("text")
+        return html.input({"value": value, "onChange": handler})
+
+    async with Layout(Root()) as layout:
+        await layout.render()
+
+        await layout.deliver({**event_message(static.target), "seq": 3})
+        await handler_has_run.wait()
+
+        # Nothing about the model differs from the last render, but the ack for the
+        # event has to reach the client regardless.
+        assert _ack_seq_of(await layout.render()) == {"onChange": 3}
+
+
+async def test_redundant_ack_delivery_requests_are_dropped(monkeypatch):
+    """Only one render is spent carrying a given ack to the client
+
+    Rendering the component is how an ack gets out, so a request to deliver an ack
+    the client already holds, or one which a render already queued will carry, must
+    not queue another.
+    """
+    static = StaticEventHandler()
+    handler = EventHandler(lambda e: None, target=static.target)
+
+    @component
+    def Root():
+        return html.input({"value": "text", "onChange": handler})
+
+    async with Layout(Root()) as layout:
+        await layout.render()
+
+        scheduled = []
+        monkeypatch.setattr(layout, "_schedule_render_task", scheduled.append)
+
+        # The ack has already been written into a rendered model.
+        layout._delivered_ack_by_target[static.target] = 7
+        layout._schedule_ack_delivery(static.target, 7)
+        assert scheduled == []
+        assert layout._pending_ack_by_target == {}
+
+        # Nothing has carried this one yet, so the first request queues a render and
+        # a second request for the same ack is folded into it.
+        del layout._delivered_ack_by_target[static.target]
+        layout._schedule_ack_delivery(static.target, 8)
+        assert layout._pending_ack_by_target[static.target] == 8
+        layout._schedule_ack_delivery(static.target, 8)
+        assert len(scheduled) == 1
+
+
 async def test_event_handler_retry_logic():
     # Setup
     @component
@@ -1732,3 +1865,71 @@ async def test_event_handler_retry_logic():
             await asyncio.wait_for(event_handled.wait(), timeout=1.0)
         except TimeoutError:
             pytest.fail("Event handler was not called after retry")
+
+
+async def test_a_render_asked_for_during_teardown_is_dropped(monkeypatch):
+    """A handler which finishes as the layout closes must not outlive it
+
+    What carries an acknowledgement to the client is a render, so a handler which
+    completes while the layout is being torn down asks for one - and by then the
+    layout has begun letting go of everything a render is made of. Cancelling the
+    tasks on the way out hands control back to the event loop, which is precisely
+    when such a handler gets its turn, so the request has to be turned down rather
+    than left to run against a layout which no longer exists.
+    """
+    inside_handler = asyncio.Event()
+    let_handler_finish = asyncio.Event()
+    has_exited = Ref(False)
+    renders_after_exit = []
+
+    @component
+    def Root():
+        value, set_value = use_state("")
+
+        async def on_change(event):
+            inside_handler.set()
+            await let_handler_finish.wait()
+            set_value(event["target"]["value"])
+
+        return html.input({"value": value, "onChange": on_change})
+
+    original_create_layout_update = Layout._create_layout_update
+
+    def note_late_render(self, model_state):
+        if has_exited.current:
+            renders_after_exit.append(model_state)
+        return original_create_layout_update(self, model_state)
+
+    monkeypatch.setattr(Layout, "_create_layout_update", note_late_render)
+
+    layout = Layout(Root())
+
+    async with layout:
+        model = (await layout.render())["model"]
+        target = model["children"][0]["eventHandlers"]["onChange"]["target"]
+
+        await layout.deliver(
+            {
+                "type": "layout-event",
+                "target": target,
+                "data": [{"target": {"value": "typed"}}],
+                "seq": 1,
+            }
+        )
+        await inside_handler.wait()
+
+        # Teardown starts while the handler is still parked, so releasing it here
+        # leaves it to finish in the window the cancellations open on the way out -
+        # which is where the acknowledgement is recorded, and a render asked for.
+        let_handler_finish.set()
+
+    has_exited.current = True
+
+    # A render which outlived the layout was created during teardown and has only
+    # the event loop's next turn to run in, so it is given one before the verdict.
+    await asyncio.sleep(0.05)
+
+    assert renders_after_exit == [], (
+        "a render went ahead after the layout had closed, on a layout which has "
+        "already let go of what it renders with"
+    )

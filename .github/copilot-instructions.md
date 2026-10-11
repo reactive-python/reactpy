@@ -42,7 +42,7 @@ pip install flask sanic tornado
 **Build JavaScript Packages:**
 
 -   `hatch run javascript:build` -- takes 15 seconds. NEVER CANCEL. Set timeout to 60+ minutes for safety.
--   This builds three packages: event-to-object, @reactpy/client, and @reactpy/app
+-   This builds two packages: @reactpy/client, and @reactpy/app
 
 **Build Python Package:**
 
@@ -174,7 +174,6 @@ print(f"✓ Hook-based component: {type(counter)}")
     -   `static/` -- Bundled JavaScript files
     -   `_html.py` -- HTML element factory functions
 -   `src/js/` -- JavaScript packages that get bundled with Python
-    -   `packages/event-to-object/` -- Event serialization package
     -   `packages/@reactpy/client/` -- Client-side React integration
     -   `packages/@reactpy/app/` -- Application framework
 -   `src/build_scripts/` -- Build automation scripts
@@ -252,7 +251,7 @@ def my_component(initial_value=0):
 ### Working with JavaScript:
 
 -   JavaScript packages are in `src/js/packages/`
--   Three main packages: event-to-object, @reactpy/client, @reactpy/app
+-   Two main packages: @reactpy/client, @reactpy/app
 -   Built JavaScript gets bundled into `src/reactpy/static/`
 -   Always rebuild JavaScript after changes: `hatch run javascript:build`
 

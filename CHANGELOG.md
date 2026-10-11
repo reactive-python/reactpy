@@ -41,7 +41,7 @@ Don't forget to remove deprecated code on each major release!
     - `debounce` waits until activity stops, then fires once. Default is 200 ms on `input`/`select`/`textarea`, 0 ms elsewhere.
     - `throttle` caps the rate how often an event is allowed to execute. No default; opt in per event.
 - Added a live event proxy which lets event handlers read properties from, and call methods on, the browser objects which triggered them rather than being limited to the snapshot sent along with the event. Handlers can `await event.target.value` or `await event.target.focus()` when asynchronous, or simply use `event.target.value` and `event.target.focus()` when synchronous. The new `reactpy.types.AsyncEvent` and `reactpy.types.SyncEvent` types describe these objects for editors and type checkers.
-    - This is opt-in. Enable it globally with `reactpy.config.REACTPY_ENABLE_EVENT_PROXY`, or per handler with `EventHandler(fn, event_proxy=True)`.
+    - Live access is opt-in. Ask for it on a single handler with `EventHandler(fn, event_proxy=True)` or `@event(event_proxy=True)`, or for every handler with `reactpy.config.REACTPY_ENABLE_EVENT_PROXY`. Until the server has asked, the browser holds nothing back and a handler is simply handed the plain `reactpy.types.Event` snapshot which arrived with the event - so an application which never reaches into the page pays nothing for the possibility. Reading something the client did not send up front costs a round trip to the browser, so synchronous handlers which do are run in a worker thread where they are free to block.
     - Unanswered requests are bounded by `reactpy.config.REACTPY_EVENT_PROXY_TIMEOUT`, `reactpy.config.REACTPY_EVENT_PROXY_MAX_TIMEOUTS`, and `reactpy.config.REACTPY_EVENT_PROXY_MAX_DEPTH`.
 
 ### Changed
@@ -56,7 +56,6 @@ Don't forget to remove deprecated code on each major release!
 - Renamed the `use_location` hook's `pathname` attribute to `path`.
 - Renamed `reactpy.config.REACTPY_DEBUG_MODE` to `reactpy.config.REACTPY_DEBUG`.
 - ReactPy no longer auto-converts `snake_case` props to `camelCase`. It is now the responsibility of the user to ensure that props are in the correct format.
-- Rewrite the `event-to-object` package to be more robust at handling properties on events.
 - Custom JS components will now automatically assume you are using ReactJS in the absence of a `bind` function.
 - Refactor layout rendering logic to improve readability and maintainability.
 - The JavaScript package `@reactpy/client` now exports `React` and `ReactDOM`, which allows third-party components to re-use the same React instance as ReactPy.
@@ -86,6 +85,7 @@ Don't forget to remove deprecated code on each major release!
 - Removed deprecated function `module_from_template`.
 - Removed deprecated exception type `reactpy.core.serve.Stop`.
 - Removed deprecated component `reactpy.widgets.hotswap`.
+- Removed the `event-to-object` package. The serializable snapshot it produced is now produced by the client's own serializer, and is what a handler is handed unless it has asked for the live object behind the event (see the live event proxy above).
 - Removed `reactpy.sample` module.
 - Removed `reactpy.svg` module. Contents previously within `reactpy.svg.*` can now be accessed via `reactpy.html.svg.*`.
 - Removed `reactpy.html._` function. Use `reactpy.html(...)` or `reactpy.html.fragment(...)` instead.

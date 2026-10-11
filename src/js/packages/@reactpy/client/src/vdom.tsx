@@ -1,6 +1,9 @@
-import eventToObject from "event-to-object";
 import { Fragment } from "preact";
-import { EVENT_MARKER_KEY } from "./event-proxy";
+import {
+  EVENT_MARKER_KEY,
+  serializeSnapshot,
+  serializeValue,
+} from "./event-proxy";
 import {
   HANDLER_DEBOUNCE,
   HANDLER_MARKER,
@@ -246,33 +249,40 @@ function createEventHandler(
         event.stopImmediatePropagation();
       }
 
-      // Convert JavaScript objects to plain JSON, if needed
+      // Whatever came out of the page can be kept alive by the registry so the server
+      // can read any property it likes and call methods such as "focus()" on it. Only
+      // the serializable half of the object goes over the wire, alongside a marker
+      // which the server turns back into a live proxy for the rest.
+      //
+      // That is only done for a handler which asked for it. Remembering an event costs
+      // the page memory, and an event nobody intends to look behind is memory spent
+      // for nothing; without the marker the server hands the handler the snapshot and
+      // leaves it at that.
       if (typeof event === "object" && event !== null) {
-        const snapshot = eventToObject(event);
-        if (
-          eventProxy &&
-          snapshot &&
-          typeof snapshot === "object" &&
-          !(EVENT_MARKER_KEY in snapshot)
-        ) {
-          // Hand the server a handle on the real object, not just on what could be
-          // squeezed into a snapshot, so it can read whatever it needs and call
-          // methods such as "focus()" on it.
+        if (eventProxy) {
+          const id = client.eventProxy.register(event);
           return {
-            ...snapshot,
-            [EVENT_MARKER_KEY]: { id: client.eventProxy.register(event) },
+            ...serializeValue(event, id),
+            [EVENT_MARKER_KEY]: { id },
           };
         }
-        return snapshot;
+        return serializeSnapshot(event);
       } else {
         return event;
       }
     });
     const seq = outgoingSeq++;
+    // Tell the element which sequence number really reached the wire. The
+    // element compares this against the server's ack to decide whether it is
+    // safe to write the server's value over what the user has typed, so it must
+    // be the number actually sent - not the number of times a handler fired,
+    // which is higher whenever a debounce coalesces keystrokes away.
+    eventHandler._reactpy_mark_sent?.(seq);
     client.sendMessage({ type: "layout-event", data, target, seq });
   } as TaggedEventHandler & {
     _reactpy_peek_seq?: () => number;
     _reactpy_set_seq?: (n: number) => void;
+    _reactpy_mark_sent?: (seq: number) => void;
   };
   eventHandler[HANDLER_MARKER] = true;
   eventHandler._reactpy_peek_seq = (): number => outgoingSeq;

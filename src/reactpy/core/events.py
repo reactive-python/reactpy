@@ -84,9 +84,9 @@ def event(
         stop_immediate_propagation:
             Also block any other listener of the same event in the browser.
         event_proxy:
-            Whether this handler receives a live, client backed event object. Defaults
-            to :data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`. Pass ``False`` for
-            handlers which never reach back into the browser.
+            Keep the browser object this event fired from alive so the handler can
+            read past the snapshot which arrived with the event. See
+            :attr:`BaseEventHandler.event_proxy`.
     """
 
     def setup(function: Callable[..., Any]) -> EventHandler:
@@ -124,7 +124,8 @@ class EventHandler(BaseEventHandler):
         stop_immediate_propagation:
             Also block any other listener of the same event in the browser.
         event_proxy:
-            Whether this handler is handed a live, client backed event object. See
+            Keep the browser object this event fired from alive so the handler can
+            read past the snapshot which arrived with the event. See
             :attr:`BaseEventHandler.event_proxy`.
     """
 
@@ -145,8 +146,8 @@ class EventHandler(BaseEventHandler):
         self.stop_immediate_propagation = stop_immediate_propagation
         self.debounce = debounce
         self.throttle = throttle
-        self.event_proxy = event_proxy
         self.target = target
+        self.event_proxy = event_proxy
 
         # Check if our `preventDefault` or `stopPropagation` methods were called
         # by inspecting the function's bytecode
@@ -264,8 +265,7 @@ def merge_event_handlers(
     :attr:`~reactpy.core.proto.EventHandlerType.stop_propagation`,
     :attr:`~reactpy.core.proto.EventHandlerType.prevent_default`,
     :attr:`~reactpy.core.proto.EventHandlerType.debounce`,
-    :attr:`~reactpy.core.proto.EventHandlerType.throttle`, or
-    :attr:`~reactpy.types.BaseEventHandler.event_proxy` attributes.
+    :attr:`~reactpy.core.proto.EventHandlerType.throttle` attributes.
     """
     if not event_handlers:
         msg = "No event handlers to merge"
@@ -283,8 +283,6 @@ def merge_event_handlers(
     stop_immediate_propagation = getattr(
         first_handler, "stop_immediate_propagation", False
     )
-    event_proxy = getattr(first_handler, "event_proxy", None)
-
     for handler in event_handlers:
         if (
             handler.stop_propagation != stop_propagation
@@ -294,14 +292,21 @@ def merge_event_handlers(
             or handler.target != target
             or getattr(handler, "stop_immediate_propagation", False)
             != stop_immediate_propagation
-            or getattr(handler, "event_proxy", None) != event_proxy
         ):
             msg = (
                 "Cannot merge handlers - 'stop_propagation', 'prevent_default', "
-                "'debounce', 'throttle', 'target', 'stop_immediate_propagation' or "
-                "'event_proxy' mismatch."
+                "'debounce', 'throttle', 'target', or "
+                "'stop_immediate_propagation' mismatch."
             )
             raise ValueError(msg)
+
+    # Asking the client to keep the originating object alive is not something the
+    # handlers can disagree about: if any of them wants it, the merged handler asks
+    # for it, and the others simply receive objects they never read past.
+    wants_proxy = [getattr(handler, "event_proxy", None) for handler in event_handlers]
+    event_proxy: bool | None = (
+        True if True in wants_proxy else False if False in wants_proxy else None
+    )
 
     return EventHandler(
         merge_event_handler_funcs([h.function for h in event_handlers]),

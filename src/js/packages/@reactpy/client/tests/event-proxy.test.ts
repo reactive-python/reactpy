@@ -15,11 +15,13 @@ import {
   ProxyAccessError,
   ProxyNotFoundError,
   collectProperties,
+  dropReferences,
   isBlockedMember,
   readPath,
   readProperty,
   readReference,
   reference,
+  serializeSnapshot,
   serializeValue,
 } from "../src/event-proxy";
 
@@ -574,4 +576,28 @@ test("handleMessage only answers proxy requests, and only when asked", () => {
     code: null,
     value: "click",
   });
+});
+
+test("serializeSnapshot hands over data and nothing which needs asking about", () => {
+  // A handler which never asked to reach back into the page gets the serializable half
+  // of the event, and no handle which could only be answered by a lookup that would
+  // fail - the object was never registered here in the first place.
+  const loop: Record<string, unknown> = { type: "click", value: "typed" };
+  loop["again"] = loop;
+
+  expect(serializeSnapshot(loop)).toEqual({
+    type: "click",
+    value: "typed",
+    again: null,
+  });
+});
+
+test("dropReferences empties references and leaves data alone", () => {
+  expect(
+    dropReferences({
+      a: 1,
+      b: [2, reference("e", ["x"])],
+      c: { d: null },
+    }),
+  ).toEqual({ a: 1, b: [2, null], c: { d: null } });
 });

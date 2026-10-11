@@ -1472,3 +1472,73 @@ async def test_async_effect_cancelled_on_dependency_change():
 
         # Verify the previous effect was cancelled
         await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+
+
+def test_a_render_is_marked_before_the_scheduler_is_handed_it():
+    """The request must be raised before the scheduler is given the work
+
+    The state change which gets us here can arrive from the thread a synchronous
+    event handler ran on, while the thread which owns the layout is midway through a
+    render and about to clear this very flag.  Raising it only after the hand-off
+    allowed the write to land *after* that clear, and since nothing was then ever
+    going to render again to reset it, every later state change was silently
+    deduplicated away and the component was stranded on a stale model for the rest
+    of its life.
+    """
+    seen_while_handing_off: list[bool] = []
+    hook = LifeCycleHook(
+        lambda: seen_while_handing_off.append(hook._scheduled_render)
+    )
+
+    hook.schedule_render()
+
+    assert seen_while_handing_off == [True]
+
+
+def test_a_failed_schedule_leaves_the_flag_down():
+    """A request which never reached the scheduler must not count as pending"""
+    attempts = 0
+
+    def explode():
+        nonlocal attempts
+        attempts += 1
+        raise RuntimeError("no scheduler available")
+
+    hook = LifeCycleHook(explode)
+
+    with assert_reactpy_did_log(
+        match_message="Failed to schedule render", error_type=RuntimeError
+    ):
+        hook.schedule_render()
+
+        assert hook._scheduled_render is False
+
+        # the flag went back down, so the next change is not deduplicated away
+        hook.schedule_render()
+
+    assert attempts == 2
+
+
+def test_a_cancelled_render_does_not_swallow_later_state_changes():
+    """Cancelling a pending render has to give back the right to render
+
+    The layout cancels a component's pending render whenever it renders that
+    component as part of updating its parent.  Once that happens nothing is left
+    which will ever clear the flag raised by ``schedule_render()``, so the layout
+    must reset it itself - otherwise this render, and every one after it, is lost.
+    """
+    scheduled: list[int] = []
+    hook = LifeCycleHook(lambda: scheduled.append(1))
+
+    hook.schedule_render()
+    assert scheduled == [1]
+
+    # a second request is deduplicated while the first is still pending
+    hook.schedule_render()
+    assert scheduled == [1]
+
+    hook.unschedule_render()
+
+    hook.schedule_render()
+    assert scheduled == [1, 1]
+

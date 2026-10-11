@@ -7,6 +7,11 @@ import pytest
 from jsonpointer import set_pointer
 
 import reactpy
+from reactpy._event_proxy import (
+    EVENT_MARKER_KEY,
+    EVENT_PROXY_REQUEST_TYPE,
+    EVENT_PROXY_RESPONSE_TYPE,
+)
 from reactpy.config import REACTPY_MAX_QUEUE_SIZE
 from reactpy.core.hooks import use_effect
 from reactpy.core.layout import Layout
@@ -150,3 +155,59 @@ async def test_dispatcher_handles_more_than_one_event_at_a_time():
         await second_event_did_execute.wait()
     finally:
         task.cancel()
+
+
+async def test_serve_round_trips_live_event_requests():
+    """A handler which reads past the snapshot sent with its event reaches the browser
+    through ``send`` and the answer finds its way back through ``recv``"""
+    seen = {}
+    did_read = asyncio.Event()
+    read_handler = StaticEventHandler()
+
+    # what the browser still holds for the object the event fired from - the snapshot
+    # which arrives with the event deliberately leaves ``target`` out of it
+    browser_objects = {"evt": {"type": "input", "target": {"value": "filled in later"}}}
+
+    @reactpy.component
+    def Reader():
+        @read_handler.use
+        async def read_late_value(event):
+            seen["value"] = await event.read("target.value")
+            did_read.set()
+
+        return reactpy.html.div({"onInput": read_late_value})
+
+    requests = []
+    inbox: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+    inbox.put_nowait(
+        event_message(read_handler.target, {EVENT_MARKER_KEY: {"id": "evt"}})
+    )
+
+    async def send(message):
+        if message.get("type") != EVENT_PROXY_REQUEST_TYPE:
+            return
+        requests.append(message)
+        # answer the way a browser would, by walking the object it kept for the event
+        value = browser_objects[message["eventId"]]
+        for segment in message["path"]:
+            value = value[segment]
+        await inbox.put(
+            {
+                "type": EVENT_PROXY_RESPONSE_TYPE,
+                "requestId": message["requestId"],
+                "ok": True,
+                "value": value,
+            }
+        )
+
+    async def recv():
+        return await inbox.get()
+
+    task = asyncio.create_task(serve_layout(Layout(Reader()), send, recv))
+    try:
+        await asyncio.wait_for(did_read.wait(), 5)
+    finally:
+        task.cancel()
+
+    assert seen["value"] == "filled in later"
+    assert [request["path"] for request in requests] == [["target", "value"]]

@@ -34,6 +34,7 @@ from reactpy._event_proxy import (
     EVENT_PROXY_RESPONSE_TYPE,
     EventArguments,
     EventProxyBackend,
+    event_marker_id,
 )
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
@@ -91,6 +92,12 @@ class Layout(BaseLayout):
             Task[LayoutUpdateMessage], _LifeCycleStateId
         ] = {}
         self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
+        # Flipped as teardown begins. A render asked for after that point has nowhere
+        # to go: everything it would render with is on its way out, and a task created
+        # in the meantime would outlive the layout which made it and reach for state
+        # which teardown has already let go of. Unlike the rest it is left in place on
+        # the way out, since asking for a render is legitimate at any time.
+        self._has_closed = False
         # Per-target event sequence tracking. Each incoming layout-event
         # may carry an optional ``seq`` field (assigned by the client)
         # which the server records here so it can be echoed back to the
@@ -99,6 +106,19 @@ class Layout(BaseLayout):
         # processed all keystrokes without relying on a time-based
         # debounce window.
         self._last_event_seq_by_target: dict[str, int] = {}
+        # An acknowledgement only reaches the client inside the model of the
+        # element it describes, which means it travels with a render - and an
+        # event whose handler changes no state schedules no render of its own.
+        # These track, per handler target, the acknowledgement a render has
+        # already carried and the one a render has yet to carry, so that a
+        # newly handled event can prompt a render while a redundant request -
+        # one the client already holds, or which a render already queued will
+        # deliver - is dropped rather than spending another render on it.
+        self._pending_ack_by_target: dict[str, int] = {}
+        self._delivered_ack_by_target: dict[str, int] = {}
+        # The component to re-render in order to carry a given target's
+        # acknowledgement, recorded as that target's handler is rendered.
+        self._ack_owner_id_by_target: dict[str, _LifeCycleStateId] = {}
         # Routes live ("event proxy") property reads and method calls made by event
         # handlers back to the client which dispatched them.
         self._event_proxy_backend = EventProxyBackend()
@@ -114,6 +134,13 @@ class Layout(BaseLayout):
     async def __aexit__(
         self, exc_type: type[Exception], exc_value: Exception, traceback: TracebackType
     ) -> None:
+        # Anything asked to render from here on is told there is nothing left to
+        # render. Cancelling the tasks below hands control back to the event loop, and
+        # a handler finishing its business during that window would otherwise create a
+        # render task which survives the loop over the tasks it knows about, only to
+        # reach, once teardown is over, for state which is no longer there.
+        self._has_closed = True
+
         root_csid = self._root_life_cycle_state_id
         root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
 
@@ -142,6 +169,9 @@ class Layout(BaseLayout):
         del self._root_life_cycle_state_id
         del self._model_states_by_life_cycle_state_id
         del self._last_event_seq_by_target
+        del self._pending_ack_by_target
+        del self._delivered_ack_by_target
+        del self._ack_owner_id_by_target
 
     async def deliver(self, event: LayoutEventMessage | dict[str, Any]) -> None:
         """Dispatch an event to the targeted handler"""
@@ -203,34 +233,25 @@ class Layout(BaseLayout):
     ) -> EventArguments:
         """Wrap raw event data for the given handler
 
-        Handlers which ask for it (or are given it by default) receive live,
-        client-backed event objects. Everything else gets the plain snapshot.
+        A handler which asks for live access is given it, and one which declines is
+        given the snapshot and nothing else. With no preference stated the data
+        decides: the client marks whatever it has agreed to keep hold of, and marked
+        data comes back as a live object. A client which has gone away cannot answer
+        for that mark either way, because a backend without a sender reports itself
+        unavailable and the mark is dropped with the rest of the overhead.
         """
         want_proxy = getattr(handler, "event_proxy", None)
         if want_proxy is None:
-            want_proxy = REACTPY_ENABLE_EVENT_PROXY.current
-        if not want_proxy:
-            from reactpy._event_proxy import build_event_args
-
-            args, _ = build_event_args(data, None, prefer_async=True)
-            return EventArguments(args)
-        return EventArguments(data, self._event_proxy_backend)
+            want_proxy = REACTPY_ENABLE_EVENT_PROXY.current or any(
+                event_marker_id(item) is not None for item in data
+            )
+        return EventArguments(data, self._event_proxy_backend if want_proxy else None)
 
     async def _process_event_queue(
         self, target: str, queue: Queue[LayoutEventMessage | dict[str, Any]]
     ) -> None:
         while True:
             event = await queue.get()
-
-            # Record the client-assigned event sequence number (if any)
-            # so we can echo it back as ``ackSeq`` on the originating
-            # element. The client uses this to decide whether the
-            # server has caught up to the latest keystrokes.
-            seq = event.get("seq")
-            if isinstance(seq, int) and seq >= 0:
-                prev = self._last_event_seq_by_target.get(target, -1)
-                if seq > prev:
-                    self._last_event_seq_by_target[target] = seq
 
             # Retry a few times to handle potential re-render race conditions where
             # the handler is temporarily removed and then re-added.
@@ -242,18 +263,41 @@ class Layout(BaseLayout):
                     if handler is not None:
                         break
 
-            if handler is not None:
-                try:
-                    await handler.function(
-                        self._make_event_arguments(handler, event["data"])
+            try:
+                if handler is not None:
+                    try:
+                        await handler.function(
+                            self._make_event_arguments(handler, event["data"])
+                        )
+                    except Exception:
+                        logger.exception(f"Failed to execute event handler {handler}")
+                else:
+                    logger.info(
+                        f"Ignored event - handler {event['target']!r} "
+                        "does not exist or its component unmounted"
                     )
-                except Exception:
-                    logger.exception(f"Failed to execute event handler {handler}")
-            else:
-                logger.info(
-                    f"Ignored event - handler {event['target']!r} "
-                    "does not exist or its component unmounted"
-                )
+            finally:
+                if self._has_closed:
+                    # The layout has been torn down around this handler. There is no
+                    # client left to acknowledge to, and nothing left to record into.
+                    return None
+                # Record the client-assigned event sequence number (if any) so it can
+                # be echoed back on the originating element, once - and only once -
+                # the handler which consumed the event is out of the way. Recording it
+                # up front would let a render made while the handler is still running
+                # claim that the event has been handled, even though the value that
+                # render carries was read before the handler could update it. A client
+                # which then wrote that value over what the user has typed since would
+                # throw those keystrokes away. It is recorded even when the handler
+                # failed or was never found, because no further state change can come
+                # from that event and withholding the acknowledgement would leave the
+                # client waiting for one forever.
+                seq = event.get("seq")
+                if isinstance(seq, int) and seq >= 0:
+                    prev = self._last_event_seq_by_target.get(target, -1)
+                    if seq > prev:
+                        self._last_event_seq_by_target[target] = seq
+                        self._schedule_ack_delivery(target, seq)
 
     async def render(self) -> LayoutUpdateMessage:
         if REACTPY_ASYNC_RENDERING.current:
@@ -478,6 +522,12 @@ class Layout(BaseLayout):
         for old_event in set(old_state.targets_by_event).difference(handlers_by_event):
             old_target = old_state.targets_by_event[old_event]
             del self._event_handlers[old_target]
+            # Nothing renders this target's acknowledgement any more, and a
+            # leftover record here would suppress the request to deliver one
+            # if the same target were to come back.
+            self._pending_ack_by_target.pop(old_target, None)
+            self._delivered_ack_by_target.pop(old_target, None)
+            self._ack_owner_id_by_target.pop(old_target, None)
 
         if not handlers_by_event:
             self._inject_event_ack_seq(new_state, raw_model.get("tagName"))
@@ -500,36 +550,106 @@ class Layout(BaseLayout):
     def _inject_event_ack_seq(
         self, new_state: _ModelState, tag_name: str | None
     ) -> None:
-        """Attach ``ackSeq`` to user-input element attributes so the client
-        can determine deterministically whether the server has processed
+        """Attach ``_reactpy_ack_seq`` to user-input element attributes so the
+        client can determine deterministically whether the server has processed
         the latest keystrokes.
 
-        For each event handler bound to this element, we look up the
-        highest client-assigned sequence number the server has received
-        for that target and, if any was recorded, attach the maximum
-        across handlers as the element's ``ackSeq``.
+        The value is a mapping of event name to the highest client-assigned
+        sequence number the server has finished handling for that event's
+        target. The client compares this, per event name, against the highest
+        sequence number it actually wrote to the wire for that event. A single
+        number across all events cannot do that: it lets a render which
+        predates the newest keystroke of one event look up to date because a
+        different event happened to be further along.
         """
         if tag_name not in {"input", "select", "textarea"}:
+            # Only these are rendered by the client's user-input element, and
+            # only that element holds anything up until an acknowledgement
+            # arrives. Prompting a render for an ordinary button or link would
+            # spend a round trip on a figure nobody is waiting for, and would
+            # break the rule that setting state to an equal value re-renders
+            # nothing at all.
             return
-        targets = list(new_state.targets_by_event.values())
-        if not targets:
-            return
-        max_ack: int | None = None
-        for target in targets:
-            ack = self._last_event_seq_by_target.get(target)
-            if ack is None:
-                continue
-            if max_ack is None or ack > max_ack:
-                max_ack = ack
-        if max_ack is None:
+
+        # Remember which component has to be rendered for this element's
+        # acknowledgement to get out, as that is what prompting a render
+        # on an event's behalf costs.
+        owner_id = self._owner_component_id(new_state)
+        if owner_id is not None:
+            for target in new_state.targets_by_event.values():
+                self._ack_owner_id_by_target[target] = owner_id
+
+        ack_seq_by_event = {
+            event: seq
+            for event, target in new_state.targets_by_event.items()
+            if (seq := self._last_event_seq_by_target.get(target)) is not None
+        }
+        if not ack_seq_by_event:
             return
         attrs = new_state.model.current.get("attributes")
         if not isinstance(attrs, dict):
             return
-        # Never let ackSeq leak into the user's attributes (it's not a
-        # real DOM attribute). Store it in a dedicated key the client
-        # recognizes.
-        attrs.setdefault("_reactpy_ack_seq", max_ack)  # type: ignore[reportArgumentType]
+        # Never let this leak into the user's attributes (it's not a real DOM
+        # attribute). Store it in a dedicated key the client recognizes. It has
+        # to be assigned, not defaulted, because the value advances as the
+        # server catches up with the keystrokes the client has sent.
+        attrs["_reactpy_ack_seq"] = ack_seq_by_event
+        for event, seq in ack_seq_by_event.items():
+            # This render is what carries the acknowledgement, so a later
+            # request to deliver the same one has nothing left to ask for.
+            target = new_state.targets_by_event[event]
+            self._delivered_ack_by_target[target] = seq
+            if self._pending_ack_by_target.get(target, -1) <= seq:
+                self._pending_ack_by_target.pop(target, None)
+
+    def _schedule_ack_delivery(self, target: str, seq: int) -> None:
+        """Prompt a render of the component owning ``target`` so that the
+        acknowledgement of the event it has just handled reaches the client.
+
+        An element waits on an acknowledgement before it will write the
+        server's value over what the user has typed, and that figure travels
+        inside the element's own model. A handler which changes no state
+        schedules no render of its own, so without prompting one here the newer
+        acknowledgement would never be sent and the element would wait forever.
+        A request is dropped when the client already holds that acknowledgement,
+        or when a render already queued will carry it, since a render costs a
+        round trip and the second time around buys nothing.
+        """
+        if self._has_closed:
+            # Teardown has begun: no render will carry this acknowledgement, and the
+            # bookkeeping below is about to be deleted.
+            return None
+        if self._delivered_ack_by_target.get(target, -1) >= seq:
+            return None
+        owner_id = self._ack_owner_id_by_target.get(target)
+        if owner_id is None:
+            # Either the event came from an element which does not wait on an
+            # acknowledgement, or the element is not rendered by anything right
+            # now. In both cases there is nothing to prompt: in the first no
+            # render is owed, in the second the model carries the acknowledgement
+            # the moment the element is rendered again.
+            return None
+        if self._pending_ack_by_target.get(target, -1) >= seq:
+            return None
+        self._pending_ack_by_target[target] = seq
+        self._schedule_render_task(owner_id)
+        return None
+
+    @staticmethod
+    def _owner_component_id(model_state: _ModelState) -> _LifeCycleStateId | None:
+        """The ID of the component which renders ``model_state``
+
+        Walks up from an element to the component nearest above it, since that
+        is the one whose re-render rewrites the element's model.
+        """
+        state = model_state
+        while not state.is_component_state:
+            try:
+                state = state.parent
+            except RuntimeError:
+                # Nothing above it remains mounted to render it.
+                return None
+        return state.life_cycle_state.id
 
     def _render_model_event_handlers_without_old_state(
         self,
@@ -648,6 +768,12 @@ class Layout(BaseLayout):
 
             for target in model_state.targets_by_event.values():
                 del self._event_handlers[target]
+                # As above: nothing renders these acknowledgements any more and
+                # a leftover record would suppress the request to deliver one
+                # were the same target to be rendered again.
+                self._pending_ack_by_target.pop(target, None)
+                self._delivered_ack_by_target.pop(target, None)
+                self._ack_owner_id_by_target.pop(target, None)
 
             if model_state.is_component_state:
                 life_cycle_state = model_state.life_cycle_state
@@ -657,6 +783,11 @@ class Layout(BaseLayout):
             to_unmount.extend(model_state.children_by_key.values())
 
     def _schedule_render_task(self, lcs_id: _LifeCycleStateId) -> None:
+        if self._has_closed:
+            # Teardown has begun, so there is nothing left for this render to produce.
+            # A task made now would not run until after everything it renders with -
+            # the handlers, the model states, the queue - has been deleted.
+            return None
         if not REACTPY_ASYNC_RENDERING.current:
             self._rendering_queue.put(lcs_id)
             return None

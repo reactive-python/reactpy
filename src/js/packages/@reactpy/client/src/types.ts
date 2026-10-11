@@ -62,14 +62,9 @@ export type ReactPyVdomEventHandler = {
   preventDefault?: boolean;
   stopPropagation?: boolean;
   stopImmediatePropagation?: boolean;
-  /**
-   * Keep the dispatched object around so the server can read properties from, and call
-   * methods on, whatever is actually in the page. Sent by the server when one of its
-   * handlers is able to make use of it.
-   */
-  eventProxy?: boolean;
   debounce?: number;
   throttle?: number;
+  eventProxy?: boolean;
 };
 
 export type ReactPyVdomImportSource = {

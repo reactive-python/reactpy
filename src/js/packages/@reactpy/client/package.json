@@ -5,8 +5,7 @@
   ],
   "dependencies": {
     "json-pointer": "catalog:",
-    "preact": "catalog:",
-    "event-to-object": "catalog:"
+    "preact": "catalog:"
   },
   "description": "A client for ReactPy implemented in React",
   "files": [
