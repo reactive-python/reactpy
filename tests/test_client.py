@@ -12,11 +12,13 @@ async def test_automatic_reconnect(display: DisplayFixture, server: BackendFixtu
     @reactpy.component
     def SomeComponent():
         count, incr_count = use_counter(0)
+
+        async def on_click(event):
+            incr_count()
+
         return reactpy.html(
             reactpy.html.p({"data-count": count, "id": "count"}, "count", count),
-            reactpy.html.button(
-                {"onClick": lambda e: incr_count(), "id": "incr"}, "incr"
-            ),
+            reactpy.html.button({"onClick": on_click, "id": "incr"}, "incr"),
         )
 
     async def get_count():
@@ -66,10 +68,14 @@ async def test_style_can_be_changed(display: DisplayFixture):
     def ButtonWithChangingColor():
         color_toggle, set_color_toggle = reactpy.hooks.use_state(True)
         color = "red" if color_toggle else "blue"
+
+        async def on_click(event):
+            set_color_toggle(not color_toggle)
+
         return reactpy.html.button(
             {
                 "id": "my-button",
-                "onClick": lambda event: set_color_toggle(not color_toggle),
+                "onClick": on_click,
                 "style": {"backgroundColor": color, "color": "white"},
             },
             f"color: {color}",

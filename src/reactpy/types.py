@@ -20,13 +20,7 @@ from typing import (
     overload,
 )
 
-from reactpy._event_proxy import (
-    AsyncEvent,
-    AsyncEventProxy,
-    EventProxy,
-    SyncEvent,
-    SyncEventProxy,
-)
+from reactpy._event_proxy import Event, EventProxy
 
 CarrierType = TypeVar("CarrierType")
 _Type = TypeVar("_Type")
@@ -1015,11 +1009,17 @@ class BaseEventHandler:
     carried. :data:`False` takes the snapshot and nothing else - the browser is not
     asked to remember anything for this handler.
 
-    The default, :data:`None`, leaves the choice to the server: a handler is given
-    live objects when the client has marked the event data as something it is still
-    holding, and otherwise gets the plain :class:`~reactpy.types.Event` snapshot.
-    Setting :data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY` asks for live objects
-    on every handler."""
+    The default, :data:`None`, follows
+    :data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`, which is switched on because
+    reading the object an event fired from is what people expect. Opt a single handler
+    out by setting this to :data:`False` - worthwhile for anything which fires
+    continuously, such as ``onScroll``, because keeping an object alive and pruning it
+    costs the browser work on every event.
+
+    Whatever this says, a handler is only ever given live access for data the client
+    actually marked as something it is still holding. Otherwise it receives the
+    :class:`~reactpy.types.Event` snapshot, and awaiting a property of it raises
+    :class:`~reactpy._event_proxy.EventProxyUnavailable`."""
 
     target: str | None
     """Typically left as ``None`` except when a static target is useful.
@@ -1190,55 +1190,15 @@ class EllipsisRepr:
         return "..."
 
 
-class Event(dict):
-    """
-    A light `dict` wrapper for event data passed to event handler functions.
-
-    This is what handlers receive for data which is not a browser object. Anything
-    which actually came out of the page is kept alive by the client and handed over as
-    a :class:`SyncEvent` or :class:`AsyncEvent`, which can additionally be read from
-    and called into.
-    """
-
-    debounce: int | None
-
-    def __getattr__(self, name: str) -> Any:
-        value = self.get(name)
-        return Event(value) if isinstance(value, dict) else value
-
-    def preventDefault(self) -> None:
-        """Prevent the default action of the event.
-
-        This is a no-op here - use :func:`reactpy.event`'s ``prevent_default=True``
-        instead, which asks the browser to do it before the event reaches the server.
-        """
-
-    def stopPropagation(self) -> None:
-        """Stop the event from propagating.
-
-        This is a no-op here - use :func:`reactpy.event`'s ``stop_propagation=True``
-        instead, which asks the browser to do it before the event reaches the server.
-        """
-
-
 SourceType = NewType("SourceType", str)
 
 
-EventObject: TypeAlias = Event | EventProxy[Any]
+EventObject: TypeAlias = Event[Any] | EventProxy[Any]
 """Anything which may be handed to an event handler as event data
 
-Either the plain :class:`Event` snapshot, or a live :class:`~reactpy._event_proxy.EventProxy`.
+Either the event object itself, or something lazily resolved out of it. Both are
+awaitable, and both are documented on :class:`~reactpy._event_proxy.EventProxy`.
 """
-
-LiveEvent: TypeAlias = SyncEvent[Any] | AsyncEvent[Any]
-"""The live event objects ReactPy hands to event handlers
-
-A :class:`~reactpy._event_proxy.SyncEvent` for synchronous handlers and an
-:class:`~reactpy._event_proxy.AsyncEvent` for asynchronous ones.
-"""
-
-LiveEventMember: TypeAlias = SyncEventProxy[Any] | AsyncEventProxy[Any]
-"""A lazily resolved member of a :data:`LiveEvent`"""
 
 
 @dataclass(frozen=True)

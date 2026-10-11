@@ -38,6 +38,10 @@ from tests.tooling.layout import layout_runner
 from tests.tooling.select import element_exists, find_element, find_elements
 
 
+async def _noop_handler(*args):
+    """A handler which does nothing, for tests which only need something to bind"""
+
+
 @pytest.fixture(autouse=True, params=[True, False])
 def async_rendering(request):
     with patch.object(REACTPY_ASYNC_RENDERING, "current", request.param):
@@ -539,12 +543,12 @@ async def test_model_key_preserves_callback_identity_for_common_elements(caplog)
         reverse_children, set_reverse_children = use_toggle()
 
         @good_handler.use
-        def good_trigger():
+        async def good_trigger():
             called_good_trigger.current = True
             set_reverse_children()
 
         @bad_handler.use
-        def bad_trigger():
+        async def bad_trigger():
             msg = "Called bad trigger"
             raise ValueError(msg)
 
@@ -601,14 +605,14 @@ async def test_model_key_preserves_callback_identity_for_components():
         if name == "good":
 
             @good_handler.use
-            def callback():
+            async def callback():
                 called_good_trigger.current = True
                 set_reverse_children()
 
         else:
 
             @bad_handler.use
-            def callback():
+            async def callback():
                 msg = "Called bad trigger"
                 raise ValueError(msg)
 
@@ -693,8 +697,11 @@ async def test_event_handler_at_component_root_is_garbage_collected():
     def HasEventHandlerAtRoot():
         value, set_value = reactpy.hooks.use_state(False)
         set_value(not value)  # trigger renders forever
-        event_handler.current = weakref(set_value)
-        button = reactpy.html.button({"onClick": set_value}, "state is: ", value)
+
+        async def on_click(event):
+            set_value(event)
+
+        button = reactpy.html.button({"onClick": on_click}, "state is: ", value)
         event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return button
 
@@ -715,8 +722,11 @@ async def test_event_handler_deep_in_component_layout_is_garbage_collected():
     def HasNestedEventHandler():
         value, set_value = reactpy.hooks.use_state(False)
         set_value(not value)  # trigger renders forever
-        event_handler.current = weakref(set_value)
-        button = reactpy.html.button({"onClick": set_value}, "state is: ", value)
+
+        async def on_click(event):
+            set_value(event)
+
+        button = reactpy.html.button({"onClick": on_click}, "state is: ", value)
         event_handler.current = weakref(button["eventHandlers"]["onClick"].function)
         return reactpy.html.div(reactpy.html.div(button))
 
@@ -795,7 +805,7 @@ async def test_log_error_on_bad_event_handler():
     @reactpy.component
     def ComponentWithBadEventHandler():
         @bad_handler.use
-        def raise_error():
+        async def raise_error():
             msg = "bad event handler"
             raise Exception(msg)
 
@@ -897,7 +907,7 @@ async def test_layout_does_not_copy_element_children_by_key():
             [
                 reactpy.html.div(
                     {"key": i},
-                    reactpy.html.input({"onChange": lambda event: None}),
+                    reactpy.html.input({"onChange": _noop_handler}),
                 )
                 for i in items
             ]
@@ -953,7 +963,7 @@ async def test_switching_node_type_with_event_handlers():
     @reactpy.component
     def Root():
         toggle, toggle_type.current = use_toggle(True)
-        handler = element_static_handler.use(lambda: None)
+        handler = element_static_handler.use(_noop_handler)
         if toggle:
             return html.div(html.button({"onEvent": handler}))
         else:
@@ -961,7 +971,7 @@ async def test_switching_node_type_with_event_handlers():
 
     @reactpy.component
     def SomeComponent():
-        handler = component_static_handler.use(lambda: None)
+        handler = component_static_handler.use(_noop_handler)
         return html.button({"onAnotherEvent": handler})
 
     async with Layout(Root()) as layout:
@@ -1043,9 +1053,13 @@ async def test_element_keys_inside_components_do_not_reset_state_of_component():
     @component
     def Parent():
         state, set_state = use_state(0)
+
+        async def on_click():
+            set_state(state + 1)
+
         return html.div(
             html.button(
-                {"onClick": set_child_key_num.use(lambda: set_state(state + 1))},
+                {"onClick": set_child_key_num.use(on_click)},
                 "click me",
             ),
             Child("some-key"),
@@ -1115,9 +1129,11 @@ async def test_changing_event_handlers_in_the_next_render():
     @component
     def Root():
         event_name, set_event_name.current = use_state("first")
-        return html.button(
-            {event_name: event_handler.use(lambda: did_trigger.set_current(True))}
-        )
+
+        async def on_event():
+            did_trigger.set_current(True)
+
+        return html.button({event_name: event_handler.use(on_event)})
 
     async with Layout(Root()) as layout:
         await layout.render()
@@ -1136,9 +1152,7 @@ async def test_no_warn_when_debounce_on_non_input_element():
     """``debounce`` is forwarded unconditionally to the client. The client
     only applies it where it has an effect; the layout does not warn."""
     static = StaticEventHandler()
-    debounced_handler = EventHandler(
-        lambda data: None, target=static.target, debounce=150
-    )
+    debounced_handler = EventHandler(_noop_handler, target=static.target, debounce=150)
 
     @component
     def Root():
@@ -1152,9 +1166,7 @@ async def test_no_warn_when_debounce_on_non_input_element():
 
 async def test_no_warn_when_debounce_on_input_element():
     static = StaticEventHandler()
-    debounced_handler = EventHandler(
-        lambda data: None, target=static.target, debounce=150
-    )
+    debounced_handler = EventHandler(_noop_handler, target=static.target, debounce=150)
 
     @component
     def Root():
@@ -1169,9 +1181,7 @@ async def test_no_warn_when_debounce_on_input_element():
 async def test_throttle_is_stored_on_handler():
     """``throttle`` should be preserved on the EventHandler after render."""
     static = StaticEventHandler()
-    throttled_handler = EventHandler(
-        lambda data: None, target=static.target, throttle=120
-    )
+    throttled_handler = EventHandler(_noop_handler, target=static.target, throttle=120)
 
     @component
     def Root():
@@ -1192,7 +1202,7 @@ async def test_debounce_and_throttle_both_stored():
     """Both ``debounce`` and ``throttle`` are preserved on the handler."""
     static = StaticEventHandler()
     handler = EventHandler(
-        lambda data: None,
+        _noop_handler,
         target=static.target,
         debounce=250,
         throttle=120,
@@ -1328,10 +1338,10 @@ async def test_ensure_model_path_udpates():
     def Item(item: str, all_items: State[list[str]]):
         color = use_state(None)
 
-        def deleteme(event):
+        async def deleteme(event):
             all_items.set_value([i for i in all_items.value if (i != item)])
 
-        def colorize(event):
+        async def colorize(event):
             color.set_value("blue" if not color.value else None)
 
         return html.div(
@@ -1663,7 +1673,7 @@ async def test_inject_ack_seq_on_input_without_attributes():
     """An ``<input>`` with event handlers and a recorded ack seq but no
     ``"attributes"`` key should not error when injecting the ack sequence."""
     static = StaticEventHandler()
-    handler = EventHandler(lambda e: None, target=static.target)
+    handler = EventHandler(_noop_handler, target=static.target)
     set_state = Ref()
 
     @component
@@ -1769,7 +1779,7 @@ async def test_ack_reaches_the_client_even_when_the_handler_changed_nothing():
     handler_has_run = Event()
     static = StaticEventHandler()
 
-    def on_change(event):
+    async def on_change(event):
         handler_has_run.set()
 
     handler = EventHandler(on_change, target=static.target)
@@ -1798,7 +1808,7 @@ async def test_redundant_ack_delivery_requests_are_dropped(monkeypatch):
     not queue another.
     """
     static = StaticEventHandler()
-    handler = EventHandler(lambda e: None, target=static.target)
+    handler = EventHandler(_noop_handler, target=static.target)
 
     @component
     def Root():
@@ -1945,7 +1955,7 @@ async def test_a_closed_layout_owes_neither_an_ack_delivery_nor_a_render():
     that, and reaching for those would raise where nothing is left to catch it.
     """
     static = StaticEventHandler()
-    handler = EventHandler(lambda e: None, target=static.target)
+    handler = EventHandler(_noop_handler, target=static.target)
 
     @component
     def Root():

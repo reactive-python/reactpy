@@ -99,9 +99,10 @@ async def test_module_from_file(display: DisplayFixture):
 
     @reactpy.component
     def ShowSimpleButton():
-        return SimpleButton(
-            {"id": "my-button", "onClick": lambda event: is_clicked.set_current(True)}
-        )
+        async def on_click(event):
+            is_clicked.set_current(True)
+
+        return SimpleButton({"id": "my-button", "onClick": on_click})
 
     await display.show(ShowSimpleButton)
 
@@ -480,9 +481,10 @@ async def test_component_from_file(display: DisplayFixture):
 
     @reactpy.component
     def ShowSimpleButton():
-        return SimpleButton(
-            {"id": "my-button", "onClick": lambda event: is_clicked.set_current(True)}
-        )
+        async def on_click(event):
+            is_clicked.set_current(True)
+
+        return SimpleButton({"id": "my-button", "onClick": on_click})
 
     await display.show(ShowSimpleButton)
 

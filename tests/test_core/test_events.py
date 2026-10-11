@@ -24,8 +24,12 @@ from reactpy.types import Event
 from tests.tooling.common import TYPE_DELAYS, event_message
 
 
+async def _noop_handler(*args: Event) -> None:
+    """A handler which does nothing, for tests which only care about the wrapper"""
+
+
 def test_event_handler_repr():
-    handler = EventHandler(lambda: None)
+    handler = EventHandler(_noop_handler)
     assert repr(handler) == (
         f"EventHandler(function={handler.function}, prevent_default=False, "
         f"stop_propagation=False, stop_immediate_propagation=False, debounce=None, "
@@ -34,42 +38,42 @@ def test_event_handler_repr():
 
 
 def test_event_handler_props():
-    handler_0 = EventHandler(lambda data: None)
+    handler_0 = EventHandler(_noop_handler)
     assert handler_0.stop_propagation is False
     assert handler_0.prevent_default is False
     assert handler_0.debounce is None
     assert handler_0.throttle is None
     assert handler_0.target is None
 
-    handler_1 = EventHandler(lambda data: None, prevent_default=True)
+    handler_1 = EventHandler(_noop_handler, prevent_default=True)
     assert handler_1.stop_propagation is False
     assert handler_1.prevent_default is True
     assert handler_1.debounce is None
     assert handler_1.throttle is None
     assert handler_1.target is None
 
-    handler_2 = EventHandler(lambda data: None, stop_propagation=True)
+    handler_2 = EventHandler(_noop_handler, stop_propagation=True)
     assert handler_2.stop_propagation is True
     assert handler_2.prevent_default is False
     assert handler_2.debounce is None
     assert handler_2.throttle is None
     assert handler_2.target is None
 
-    handler_3 = EventHandler(lambda data: None, target="123")
+    handler_3 = EventHandler(_noop_handler, target="123")
     assert handler_3.stop_propagation is False
     assert handler_3.prevent_default is False
     assert handler_3.debounce is None
     assert handler_3.throttle is None
     assert handler_3.target == "123"
 
-    handler_4 = EventHandler(lambda data: None, debounce=250)
+    handler_4 = EventHandler(_noop_handler, debounce=250)
     assert handler_4.stop_propagation is False
     assert handler_4.prevent_default is False
     assert handler_4.debounce == 250
     assert handler_4.throttle is None
     assert handler_4.target is None
 
-    handler_5 = EventHandler(lambda data: None, throttle=150)
+    handler_5 = EventHandler(_noop_handler, throttle=150)
     assert handler_5.stop_propagation is False
     assert handler_5.prevent_default is False
     assert handler_5.debounce is None
@@ -81,9 +85,12 @@ def test_event_handler_equivalence():
     async def func(data):
         return None
 
+    async def other_func(data):
+        return None
+
     assert EventHandler(func) == EventHandler(func)
 
-    assert EventHandler(lambda data: None) != EventHandler(lambda data: None)
+    assert EventHandler(func) != EventHandler(other_func)
 
     assert EventHandler(func, stop_propagation=True) != EventHandler(
         func, stop_propagation=False
@@ -106,20 +113,39 @@ async def test_to_event_handler_function():
     async def coro(*args):
         call_args.current = args
 
-    def func(*args):
-        call_args.current = args
-
     await to_event_handler_function(coro, positional_args=True)([1, 2, 3])
-    assert call_args.current == (1, 2, 3)
-
-    await to_event_handler_function(func, positional_args=True)([1, 2, 3])
     assert call_args.current == (1, 2, 3)
 
     await to_event_handler_function(coro, positional_args=False)([1, 2, 3])
     assert call_args.current == ([1, 2, 3],)
 
-    await to_event_handler_function(func, positional_args=False)([1, 2, 3])
-    assert call_args.current == ([1, 2, 3],)
+
+def test_event_handlers_must_be_coroutines():
+    """A plain ``def`` would have to block for the browser, so it is refused
+
+    Reading the object an event fired from is a round trip, and only a coroutine can
+    await one. A blocking handler would have to be run off the event loop, where it
+    could not safely update the very state it renders from.
+    """
+
+    def sync_handler(data):
+        return None
+
+    for make_handler in (EventHandler, event, to_event_handler_function):
+        with pytest.raises(TypeError, match="must be declared with 'async def'"):
+            make_handler(sync_handler)
+
+    async def async_handler(data):
+        return None
+
+    # partials and objects with a coroutine __call__ are handlers too
+    assert isinstance(EventHandler(partial(async_handler)), EventHandler)
+
+    class CallableHandler:
+        async def __call__(self, data):
+            return None
+
+    assert isinstance(EventHandler(CallableHandler()), EventHandler)
 
 
 async def test_merge_event_handler_empty_list():
@@ -138,7 +164,7 @@ async def test_merge_event_handler_empty_list():
     ],
 )
 async def test_merge_event_handlers_raises_on_mismatch(kwargs_1, kwargs_2):
-    def func(data):
+    async def func(data):
         return None
 
     with pytest.raises(ValueError, match=r"Cannot merge handlers"):
@@ -151,14 +177,21 @@ async def test_merge_event_handlers_raises_on_mismatch(kwargs_1, kwargs_2):
 
 
 async def test_merge_event_handlers():
-    handler = EventHandler(lambda data: None)
+    handler = EventHandler(_noop_handler)
     assert merge_event_handlers([handler]) is handler
 
     calls = []
+
+    async def first(data):
+        calls.append("first")
+
+    async def second(data):
+        calls.append("second")
+
     merged_handler = merge_event_handlers(
         [
-            EventHandler(lambda data: calls.append("first")),
-            EventHandler(lambda data: calls.append("second")),
+            EventHandler(first),
+            EventHandler(second),
         ]
     )
     await merged_handler.function({})
@@ -194,10 +227,10 @@ def test_merge_event_handlers_event_proxy():
     merged handler asks for it whenever any of the originals did, and states nothing
     at all when none of them said either way.
     """
-    plain = EventHandler(lambda data: None)
-    wants = EventHandler(lambda data: None, event_proxy=True)
-    declines = EventHandler(lambda data: None, event_proxy=False)
-    other_plain = EventHandler(lambda data: None)
+    plain = EventHandler(_noop_handler)
+    wants = EventHandler(_noop_handler, event_proxy=True)
+    declines = EventHandler(_noop_handler, event_proxy=False)
+    other_plain = EventHandler(_noop_handler)
 
     assert merge_event_handlers([plain, other_plain]).event_proxy is None
     assert merge_event_handlers([plain, wants]).event_proxy is True
@@ -250,10 +283,10 @@ async def test_can_stop_event_propagation(display: DisplayFixture):
     @reactpy.component
     def DivInDiv():
         @reactpy.event(stop_propagation=True)
-        def inner_click_no_op(event):
+        async def inner_click_no_op(event):
             clicked.current = True
 
-        def outer_click_is_not_triggered(event):
+        async def outer_click_is_not_triggered(event):
             raise AssertionError
 
         outer = reactpy.html.div(
@@ -336,12 +369,16 @@ async def test_javascript_event_after_state_update(display: DisplayFixture):
     @reactpy.component
     def App():
         click_count, set_click_count = reactpy.hooks.use_state(0)
+
+        async def on_click(event):
+            set_click_count(click_count + 1)
+
         return reactpy.html.div(
             {"id": "the-parent"},
             reactpy.html.button(
                 {
                     "id": "button-with-reactpy-event",
-                    "onClick": lambda _: set_click_count(click_count + 1),
+                    "onClick": on_click,
                 },
                 "Click Me",
             ),
@@ -379,7 +416,7 @@ async def test_javascript_event_after_state_update(display: DisplayFixture):
 
 
 def test_detect_prevent_default():
-    def handler(event: Event):
+    async def handler(event: Event):
         event.preventDefault()
 
     eh = EventHandler(handler)
@@ -387,7 +424,7 @@ def test_detect_prevent_default():
 
 
 def test_detect_stop_propagation():
-    def handler(event: Event):
+    async def handler(event: Event):
         event.stopPropagation()
 
     eh = EventHandler(handler)
@@ -395,7 +432,7 @@ def test_detect_stop_propagation():
 
 
 def test_detect_debounce():
-    def handler(event: Event):
+    async def handler(event: Event):
         event.debounce = 200
 
     eh = EventHandler(handler)
@@ -410,7 +447,7 @@ def test_computed_debounce_value_is_not_detected():
     def make_handler():
         computed_debounce = 200
 
-        def handler(event: Event):
+        async def handler(event: Event):
             event.debounce = computed_debounce
 
         return handler
@@ -426,7 +463,7 @@ def test_computed_debounce_value_is_not_detected():
     def get_debounce():
         return 200
 
-    def handler(event: Event):
+    async def handler(event: Event):
         event.debounce = get_debounce()
 
     eh2 = EventHandler(handler)
@@ -434,7 +471,7 @@ def test_computed_debounce_value_is_not_detected():
 
 
 def test_detect_both():
-    def handler(event: Event):
+    async def handler(event: Event):
         event.preventDefault()
         event.stopPropagation()
 
@@ -444,7 +481,7 @@ def test_detect_both():
 
 
 def test_detect_both_when_handler_is_partial():
-    def handler(event: Event, *, extra_param):
+    async def handler(event: Event, *, extra_param):
         event.preventDefault()
         event.stopPropagation()
 
@@ -454,7 +491,7 @@ def test_detect_both_when_handler_is_partial():
 
 
 def test_detect_debounce_when_handler_is_partial():
-    def handler(event: Event, *, extra_param):
+    async def handler(event: Event, *, extra_param):
         event.debounce = 125
 
     eh = EventHandler(partial(handler, extra_param=125))
@@ -462,7 +499,7 @@ def test_detect_debounce_when_handler_is_partial():
 
 
 def test_detect_debounce_from_positional_default():
-    def handler(event: Event, ms=375):
+    async def handler(event: Event, ms=375):
         event.debounce = ms
 
     eh = EventHandler(handler)
@@ -470,7 +507,7 @@ def test_detect_debounce_from_positional_default():
 
 
 def test_detect_debounce_from_keyword_only_default():
-    def handler(event: Event, *, ms=400):
+    async def handler(event: Event, *, ms=400):
         event.debounce = ms
 
     eh = EventHandler(handler)
@@ -479,7 +516,7 @@ def test_detect_debounce_from_keyword_only_default():
 
 def test_detect_debounce_from_closure():
     def make(ms):
-        def handler(event: Event):
+        async def handler(event: Event):
             event.debounce = ms
 
         return handler
@@ -490,7 +527,7 @@ def test_detect_debounce_from_closure():
 
 def test_detect_debounce_from_closure_among_multiple():
     def make(unused, used):
-        def handler(event: Event):
+        async def handler(event: Event):
             event.debounce = used
 
         return handler
@@ -500,7 +537,7 @@ def test_detect_debounce_from_closure_among_multiple():
 
 
 def test_no_detect_debounce_when_local_var_used():
-    def handler(event: Event):
+    async def handler(event: Event):
         ms = 500
         event.debounce = ms
 
@@ -511,7 +548,7 @@ def test_no_detect_debounce_when_local_var_used():
 def test_no_detect_debounce_when_fallback_literal_used():
     # Branch uses a local var (unresolvable) plus a literal fallback; we
     # refuse to pick either because runtime behaviour is ambiguous.
-    def handler(event: Event):
+    async def handler(event: Event):
         val = 50
         if val:
             event.debounce = val
@@ -523,7 +560,7 @@ def test_no_detect_debounce_when_fallback_literal_used():
 
 
 def test_detect_debounce_from_nested_default():
-    def handler(event: Event, a=100, b=200):
+    async def handler(event: Event, a=100, b=200):
         event.debounce = b
 
     eh = EventHandler(handler)
@@ -531,7 +568,7 @@ def test_detect_debounce_from_nested_default():
 
 
 def test_detect_debounce_zero_literal():
-    def handler(event: Event):
+    async def handler(event: Event):
         event.debounce = 0
 
     eh = EventHandler(handler)
@@ -539,7 +576,7 @@ def test_detect_debounce_zero_literal():
 
 
 def test_no_detect():
-    def handler(event: Event):
+    async def handler(event: Event):
         pass
 
     eh = EventHandler(handler)
@@ -550,7 +587,7 @@ def test_no_detect():
 
 def test_event_decorator_accepts_throttle():
     @event(throttle=200)
-    def handler(event: Event):
+    async def handler(event: Event):
         pass
 
     assert handler.throttle == 200
@@ -559,7 +596,7 @@ def test_event_decorator_accepts_throttle():
 
 def test_event_decorator_accepts_debounce_and_throttle():
     @event(debounce=300, throttle=100)
-    def handler(event: Event):
+    async def handler(event: Event):
         pass
 
     assert handler.debounce == 300
@@ -567,7 +604,7 @@ def test_event_decorator_accepts_debounce_and_throttle():
 
 
 def test_event_handler_throttle_default_is_none():
-    eh = EventHandler(lambda data: None)
+    eh = EventHandler(_noop_handler)
     assert eh.throttle is None
 
 
@@ -583,7 +620,7 @@ def test_event_wrapper():
 async def test_vdom_has_prevent_default():
     @component
     def MyComponent():
-        def handler(event: Event):
+        async def handler(event: Event):
             event.preventDefault()
 
         return html.button({"onClick": handler})
@@ -599,7 +636,7 @@ async def test_vdom_has_prevent_default():
 async def test_vdom_has_debounce():
     @component
     def MyComponent():
-        def handler(event: Event):
+        async def handler(event: Event):
             event.debounce = 200
 
         return html.input({"onChange": handler})
@@ -617,7 +654,7 @@ def test_event_export():
 
 
 def test_detect_false_positive():
-    def handler(event: Event):
+    async def handler(event: Event):
         # This should not trigger detection
         other = Event()
         other.preventDefault()
@@ -631,7 +668,7 @@ def test_detect_false_positive():
 
 
 def test_detect_renamed_argument():
-    def handler(e: Event):
+    async def handler(e: Event):
         e.preventDefault()
         e.stopPropagation()
         e.debounce = 200
@@ -699,7 +736,7 @@ async def test_event_targeting_with_shifting_elements(display: DisplayFixture):
     def ListContainer():
         items, set_items = use_state(["B", "C"])
 
-        def add_top(event):
+        async def add_top(event):
             set_items(["A", *items])
 
         return html.div(
@@ -818,10 +855,10 @@ def _ControlledInputWithMirror():
     """A controlled input whose model is also rendered somewhere un-clobberable"""
     value, set_value = use_state("")
 
-    def on_change(event):
+    async def on_change(event):
         set_value(event["target"]["value"])
 
-    def append_marker(event):
+    async def append_marker(event):
         set_value(lambda old: old + MARKER)
 
     return reactpy.html.div(
@@ -939,10 +976,10 @@ def _ControlledInputWhichClearsOnKeyDown():
     """
     value, set_value = use_state("")
 
-    def on_change(event):
+    async def on_change(event):
         set_value(event["target"]["value"])
 
-    def on_key_down(event):
+    async def on_key_down(event):
         set_value("")
 
     return reactpy.html.div(
@@ -993,7 +1030,7 @@ async def test_controlled_input_respects_custom_debounce(display: DisplayFixture
     def ControlledInput():
         value, set_value = use_state("")
 
-        def on_change(event: Event):
+        async def on_change(event: Event):
             event.debounce = 0
             set_value(event.target.value.upper())
 
@@ -1028,7 +1065,7 @@ async def test_controlled_input_default_debounce_reconciles_server_value(
     def ControlledInput():
         value, set_value = use_state("")
 
-        def on_change(event: Event):
+        async def on_change(event: Event):
             event.debounce = 200
             set_value(event.target.value.upper())
 
@@ -1264,7 +1301,7 @@ def _HeavyPage():
     value, set_value = use_state("")
     ticks, set_ticks = use_state(0)
 
-    def on_change(event):
+    async def on_change(event):
         set_value(event["target"]["value"])
 
     def keep_rendering():

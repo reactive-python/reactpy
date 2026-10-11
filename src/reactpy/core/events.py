@@ -1,20 +1,66 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable, Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from functools import partial
 from typing import Any, Literal, cast, overload
 
-from anyio import create_task_group, to_thread
+from anyio import create_task_group
 
-from reactpy._event_proxy import uses_sync_event_proxy
 from reactpy.core._event_inspect import inspect_event_handler
 from reactpy.types import BaseEventHandler, EventHandlerFunc
 
 
+def _unwrap_handler(function: Any) -> Any:
+    """Get at the callable a user actually wrote, through wrappers and partials"""
+    target = function
+    while isinstance(target, partial):
+        target = target.func
+    return inspect.unwrap(target)
+
+
+def _is_handler_coroutine(function: Any) -> bool:
+    """Whether calling this object gives something awaitable
+
+    :func:`inspect.iscoroutinefunction` says no to an object whose ``__call__`` is a
+    coroutine, so that case is looked at directly.
+    """
+    target = _unwrap_handler(function)
+    if inspect.iscoroutinefunction(target):
+        return True
+    call = type(target).__dict__.get("__call__", None)
+    return call is not None and inspect.iscoroutinefunction(call)
+
+
+def check_is_async_handler(function: Any) -> None:
+    """Raise a :exc:`TypeError` unless ``function`` can be awaited as a handler
+
+    Event handlers are always coroutines. There is no blocking flavour of event data,
+    which is what makes it safe for a handler to call ``set_state()`` and keeps the
+    layout's event loop free to render while a live value is fetched from the browser.
+    """
+    if _is_handler_coroutine(function):
+        return
+
+    name = getattr(function, "__qualname__", None) or repr(function)
+    msg = (
+        f"{name} cannot be used as an event handler because it is not a coroutine. "
+        "Event handlers must be declared with 'async def':\n\n"
+        "    async def on_click(event):\n        ...\n\n"
+        "An event object reads from the browser as needed, and only a coroutine can "
+        "await that round trip without stalling the event loop."
+    )
+    if name.startswith("_CurrentState.__init__") or name.endswith(".dispatch"):
+        msg += (
+            "\n\nA state setter is not an event handler - call it from one instead:\n\n"
+            "    async def on_click(event):\n        set_value(...)"
+        )
+    raise TypeError(msg)
+
+
 @overload
 def event(
-    function: Callable[..., Any],
+    function: Callable[..., Awaitable[Any]],
     *,
     stop_propagation: bool = ...,
     stop_immediate_propagation: bool = ...,
@@ -35,11 +81,11 @@ def event(
     debounce: int | None = ...,
     throttle: int | None = ...,
     event_proxy: bool | None = ...,
-) -> Callable[[Callable[..., Any]], EventHandler]: ...
+) -> Callable[[Callable[..., Awaitable[Any]]], EventHandler]: ...
 
 
 def event(
-    function: Callable[..., Any] | None = None,
+    function: Callable[..., Awaitable[Any]] | None = None,
     *,
     stop_propagation: bool = False,
     stop_immediate_propagation: bool = False,
@@ -47,7 +93,7 @@ def event(
     debounce: int | None = None,
     throttle: int | None = None,
     event_proxy: bool | None = None,
-) -> EventHandler | Callable[[Callable[..., Any]], EventHandler]:
+) -> EventHandler | Callable[[Callable[..., Awaitable[Any]]], EventHandler]:
     """A decorator for constructing an :class:`EventHandler`.
 
     While you're always free to add callbacks by assigning them to an element's attributes
@@ -63,14 +109,18 @@ def event(
     .. code-block:: python
 
         @event(stop_propagation=True, prevent_default=True)
-        def my_callback(*data): ...
+        async def my_callback(event): ...
 
 
         element = reactpy.html.button({"onClick": my_callback})
 
+    The handler must be a coroutine. Anything which is not an ``async def`` raises a
+    :exc:`TypeError`, because reading the object an event fired from means asking the
+    browser for it, and only a coroutine can await that without stalling the layout.
+
     Parameters:
         function:
-            A function or coroutine responsible for handling the event.
+            A coroutine responsible for handling the event.
         stop_propagation:
             Block the event from propagating further up the DOM.
         prevent_default:
@@ -89,7 +139,7 @@ def event(
             :attr:`BaseEventHandler.event_proxy`.
     """
 
-    def setup(function: Callable[..., Any]) -> EventHandler:
+    def setup(function: Callable[..., Awaitable[Any]]) -> EventHandler:
         return EventHandler(
             to_event_handler_function(function, positional_args=True),
             stop_propagation,
@@ -104,11 +154,13 @@ def event(
 
 
 class EventHandler(BaseEventHandler):
-    """Turn a function or coroutine into an event handler
+    """Turn a coroutine into an event handler
 
     Parameters:
         function:
-            The function or coroutine which handles the event.
+            The coroutine which handles the event. A plain ``def`` raises a
+            :exc:`TypeError`, since only a coroutine can await the browser for the
+            object an event fired from. See :func:`event`.
         stop_propagation:
             Block the event from propagating further up the DOM.
         prevent_default:
@@ -131,7 +183,7 @@ class EventHandler(BaseEventHandler):
 
     def __init__(
         self,
-        function: EventHandlerFunc,
+        function: Callable[..., Awaitable[Any]],
         stop_propagation: bool = False,
         prevent_default: bool = False,
         target: str | None = None,
@@ -140,6 +192,7 @@ class EventHandler(BaseEventHandler):
         stop_immediate_propagation: bool = False,
         event_proxy: bool | None = None,
     ) -> None:
+        check_is_async_handler(function)
         self.function = to_event_handler_function(function, positional_args=False)
         self.prevent_default = prevent_default
         self.stop_propagation = stop_propagation
@@ -149,17 +202,10 @@ class EventHandler(BaseEventHandler):
         self.target = target
         self.event_proxy = event_proxy
 
-        # Check if our `preventDefault` or `stopPropagation` methods were called
-        # by inspecting the function's bytecode
-        func_to_inspect = cast(Any, function)
-        while hasattr(func_to_inspect, "__wrapped__"):
-            func_to_inspect = func_to_inspect.__wrapped__
-
-        if isinstance(func_to_inspect, partial):
-            func_to_inspect = func_to_inspect.func
-
+        # Check if our `preventDefault` or `stopPropagation` methods were called by
+        # inspecting the bytecode of the handler the user actually wrote
         found_prevent_default, found_stop_propagation, found_debounce = (
-            inspect_event_handler(func_to_inspect)
+            inspect_event_handler(_unwrap_handler(function))
         )
 
         if found_prevent_default:
@@ -198,62 +244,32 @@ class EventHandler(BaseEventHandler):
 
 
 def to_event_handler_function(
-    function: Callable[..., Any],
+    function: Callable[..., Awaitable[Any]],
     positional_args: bool = True,
 ) -> EventHandlerFunc:
-    """Make a :data:`~reactpy.core.proto.EventHandlerFunc` from a function or coroutine
+    """Make a :data:`~reactpy.types.EventHandlerFunc` from an event handler coroutine
 
     Parameters:
         function:
-            A function or coroutine accepting a number of positional arguments.
+            A coroutine accepting a number of positional arguments.
         positional_args:
-            Whether to pass the event parameters a positional args or as a list.
+            Whether to pass the event parameters as positional args or as a list.
 
-    Synchronous handlers are handed :class:`~reactpy.types.SyncEvent` objects which
-    block while reading from the browser. To keep that from stalling the event loop,
-    such handlers are run in their own thread.
+    Handlers are always coroutines, and the :class:`~reactpy.types.Event` handed to them
+    reaches back into the browser by being awaited. Nothing here ever blocks, which is
+    what allows a handler to call ``set_state()`` from the loop it renders on.
     """
-    is_async = inspect.iscoroutinefunction(function)
-
-    def prepare(data: Sequence[Any]) -> Any:
-        """Hand the function the flavour of event data it knows how to handle"""
-        rebuild = getattr(data, "rebuild", None)
-        return data if rebuild is None else rebuild(is_async)
+    check_is_async_handler(function)
 
     if positional_args:
-        if is_async:
-
-            async def wrapper(data: Sequence[Any]) -> None:
-                await function(*prepare(data))
-
-        else:
-
-            async def wrapper(data: Sequence[Any]) -> None:
-                args = prepare(data)
-                if uses_sync_event_proxy(args):
-                    # Live event access blocks on a round trip to the client - run the
-                    # handler somewhere it is allowed to block.
-                    await to_thread.run_sync(partial(function, *args))
-                else:
-                    function(*args)
-
-        cast(Any, wrapper).__wrapped__ = function
-        cast(Any, wrapper).__reactpy_is_async_handler__ = is_async
-        return wrapper
-    elif not is_async:
 
         async def wrapper(data: Sequence[Any]) -> None:
-            args = prepare(data)
-            if uses_sync_event_proxy(args):
-                await to_thread.run_sync(function, args)
-            else:
-                function(args)
+            await function(*data)
 
         cast(Any, wrapper).__wrapped__ = function
-        cast(Any, wrapper).__reactpy_is_async_handler__ = False
         return wrapper
-    else:
-        return function
+
+    return cast(EventHandlerFunc, function)
 
 
 def merge_event_handlers(
@@ -325,9 +341,8 @@ def merge_event_handler_funcs(
 ) -> EventHandlerFunc:
     """Make one event handler function from many
 
-    Each of the given functions is handed event data of the flavour it expects, which
-    matters when synchronous (blocking) and asynchronous (awaitable) handlers are
-    merged together.
+    Every handler is handed the very same event data. There is a single flavour of it,
+    and each handler awaits whatever it needs from the browser in its own task.
     """
     if not functions:
         msg = "No event handler functions to merge"
@@ -335,19 +350,9 @@ def merge_event_handler_funcs(
     elif len(functions) == 1:
         return functions[0]
 
-    is_async_by_func = [
-        bool(
-            getattr(
-                func, "__reactpy_is_async_handler__", inspect.iscoroutinefunction(func)
-            )
-        )
-        for func in functions
-    ]
-
     async def await_all_event_handlers(data: Sequence[Any]) -> None:
         async with create_task_group() as group:
-            for func, is_async in zip(functions, is_async_by_func, strict=True):
-                rebuild = getattr(data, "rebuild", None)
-                group.start_soon(func, data if rebuild is None else rebuild(is_async))
+            for func in functions:
+                group.start_soon(func, data)
 
     return await_all_event_handlers

@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-import threading
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from time import monotonic
 from types import MappingProxyType
 from typing import Any
@@ -17,18 +16,14 @@ from reactpy._event_proxy import (
     EVENT_PROXY_REQUEST_TYPE,
     EVENT_PROXY_RESPONSE_TYPE,
     EVENT_REFERENCE_KEY,
-    AsyncEvent,
-    AsyncEventProxy,
     EventArguments,
+    Event,
     EventProxy,
     EventProxyAccessError,
     EventProxyBackend,
-    EventProxyBlocked,
     EventProxyNotFound,
     EventProxyTimeout,
     EventProxyUnavailable,
-    SyncEvent,
-    SyncEventProxy,
     build_event_args,
     deserialize_value,
     serialize_argument,
@@ -37,13 +32,33 @@ from reactpy.config import (
     REACTPY_EVENT_PROXY_MAX_TIMEOUTS,
     REACTPY_EVENT_PROXY_TIMEOUT,
 )
+
 from reactpy.core.component import component
 from reactpy.core.events import EventHandler, event, merge_event_handlers
 from reactpy.core.layout import Layout
 from reactpy.testing import assert_reactpy_did_log
-from reactpy.types import Event
 from reactpy.utils import Ref
 from tests.tooling.common import event_message
+
+
+def make_event(
+    backend: EventProxyBackend,
+    event_id: str,
+    snapshot: dict[str, Any] | None = None,
+    path: Sequence[str | int] = (),
+) -> Event:
+    """Build an event the way the layout hands one to a handler"""
+    return Event(snapshot or {}, backend=backend, event_id=event_id, path=path)
+
+
+def make_proxy(
+    backend: EventProxyBackend,
+    event_id: str,
+    path: Sequence[str | int] = (),
+    snapshot: dict[str, Any] | None = None,
+) -> EventProxy:
+    """Build a member proxy of the kind an event hands out"""
+    return EventProxy(snapshot, backend=backend, event_id=event_id, path=path)
 
 
 class Method:
@@ -282,34 +297,9 @@ def make_canned_client(**response: Any) -> tuple[EventProxyBackend, CannedClient
     return backend, client
 
 
-async def in_worker(function: Callable[[], Any]) -> Any:
-    """Run ``function`` off the event loop, returning its result or raising its error
-
-    Synchronous live access refuses to block the loop thread, so anything which blocks
-    has to run somewhere else - just like the worker thread ReactPy puts plain ``def``
-    handlers in.
-    """
-    outcome: Ref[tuple[bool, Any]] = Ref(None)
-
-    def run() -> None:
-        try:
-            outcome.current = (True, function())
-        except Exception as error:
-            outcome.current = (False, error)
-
-    thread = threading.Thread(target=run)
-    thread.start()
-    await asyncio.to_thread(thread.join, 10)
-    assert not thread.is_alive(), "the worker thread never finished"
-    succeeded, result = outcome.current
-    if not succeeded:
-        raise result
-    return result
-
-
 async def test_async_event_prefers_the_snapshot():
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(
+    event_object = make_event(
         backend,
         "evt",
         snapshot={"type": "click", "target": {"value": "cached"}},
@@ -318,13 +308,13 @@ async def test_async_event_prefers_the_snapshot():
     assert event_object["type"] == "click"
     assert event_object["target"]["value"] == "cached"
     assert event_object.target.value == "cached"
-    assert isinstance(event_object["target"]["nope"], AsyncEventProxy)
+    assert isinstance(event_object["target"]["nope"], EventProxy)
     assert requested_paths(client) == []
 
 
 async def test_async_event_resolves_what_the_snapshot_lacks():
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(backend, "evt", snapshot={"type": "click"})
+    event_object = make_event(backend, "evt", snapshot={"type": "click"})
 
     assert await event_object.target.tagName == "INPUT"
     assert await event_object.read("target.value") == "typed"
@@ -338,10 +328,10 @@ async def test_async_event_resolves_what_the_snapshot_lacks():
 
 async def test_async_event_walks_references():
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     deep = await event_object.deep.resolve()
-    assert isinstance(deep, AsyncEventProxy)
+    assert isinstance(deep, EventProxy)
     assert deep.path == ("deep",)
     assert await event_object.deep.a.b.c == 42
     assert await event_object.read("deep.a.b.c") == 42
@@ -355,7 +345,7 @@ async def test_async_event_walks_references():
 async def test_async_event_calls_client_side_methods():
     objects = make_objects()
     backend, _client = make_client(objects)
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     assert await event_object.target.focus() == "focused"
     assert await event_object.composedPath() == ["window", "input"]
@@ -371,7 +361,7 @@ async def test_async_event_calls_client_side_methods():
 async def test_prevent_default_is_scheduled_but_not_awaited():
     objects = make_objects()
     backend, client = make_client(objects)
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     event_object.preventDefault()
     event_object.stopPropagation()
@@ -396,7 +386,7 @@ def test_snapshot_data_is_plain_json():
     import json
 
     backend = EventProxyBackend()
-    event_object = AsyncEvent(
+    event_object = make_event(
         backend, "evt", snapshot={"type": "click", "target": {"value": "x"}}
     )
 
@@ -411,48 +401,11 @@ def test_snapshot_data_is_plain_json():
     assert event_object.debounce == 120
 
 
-async def test_sync_event_blocks_until_the_client_answers():
-    objects = make_objects()
-    backend, _client = make_client(objects, delay=0.01)
-    event_object = SyncEvent(backend, "evt", snapshot={"type": "click"})
-    outcome: Ref[tuple[Any, ...]] = Ref(None)
-
-    def handler() -> None:
-        outcome.current = (
-            event_object.target.value,
-            str(event_object.deep.a.b.c),
-            event_object.target.focus(),
-            event_object.composedPath(),
-            [touch["pageX"] for touch in event_object.touches],
-        )
-
-    thread = threading.Thread(target=handler)
-    thread.start()
-    await asyncio.to_thread(thread.join, 10)
-    assert not thread.is_alive()
-    assert outcome.current == (
-        "typed",
-        "42",
-        "focused",
-        ["window", "input"],
-        [1, 2],
-    )
-
-
-async def test_sync_access_from_the_event_loop_is_refused():
-    backend, _client = make_client(make_objects())
-    event_object = SyncEvent(backend, "evt", snapshot={})
-
-    with pytest.raises(EventProxyBlocked):
-        value = event_object.target.value
-        assert value
-
-
 async def test_unanswered_requests_eventually_disable_live_access(monkeypatch):
     monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
     monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 2)
     backend, _client = make_client(make_objects(), respond=False)
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     for _ in range(2):
         with pytest.raises(EventProxyTimeout):
@@ -466,18 +419,18 @@ async def test_unanswered_requests_eventually_disable_live_access(monkeypatch):
 
 async def test_missing_objects_and_paths_are_reported():
     backend, _client = make_client(make_objects())
-    missing = AsyncEvent(backend, "not-registered", snapshot={})
+    missing = make_event(backend, "not-registered", snapshot={})
     with pytest.raises(EventProxyNotFound):
         await missing.resolve()
 
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
     with pytest.raises(EventProxyNotFound):
         await event_object.nope.resolve()
 
 
 def test_arguments_are_serialized_or_refused():
     backend = EventProxyBackend()
-    proxy = SyncEventProxy(backend, "evt", ["target"])
+    proxy = make_proxy(backend, "evt", ["target"])
     assert serialize_argument(proxy) == {
         EVENT_REFERENCE_KEY: {"eventId": "evt", "path": ["target"]},
     }
@@ -493,7 +446,7 @@ def test_excessively_nested_references_are_refused():
         value = {"nested": value}
 
     with pytest.raises(EventProxyAccessError):
-        deserialize_value(value, "evt", backend, sync=False)
+        deserialize_value(value, "evt", backend)
 
 
 def test_backend_without_a_sender_is_unavailable():
@@ -501,29 +454,9 @@ def test_backend_without_a_sender_is_unavailable():
     assert not backend.available
 
     data = [{EVENT_MARKER_KEY: {"id": "evt"}, "type": "click"}, 5]
-    args, flavor = build_event_args(data, backend)
+    args = build_event_args(data, backend)
     assert isinstance(args[0], Event)
     assert args[1] == 5
-    assert flavor is None
-
-
-async def test_event_arguments_are_rebuilt_for_each_handler():
-    backend, _client = make_client(make_objects())
-    data = [{EVENT_MARKER_KEY: {"id": "evt"}, "type": "click"}]
-
-    arguments = EventArguments(data, backend)
-    assert isinstance(arguments[0], AsyncEvent)
-    assert EVENT_MARKER_KEY not in arguments[0]
-
-    sync_arguments = arguments.rebuild(False)
-    assert isinstance(sync_arguments[0], SyncEvent)
-    assert arguments.rebuild(True) is arguments
-
-    plain = EventArguments([1, "two"])
-    assert plain.rebuild(False) is plain
-
-
-# -- layout integration -----------------------------------------------------
 
 
 def event_handlers_of(model: dict[str, Any]) -> dict[str, Any]:
@@ -540,64 +473,15 @@ def event_handlers_of(model: dict[str, Any]) -> dict[str, Any]:
     raise KeyError(msg)
 
 
-async def test_layout_hands_handlers_events_of_their_own_flavour():
-    main_thread = threading.current_thread().name
-    received: dict[str, tuple[Any, str, Any]] = {}
-    objects = make_objects()
-
-    async def async_handler(event_object):
-        received["async"] = (
-            event_object,
-            threading.current_thread().name,
-            await event_object.read("target.value"),
-        )
-
-    def sync_handler(event_object):
-        received["sync"] = (
-            event_object,
-            threading.current_thread().name,
-            event_object.target.value,
-        )
-
-    @component
-    def MyComponent():
-        return reactpy.html.div({"onSync": sync_handler, "onAsync": async_handler})
-
-    _backend, client = make_client(objects)
-
-    async with Layout(MyComponent()) as layout:
-        connect(layout, client)
-        model = (await layout.render())["model"]
-        handlers = event_handlers_of(model)
-
-        data = {EVENT_MARKER_KEY: {"id": "evt"}, "type": "click"}
-        await layout.deliver(event_message(handlers["onSync"]["target"], dict(data)))
-        await poll(lambda: "sync" in received)
-        await layout.deliver(event_message(handlers["onAsync"]["target"], dict(data)))
-        await poll(lambda: "async" in received)
-
-    sync_event, sync_thread, sync_value = received["sync"]
-    assert isinstance(sync_event, SyncEvent)
-    assert sync_value == "typed"
-    assert sync_thread != main_thread, "blocking handlers run off the event loop"
-
-    async_event, async_thread, async_value = received["async"]
-    assert isinstance(async_event, AsyncEvent)
-    assert async_value == "typed"
-    assert async_thread == main_thread
-
-    assert requested_paths(client) == [["target"], ["target", "value"]]
-
-
 async def test_layout_hands_data_which_is_not_a_browser_object_as_is():
     received: dict[str, Any] = {}
 
-    def sync_handler(event):
+    async def on_click(event):
         received["event"] = event
 
     @component
     def MyComponent():
-        return reactpy.html.div({"onClick": sync_handler})
+        return reactpy.html.div({"onClick": on_click})
 
     _backend, client = make_client(make_objects())
 
@@ -615,17 +499,22 @@ async def test_layout_hands_data_which_is_not_a_browser_object_as_is():
     assert client.requests == [], "nothing to reach into, so nothing was asked"
 
 
-async def test_merged_handlers_get_the_flavour_each_needs():
+async def test_merged_handlers_all_share_the_same_event():
+    """Merged handlers are handed the very same data, which each reads as it likes
+
+    There is a single flavour of event data, so a merged handler never needs arguments
+    dressed up differently from those of its siblings.
+    """
     received: dict[str, Any] = {}
 
-    def sync_handler(args):
-        received["sync"] = args[0]
+    async def first_handler(args):
+        received["first"] = args[0]
 
-    async def async_handler(args):
-        received["async"] = args[0]
+    async def second_handler(args):
+        received["second"] = args[0]
 
     merged = merge_event_handlers(
-        [EventHandler(sync_handler), EventHandler(async_handler)]
+        [EventHandler(first_handler), EventHandler(second_handler)]
     )
 
     @component
@@ -643,19 +532,21 @@ async def test_merged_handlers_get_the_flavour_each_needs():
         )
         await poll(lambda: len(received) == 2)
 
-    assert isinstance(received["sync"], SyncEvent)
-    assert isinstance(received["async"], AsyncEvent)
+    assert isinstance(received["first"], Event)
+    assert isinstance(received["second"], Event)
+    assert received["first"] is received["second"]
+    assert await received["first"].read("type") == "click"
 
 
 async def test_layout_without_a_client_falls_back_to_snapshots():
     received: dict[str, Any] = {}
 
-    def sync_handler(event):
+    async def on_click(event):
         received["event"] = event
 
     @component
     def MyComponent():
-        return reactpy.html.div({"onClick": sync_handler})
+        return reactpy.html.div({"onClick": on_click})
 
     async with Layout(MyComponent()) as layout:
         model = (await layout.render())["model"]
@@ -680,7 +571,7 @@ async def test_a_handler_which_declines_live_access_takes_the_snapshot():
     """
     received: dict[str, Any] = {}
 
-    def handler(event_object):
+    async def handler(event_object):
         received["event"] = event_object
 
     @component
@@ -744,7 +635,7 @@ async def test_a_handler_which_asks_for_live_access_gets_it():
         )
         await poll(lambda: "event" in received)
 
-        assert isinstance(received["event"], AsyncEvent)
+        assert isinstance(received["event"], Event)
         assert await received["event"].read("target.value") == "typed"
 
     assert requested_paths(client) == [["target", "value"]]
@@ -766,7 +657,7 @@ async def test_proxy_responses_are_routed_not_delivered():
 
 
 async def test_stop_immediate_propagation_is_detected_and_forwarded():
-    def on_click(event):
+    async def on_click(event):
         event.stopImmediatePropagation()
 
     @component
@@ -785,7 +676,7 @@ async def test_stop_immediate_propagation_is_detected_and_forwarded():
 
 async def test_proxies_describe_themselves():
     backend, _client = make_client(make_objects())
-    event_object = AsyncEvent(
+    event_object = make_event(
         backend, "evt", snapshot={"type": "click", 3: "not-an-attribute"}
     )
     target = event_object.target
@@ -795,7 +686,7 @@ async def test_proxies_describe_themselves():
     assert event_object.path == ()
     assert event_object.has_snapshot is True
     assert repr(event_object) == (
-        "AsyncEvent(event_id='evt', path=[], "
+        "Event(event_id='evt', path=[], "
         "snapshot={'type': 'click', 3: 'not-an-attribute'})"
     )
     # snapshot keys show up as attributes, but only the string ones
@@ -805,14 +696,12 @@ async def test_proxies_describe_themselves():
     assert target.backend is backend
     assert target.path == ("target",)
     assert target.has_snapshot is False
-    assert repr(target) == (
-        "AsyncEventProxy(event_id='evt', path=['target'], snapshot={})"
-    )
+    assert repr(target) == ("EventProxy(event_id='evt', path=['target'], snapshot={})")
 
 
 async def test_internal_attributes_are_never_resolved_against_the_browser():
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     for name in ("_reactpy_nothing", "__wrapped__", "__deepcopy__"):
         with pytest.raises(AttributeError, match=f"^{name}$"):
@@ -821,12 +710,12 @@ async def test_internal_attributes_are_never_resolved_against_the_browser():
     assert client.requests == [], "internals are not looked up in the browser"
 
 
-def test_only_the_two_flavours_know_how_to_resolve():
-    base = EventProxy(EventProxyBackend(), "evt", ["target"])
+async def test_a_proxy_with_nothing_behind_it_cannot_resolve():
+    base = make_proxy(EventProxyBackend(), "evt", ["target"])
 
     assert dict(base) == {}
-    with pytest.raises(NotImplementedError, match="cannot resolve live event data"):
-        base._reactpy_resolve_path(False, ())
+    with pytest.raises(EventProxyUnavailable, match="live access"):
+        await base
 
 
 # -- reading through the snapshot -------------------------------------------
@@ -834,7 +723,7 @@ def test_only_the_two_flavours_know_how_to_resolve():
 
 async def test_read_walks_the_whole_dotted_path_at_once():
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(
+    event_object = make_event(
         backend,
         "evt",
         snapshot={
@@ -859,7 +748,7 @@ async def test_read_walks_the_whole_dotted_path_at_once():
 
 async def test_read_gives_up_on_paths_the_snapshot_cannot_hold():
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(
+    event_object = make_event(
         backend,
         "evt",
         snapshot={
@@ -886,7 +775,7 @@ async def test_read_gives_up_on_paths_the_snapshot_cannot_hold():
         await event_object.read("type.deeper")
 
 
-async def test_chained_attributes_ask_for_one_level_at_a_time():
+async def test_chained_attributes_are_asked_for_in_one_round_trip():
     objects = {
         "evt": {
             "chain": Reference(
@@ -895,21 +784,17 @@ async def test_chained_attributes_ask_for_one_level_at_a_time():
         },
     }
     backend, client = make_client(objects)
-    event_object = SyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     # read() asks for the whole path in a single round trip ...
-    assert await in_worker(lambda: event_object.read("chain.next.next.answer")) == 5
+    assert await event_object.read("chain.next.next.answer") == 5
     assert requested_paths(client) == [["chain", "next", "next", "answer"]]
 
-    # ... while walking attributes resolves whatever the last answer left over
+    # ... and so does walking attributes, since nothing is asked of the browser until
+    # the value behind the last name in the chain is actually awaited
     client.sent.clear()
-    assert await in_worker(lambda: event_object.chain.next.next.answer) == 5
-    assert requested_paths(client) == [
-        ["chain"],
-        ["chain", "next"],
-        ["chain", "next", "next"],
-        ["chain", "next", "next", "answer"],
-    ]
+    assert await event_object.chain.next.next.answer == 5
+    assert requested_paths(client) == [["chain", "next", "next", "answer"]]
 
 
 # -- snapshot data which is a reference or a list ---------------------------
@@ -917,7 +802,7 @@ async def test_chained_attributes_ask_for_one_level_at_a_time():
 
 async def test_references_inside_a_snapshot_become_real_proxies():
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(
+    event_object = make_event(
         backend,
         "evt",
         snapshot={
@@ -933,7 +818,7 @@ async def test_references_inside_a_snapshot_become_real_proxies():
     )
 
     node = event_object.node
-    assert isinstance(node, AsyncEventProxy)
+    assert isinstance(node, EventProxy)
     # the path the client handed us wins over where this proxy sits
     assert node.path == ("target",)
     assert node.event_id == "other"
@@ -942,7 +827,7 @@ async def test_references_inside_a_snapshot_become_real_proxies():
 
     # a reference which does not say where it points at keeps our own path
     self_ref = event_object.self_ref
-    assert isinstance(self_ref, AsyncEventProxy)
+    assert isinstance(self_ref, EventProxy)
     assert self_ref.path == ("self_ref",)
     assert self_ref.event_id == "evt"
     assert self_ref._reactpy_callable is False
@@ -951,7 +836,7 @@ async def test_references_inside_a_snapshot_become_real_proxies():
 
 async def test_lists_inside_a_snapshot_are_wrapped_with_child_proxies():
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(
+    event_object = make_event(
         backend,
         "evt",
         snapshot={
@@ -966,10 +851,10 @@ async def test_lists_inside_a_snapshot_are_wrapped_with_child_proxies():
         ("touches", "0"),
         ("touches", "1"),
     ]
-    assert all(isinstance(touch, AsyncEventProxy) for touch in touches)
+    assert all(isinstance(touch, EventProxy) for touch in touches)
 
     matrix = event_object.matrix
-    assert isinstance(matrix[0][0], AsyncEventProxy)
+    assert isinstance(matrix[0][0], EventProxy)
     assert matrix[0][0].path == ("matrix", "0", "0")
     assert matrix[0][0]["x"] == 1
     assert matrix[1] == [3, "four"]
@@ -982,11 +867,11 @@ async def test_lists_inside_a_snapshot_are_wrapped_with_child_proxies():
 
 async def test_async_proxies_refuse_to_be_inspected_while_unknown():
     backend, client = make_client(make_objects())
-    target = AsyncEventProxy(backend, "evt", ["target"])
+    target = make_proxy(backend, "evt", ["target"])
 
     with pytest.raises(EventProxyAccessError) as measure:
         len(target)
-    assert "cannot measure AsyncEventProxy for ['target'] of event 'evt'" in str(
+    assert "cannot measure EventProxy for ['target'] of event 'evt'" in str(
         measure.value
     )
     assert "await the proxy" in str(measure.value)
@@ -999,7 +884,7 @@ async def test_async_proxies_refuse_to_be_inspected_while_unknown():
     assert requested_paths(client) == []
 
     # once the client has told us something the dict protocol is free
-    event_object = AsyncEvent(backend, "evt", snapshot={"type": "click"})
+    event_object = make_event(backend, "evt", snapshot={"type": "click"})
     assert len(event_object) == 1
     assert list(event_object) == ["type"]
     assert "type" in event_object
@@ -1008,7 +893,7 @@ async def test_async_proxies_refuse_to_be_inspected_while_unknown():
 
 
 async def test_proxies_without_a_connection_are_quietly_empty():
-    event_object = AsyncEvent(EventProxyBackend(), "evt", snapshot={})
+    event_object = make_event(EventProxyBackend(), "evt", snapshot={})
 
     assert len(event_object) == 0
     assert list(event_object) == []
@@ -1018,22 +903,18 @@ async def test_proxies_without_a_connection_are_quietly_empty():
 # -- what the synchronous flavour does when it has to block -----------------
 
 
-async def test_sync_reads_either_use_the_snapshot_or_block_for_the_browser():
+async def test_reads_either_use_the_snapshot_or_ask_the_browser():
     objects = make_objects()
     objects["evt"]["detail"] = 7
     backend, client = make_client(objects)
-    event_object = SyncEvent(backend, "evt", snapshot={"type": "click"})
+    event_object = make_event(backend, "evt", snapshot={"type": "click"})
 
-    def access():
-        return (
-            event_object.read("type"),
-            event_object.read("target.value"),
-            event_object.read("nope", default="fallback"),
-            event_object.detail,
-            SyncEventProxy(backend, "evt", ["target"]).resolve(),
-        )
+    cached = await event_object.read("type")
+    typed = await event_object.read("target.value")
+    fallback = await event_object.read("nope", default="fallback")
+    detail = await event_object.read("detail")
+    resolved = await make_proxy(backend, "evt", ["target"]).resolve()
 
-    cached, typed, fallback, detail, resolved = await in_worker(access)
     assert (cached, typed, fallback, detail) == ("click", "typed", "fallback", 7)
     assert type(resolved) is dict
     assert resolved["value"] == "typed"
@@ -1046,95 +927,7 @@ async def test_sync_reads_either_use_the_snapshot_or_block_for_the_browser():
 
     # without a default the client's refusal is raised rather than swallowed
     with pytest.raises(EventProxyNotFound):
-        await in_worker(lambda: event_object.read("nope"))
-
-
-async def test_sync_reads_the_browser_cannot_answer_degrade_to_a_blank_proxy():
-    backend, client = make_client(make_objects())
-    event_object = SyncEvent(backend, "evt", snapshot={})
-
-    with assert_reactpy_did_log("Falling back to snapshot data", EventProxyNotFound):
-        missing = await in_worker(lambda: event_object.nope)
-    assert isinstance(missing, SyncEventProxy)
-    assert missing.path == ("nope",)
-    assert missing.has_snapshot is False
-    assert requested_paths(client) == [["nope"]]
-
-    # printing and iterating still work, so a failed read is safe to log
-    with assert_reactpy_did_log("Could not resolve", EventProxyNotFound):
-        assert await in_worker(lambda: str(missing)) == "{}"
-        empty = await in_worker(lambda: iter(missing))
-        assert next(empty, None) is None
-    assert requested_paths(client) == [["nope"], ["nope"], ["nope"]]
-
-
-async def test_sync_proxies_compare_by_what_they_point_at():
-    objects = make_objects()
-    objects["evt"]["numbers"] = [1, 2, 3]
-    backend, _client = make_client(objects)
-    left = SyncEventProxy(backend, "evt", ["target"], snapshot={"k": 1})
-    same = SyncEventProxy(backend, "evt", ["target"], snapshot={"k": 2})
-    other = SyncEventProxy(backend, "evt", ["deep"], snapshot={"k": 2})
-
-    # the very same browser object, whatever either snapshot happens to say
-    assert (left == same) is True
-    assert (left != same) is False
-    # a different path leaves it to the data we hold
-    assert (left == other) is False
-    assert (left != other) is True
-    assert (left == SyncEventProxy(backend, "evt", ["deep"], {"k": 1})) is True
-
-    # against anything else the live value is what counts
-    numbers = SyncEventProxy(backend, "evt", ["numbers"])
-    assert await in_worker(lambda: numbers == [1, 2, 3]) is True
-    assert await in_worker(lambda: numbers == [1, 2]) is False
-    assert await in_worker(lambda: numbers != [1, 2, 3]) is False
-
-    # a snapshot we already have is never compared against the browser
-    answered = SyncEventProxy(backend, "evt", ["x"], snapshot={"k": 1})
-    assert await in_worker(lambda: answered == 5) is False
-    assert await in_worker(lambda: answered != 5) is True
-
-
-async def test_sync_proxies_print_and_measure_like_their_values():
-    objects = make_objects()
-    objects["evt"]["numbers"] = [1, 2, 3]
-    backend, _client = make_client(objects)
-    numbers = SyncEventProxy(backend, "evt", ["numbers"])
-    node = SyncEventProxy(backend, "evt", ["target"])
-    answered = SyncEventProxy(backend, "evt", ["x"], snapshot={"k": 1})
-
-    assert await in_worker(lambda: str(numbers)) == "[1, 2, 3]"
-    assert await in_worker(lambda: format(numbers, "")) == "[1, 2, 3]"
-    assert await in_worker(lambda: str(answered)) == "{'k': 1}"
-    assert await in_worker(lambda: format(answered, "")) == "{'k': 1}"
-
-    assert await in_worker(lambda: len(numbers)) == 3
-    assert await in_worker(lambda: list(numbers)) == [1, 2, 3]
-    assert await in_worker(lambda: len(answered)) == 1
-    assert await in_worker(lambda: list(answered)) == ["k"]
-
-    assert await in_worker(lambda: 2 in numbers) is True
-    assert await in_worker(lambda: 9 in numbers) is False
-    assert await in_worker(lambda: "tagName" in node) is True
-    assert await in_worker(lambda: "k" in answered) is True
-    assert await in_worker(lambda: "zzz" in answered) is False
-
-    # a reference to something else says nothing about this proxy
-    deep = SyncEventProxy(backend, "evt", ["deep"])
-    assert await in_worker(lambda: str(deep)) == "{}"
-    deep_items = await in_worker(lambda: iter(deep))
-    assert next(deep_items, None) is None
-
-    # a read which failed is simply "not there"
-    missing = SyncEventProxy(backend, "evt", ["nope"])
-    assert await in_worker(lambda: "anything" in missing) is False
-    # with no connection at all membership is never asked of the browser
-    offline = SyncEventProxy(EventProxyBackend(), "evt", ["target"])
-    assert ("tagName" in offline) is False
-
-
-# -- when the connection is not what it should be ---------------------------
+        await event_object.read("nope")
 
 
 async def test_a_failed_send_switches_live_access_off():
@@ -1147,7 +940,7 @@ async def test_a_failed_send_switches_live_access_off():
         raise ConnectionResetError(msg)
 
     backend.set_sender(send)
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     with pytest.raises(EventProxyUnavailable, match="failed to send"):
         await event_object.read("target")
@@ -1159,7 +952,7 @@ async def test_a_failed_send_switches_live_access_off():
 
 async def test_closing_the_backend_fails_everything_still_in_flight():
     backend, client = make_client(make_objects(), respond=False)
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
     pending = [
         asyncio.create_task(event_object.read("target")),
         asyncio.create_task(event_object.read("type")),
@@ -1182,25 +975,12 @@ async def test_closing_the_backend_fails_everything_still_in_flight():
     )
 
 
-async def test_blocking_reads_time_out(monkeypatch):
-    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
-    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 1)
-    backend, client = make_client(make_objects(), respond=False)
-    event_object = SyncEvent(backend, "evt", snapshot={})
-
-    with pytest.raises(EventProxyTimeout, match="did not answer"):
-        await in_worker(lambda: event_object.read("target"))
-
-    assert len(client.requests) == 1
-    assert backend.disabled
-
-
 async def test_client_reported_timeouts_count_against_the_same_budget(monkeypatch):
     monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 1)
     backend, _client = make_canned_client(
         ok=False, code="timeout", error="browser hung"
     )
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     with pytest.raises(EventProxyTimeout, match="did not answer"):
         await event_object.read("target")
@@ -1210,7 +990,7 @@ async def test_client_reported_timeouts_count_against_the_same_budget(monkeypatc
 
 async def test_failures_the_client_cannot_explain_are_still_reported():
     backend, client = make_canned_client(ok=False)
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     with pytest.raises(EventProxyAccessError) as info:
         await event_object.read("target")
@@ -1223,7 +1003,7 @@ async def test_failures_the_client_cannot_explain_are_still_reported():
 
 async def test_requests_made_just_after_the_loop_is_gone_fail_fast(monkeypatch):
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
     loop = asyncio.get_running_loop()
     # the loop which owned this connection has gone away, the sender has not noticed
     monkeypatch.setattr(backend, "_loop", None)
@@ -1242,7 +1022,7 @@ async def test_requests_made_just_after_the_loop_is_gone_fail_fast(monkeypatch):
 
 async def test_fires_and_forget_calls_never_raise_at_the_handler():
     # nothing is bound to this backend, so there is nobody to tell
-    event_object = AsyncEvent(EventProxyBackend(), "evt", snapshot={})
+    event_object = make_event(EventProxyBackend(), "evt", snapshot={})
 
     assert event_object.preventDefault() is None
     assert event_object.stopPropagation() is None
@@ -1257,7 +1037,7 @@ async def test_stop_immediate_propagation_is_forwarded_to_the_client():
     objects = make_objects()
     objects["evt"]["stopImmediatePropagation"] = Method()
     backend, client = make_client(objects)
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     event_object.stopImmediatePropagation()
 
@@ -1273,7 +1053,7 @@ async def test_stop_immediate_propagation_is_forwarded_to_the_client():
 async def test_client_side_calls_can_be_waited_for():
     objects = make_objects()
     backend, client = make_client(objects)
-    target = AsyncEventProxy(backend, "evt", ["target"])
+    target = make_proxy(backend, "evt", ["target"])
 
     # ``preventDefault()`` and friends do not wait; asking to wait hands back
     # whatever the browser's method returned once it has actually run
@@ -1286,19 +1066,12 @@ async def test_client_side_calls_can_be_waited_for():
 
 async def test_the_event_object_itself_cannot_be_called():
     backend, client = make_client(make_objects())
-    event_object = AsyncEvent(backend, "evt", snapshot={})
+    event_object = make_event(backend, "evt", snapshot={})
 
     with pytest.raises(EventProxyAccessError, match="cannot be called"):
         await event_object()
     with pytest.raises(EventProxyAccessError, match="cannot be called"):
-        await AsyncEventProxy(backend, "evt")()
-
-    # ... and the blocking flavour says the same thing from a worker thread
-    def call_the_root():
-        return SyncEvent(backend, "evt", snapshot={})()
-
-    with pytest.raises(EventProxyAccessError, match="cannot be called"):
-        await in_worker(call_the_root)
+        await make_proxy(backend, "evt")()
 
     assert client.requests == []
 
@@ -1309,23 +1082,20 @@ async def test_the_event_object_itself_cannot_be_called():
 async def test_a_plain_string_marker_names_a_live_event_too():
     backend, _client = make_client(make_objects())
 
-    args, flavor = build_event_args(
+    args = build_event_args(
         [{EVENT_MARKER_KEY: "evt", "type": "click"}, {"type": "click"}, "extra"],
         backend,
     )
 
-    assert isinstance(args[0], AsyncEvent)
+    assert isinstance(args[0], Event)
     assert args[0].event_id == "evt"
     assert args[0]["type"] == "click"
     assert type(args[1]) is Event
     assert args[2] == "extra"
-    assert flavor is True
 
-    sync_args, sync_flavor = build_event_args(
-        [{EVENT_MARKER_KEY: {"id": "evt"}}], backend, prefer_async=False
-    )
-    assert isinstance(sync_args[0], SyncEvent)
-    assert sync_flavor is False
+    marked = build_event_args([{EVENT_MARKER_KEY: {"id": "evt"}}], backend)
+    assert isinstance(marked[0], Event)
+    assert marked[0].event_id == "evt"
 
 
 def test_arguments_the_client_could_never_use_are_refused():

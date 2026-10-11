@@ -29,7 +29,7 @@ from reactpy.core._event_inspect import (
 def test_non_int_positional_default_is_ignored():
     """A positional default that isn't an int must be skipped."""
 
-    def handler(event, ms="not-an-int"):
+    async def handler(event, ms="not-an-int"):
         event.debounce = ms
 
     # Public API confirms the int default was filtered out and the closure
@@ -43,7 +43,7 @@ def test_non_int_positional_default_is_ignored():
 def test_non_int_load_const_debounce_returns_none():
     """``LOAD_CONST`` with a non-int value should resolve to ``None``."""
 
-    def handler(event):
+    async def handler(event):
         event.debounce = "not-an-int"
 
     from reactpy.core.events import EventHandler
@@ -55,7 +55,7 @@ def test_non_int_load_const_debounce_returns_none():
 def test_mixed_default_with_string_and_int_uses_int():
     """Defaults that aren't int are ignored, leaving int ones intact."""
 
-    def handler(event, label="x", ms=275):
+    async def handler(event, label="x", ms=275):
         event.debounce = ms
 
     from reactpy.core.events import EventHandler
@@ -73,7 +73,7 @@ def test_target_loaded_from_global_returns_none():
 
     GLOBAL_EVENT = object()
 
-    def handler(event):
+    async def handler(event):
         GLOBAL_EVENT.debounce = 100
 
     # Sanity: confirm the target is loaded by something other than
@@ -94,7 +94,7 @@ def test_target_local_differs_from_event_arg_returns_none():
 
     from reactpy.core.events import EventHandler
 
-    def handler(other):
+    async def handler(other):
         event = other
         event.debounce = 100
 
@@ -107,7 +107,7 @@ def test_closure_lookup_handles_extra_cells():
     in pathological bytecode but shouldn't happen in pure Python), the
     helper must defensively stop iterating."""
 
-    def handler(event):
+    async def handler(event):
         pass
 
     # Simulate the defensive branch by calling the helper directly with a
@@ -127,7 +127,7 @@ def test_closure_lookup_skips_uninitialized_cells():
     def make():
         captured = 100
 
-        def handler(event):
+        async def handler(event):
             return captured
 
         return handler
@@ -184,7 +184,7 @@ def test_closure_lookup_stops_when_more_cells_than_freevars():
 
 
 def test_function_arg_defaults_ignores_non_int_positional():
-    def handler(event, label="x", ms=275):
+    async def handler(event, label="x", ms=275):
         pass
 
     defaults = _function_arg_defaults(handler)
@@ -193,21 +193,21 @@ def test_function_arg_defaults_ignores_non_int_positional():
 
 
 def test_function_arg_defaults_returns_empty_when_only_string_defaults():
-    def handler(event, label="x"):
+    async def handler(event, label="x"):
         pass
 
     assert _function_arg_defaults(handler) == {}
 
 
 def test_closure_lookup_returns_empty_when_no_closure():
-    def handler(event):
+    async def handler(event):
         pass
 
     assert _closure_lookup(handler) == {}
 
 
 def test_constant_ints_by_name_returns_empty():
-    def handler(event):
+    async def handler(event):
         pass
 
     assert _constant_ints_by_name(handler.__code__) == {}
@@ -338,7 +338,7 @@ def test_inspect_event_handler_handles_fused_superinstruction():
     import dis
     from unittest.mock import patch
 
-    def handler(event, ms=400):
+    async def handler(event, ms=400):
         event.debounce = ms
 
     fake_prev = types.SimpleNamespace(
@@ -378,7 +378,7 @@ def test_inspect_event_handler_with_borrow_superinstruction():
 
     from reactpy.core.events import EventHandler
 
-    def handler(event, ms=225):
+    async def handler(event, ms=225):
         event.debounce = ms
 
     # Sanity: confirm the superinstruction is actually emitted on this
@@ -407,7 +407,7 @@ def test_resolve_debounce_value_with_borrow_superinstruction_non_event_target():
     # followed by ``event``.
     from reactpy.core.events import EventHandler
 
-    def handler(event, other, ms=175):
+    async def handler(event, other, ms=175):
         # Force two LOAD_FAST ops before STORE_ATTR. ``other`` and ``event``
         # are emitted as the fused superinstruction; if the event detector
         # picks up ``other`` instead, debounce detection should still work

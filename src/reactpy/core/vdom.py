@@ -22,6 +22,7 @@ from reactpy.types import (
     CustomVdomConstructor,
     EllipsisRepr,
     EventHandlerDict,
+    EventHandlerFunc,
     ImportSourceDict,
     InlineJavaScript,
     InlineJavaScriptDict,
@@ -236,7 +237,12 @@ def separate_attributes_handlers_and_inline_javascript(
 
     for k, v in attributes.items():
         if callable(v):
-            _event_handlers[k] = EventHandler(to_event_handler_function(v))
+            # any callable attribute is taken to be an event handler - the handler
+            # check inside `to_event_handler_function` rejects plain `def` functions
+            handler_function = cast(EventHandlerFunc, v)
+            _event_handlers[k] = EventHandler(
+                to_event_handler_function(handler_function)
+            )
         elif isinstance(v, BaseEventHandler):
             _event_handlers[k] = v
         elif EVENT_ATTRIBUTE_PATTERN.match(k) and isinstance(v, str):

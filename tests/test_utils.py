@@ -6,6 +6,10 @@ import reactpy
 from reactpy import component, html, utils
 
 
+async def _noop_handler(*args):
+    """A handler which does nothing, for tests which only need something to bind"""
+
+
 def test_basic_ref_behavior():
     r = reactpy.Ref(1)
     assert r.current == 1
@@ -343,7 +347,7 @@ def example_none_return():
             '<div>hello<a href="https://example.com">example</a>world</div>',
         ),
         (
-            html.button({"onClick": lambda event: None}),
+            html.button({"onClick": _noop_handler}),
             "<button></button>",
         ),
         (

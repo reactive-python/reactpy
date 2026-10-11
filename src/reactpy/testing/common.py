@@ -171,7 +171,11 @@ class StaticEventHandler:
             @reactpy.component
             def MyComponent():
                 state, set_state = reactpy.hooks.use_state(0)
-                handler = static_handler.use(lambda event: set_state(state + 1))
+
+                async def on_click(event):
+                    set_state(state + 1)
+
+                handler = static_handler.use(on_click)
                 return reactpy.html.button({"onClick": handler}, "Click me!")
 
             # gives the target ID for onClick where from the last render of MyComponent
@@ -194,7 +198,11 @@ class StaticEventHandler:
             @reactpy.component
             def Child(key):
                 state, set_state = reactpy.hooks.use_state(0)
-                handler = static_handlers_by_key[key].use(lambda event: set_state(state + 1))
+
+                async def on_click(event):
+                    set_state(state + 1)
+
+                handler = static_handlers_by_key[key].use(on_click)
                 return reactpy.html.button({"onClick": handler}, "Click me!")
 
             # grab the individual targets for each instance above
@@ -207,7 +215,7 @@ class StaticEventHandler:
 
     def use(
         self,
-        function: Callable[..., Any],
+        function: Callable[..., Awaitable[Any]],
         stop_propagation: bool = False,
         prevent_default: bool = False,
     ) -> EventHandler:

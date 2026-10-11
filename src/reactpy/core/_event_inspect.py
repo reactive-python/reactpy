@@ -19,6 +19,34 @@ _LOAD_FAST_BORROW_PAIR_SIZE = 2
 _STORE_ATTR_VALUE_OFFSET = 2
 
 
+def _handler_code(func: Callable) -> CodeType | None:
+    """The bytecode of the callable a user handed us
+
+    A handler is normally a function, but an object whose ``__call__`` is a coroutine
+    is a handler too, and its bytecode lives on the class.
+    """
+    code = getattr(func, "__code__", None)
+    if code is not None:
+        return code
+    # a callable object's own ``__call__`` is defined on its class
+    try:
+        call = type(func).__call__
+    except AttributeError:
+        return None
+    return getattr(call, "__code__", None)
+
+
+def _event_arg_name(func: Callable, code: CodeType | None) -> str | None:
+    """What the given handler calls the event it is handed, if it takes one"""
+    if code is None:
+        return None
+    # the first parameter of a callable object's ``__call__`` is the object itself
+    offset = 0 if hasattr(func, "__code__") else 1
+    if code.co_argcount <= offset:
+        return None
+    return code.co_varnames[offset]
+
+
 def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]:
     """Detect ``preventDefault``/``stopPropagation``/``debounce`` usage.
 
@@ -45,14 +73,15 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]
     ``stop_propagation`` is the string ``"immediate"`` if the handler asked to stop
     *other listeners* as well.
     """
-    code = func.__code__
-
     prevent_default = False
     stop_propagation = False
     stop_immediate_propagation = False
     debounce: int | None = None
 
-    if code.co_argcount <= 0:
+    code = _handler_code(func)
+    event_arg_name = _event_arg_name(func, code)
+    if code is None or event_arg_name is None:
+        # Nothing to walk, or nothing to walk from
         return prevent_default, stop_propagation, debounce
 
     names = code.co_names
@@ -69,7 +98,6 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]
     ):
         return prevent_default, stop_propagation, debounce
 
-    event_arg_name = code.co_varnames[0]
     instructions = list(dis.get_instructions(code))
     arg_defaults = _function_arg_defaults(func)
     closure_by_name = _closure_lookup(func)
@@ -171,8 +199,10 @@ def _function_arg_defaults(func: Callable) -> dict[str, int]:
     Includes positional defaults (``__defaults__``) and keyword-only defaults
     (``__kwdefaults__``).
     """
-    code = func.__code__
+    code = _handler_code(func)
     result: dict[str, int] = {}
+    if code is None:
+        return result
 
     positional_defaults = getattr(func, "__defaults__", None)
     if positional_defaults:
@@ -198,7 +228,8 @@ def _closure_lookup(func: Callable) -> dict[str, int]:
     closure = getattr(func, "__closure__", None)
     if not closure:
         return {}
-    freevars = getattr(func.__code__, "co_freevars", ())
+    code = _handler_code(func)
+    freevars = getattr(code, "co_freevars", ()) if code is not None else ()
     result: dict[str, int] = {}
     for idx, cell in enumerate(closure):
         if idx >= len(freevars):

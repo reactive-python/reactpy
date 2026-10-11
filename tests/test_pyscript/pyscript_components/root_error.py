@@ -5,7 +5,7 @@ from reactpy import component, hooks, html
 def root():
     count, set_count = hooks.use_state(0)
 
-    def increment(event):
+    async def increment(event):
         set_count(count + 1)
 
     # crash on purpose after a few clicks, same as the real bug report

@@ -177,9 +177,9 @@ async def test_set_state_checks_equality_not_identity(display: DisplayFixture):
     event_count = reactpy.Ref(0)
 
     def event_count_tracker(function):
-        def tracker(*args, **kwargs):
+        async def tracker(event):
             event_count.current += 1
-            return function(*args, **kwargs)
+            return await function(event)
 
         return tracker
 
@@ -187,19 +187,25 @@ async def test_set_state_checks_equality_not_identity(display: DisplayFixture):
     def TestComponent():
         state, set_state = reactpy.hooks.use_state(r_1)
 
+        async def set_state_to_r_1(event):
+            set_state(r_1)
+
+        async def set_state_to_r_2(event):
+            set_state(r_2)
+
         render_count.current += 1
         return reactpy.html.div(
             reactpy.html.button(
                 {
                     "id": "r_1",
-                    "onClick": event_count_tracker(lambda event: set_state(r_1)),
+                    "onClick": event_count_tracker(set_state_to_r_1),
                 },
                 "r_1",
             ),
             reactpy.html.button(
                 {
                     "id": "r_2",
-                    "onClick": event_count_tracker(lambda event: set_state(r_2)),
+                    "onClick": event_count_tracker(set_state_to_r_2),
                 },
                 "r_2",
             ),
@@ -265,7 +271,7 @@ async def test_double_set_state(display: DisplayFixture):
         state_1, set_state_1 = reactpy.hooks.use_state(0)
         state_2, set_state_2 = reactpy.hooks.use_state(0)
 
-        def double_set_state(event):
+        async def double_set_state(event):
             set_state_1(state_1 + 1)
             set_state_2(state_2 + 1)
 

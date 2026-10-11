@@ -12,7 +12,7 @@ async def test_script_re_run_on_content_change(display: DisplayFixture):
     def HasScript():
         count, set_count = hooks.use_state(0)
 
-        def on_click(event):
+        async def on_click(event):
             set_count(count + 1)
 
         return html.div(
@@ -98,8 +98,10 @@ def test_child_of_script_must_be_string():
 
 
 def test_script_has_no_event_handlers():
+    async def on_event(event): ...
+
     with pytest.raises(ValueError, match=r"do not support event handlers"):
-        html.script({"onEvent": lambda: None})
+        html.script({"onEvent": on_event})
 
 
 def test_simple_fragment():

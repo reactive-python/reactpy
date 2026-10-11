@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from reactpy.core.events import EventHandler, to_event_handler_function
+from reactpy.core.events import EventHandler
 from reactpy.types import VdomAttributes, VdomDict
+
+
+async def _ignore_event_data(*_args: Any) -> None:
+    """A handler which exists only to carry ``prevent_default`` on an anchor click"""
 
 
 def attributes_to_reactjs(attributes: VdomAttributes):
@@ -125,7 +129,7 @@ class RequiredTransforms:
         vdom.setdefault("eventHandlers", {})
         if "eventHandlers" in vdom and isinstance(vdom["eventHandlers"], dict):
             vdom["eventHandlers"]["onClick"] = EventHandler(
-                to_event_handler_function(lambda *_args, **_kwargs: None),
+                _ignore_event_data,
                 prevent_default=True,
             )
 

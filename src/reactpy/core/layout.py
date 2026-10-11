@@ -235,16 +235,16 @@ class Layout(BaseLayout):
 
         A handler which asks for live access is given it, and one which declines is
         given the snapshot and nothing else. With no preference stated the data
-        decides: the client marks whatever it has agreed to keep hold of, and marked
-        data comes back as a live object. A client which has gone away cannot answer
-        for that mark either way, because a backend without a sender reports itself
-        unavailable and the mark is dropped with the rest of the overhead.
+        decides: the client marks whatever it has agreed to keep hold of - which
+        ``REACTPY_ENABLE_EVENT_PROXY`` asks it to do for every handler by default -
+        and marked data comes back as a live object. A client which has gone away
+        cannot answer for that mark either way, because a backend without a sender
+        reports itself unavailable and the mark is dropped with the rest of the
+        overhead.
         """
         want_proxy = getattr(handler, "event_proxy", None)
         if want_proxy is None:
-            want_proxy = REACTPY_ENABLE_EVENT_PROXY.current or any(
-                event_marker_id(item) is not None for item in data
-            )
+            want_proxy = any(event_marker_id(item) is not None for item in data)
         return EventArguments(data, self._event_proxy_backend if want_proxy else None)
 
     async def _process_event_queue(

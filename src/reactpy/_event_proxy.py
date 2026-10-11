@@ -1,10 +1,9 @@
 """Client-backed ("live") proxies for browser events.
 
-Historically an event handler was handed a plain :class:`reactpy.types.Event` - a
-snapshot of the JavaScript ``Event`` object. Snapshots are cheap and never block, but
-they are frozen at the moment the event was dispatched: methods such as ``focus()`` or
-``composedPath()`` cannot be called from Python, and any property that the snapshot left
-out is simply gone.
+Every event handler is handed a snapshot of the JavaScript ``Event`` object. Snapshots
+are cheap and never block, but they are frozen at the moment the event was dispatched:
+methods such as ``focus()`` or ``composedPath()`` cannot be called from Python, and any
+property that the snapshot left out is simply gone.
 
 This module implements the machinery which lets a handler reach *live* into the browser
 instead. Alongside the snapshot it serialized, the client marks every object it kept
@@ -22,14 +21,13 @@ alive with an id::
         ],
     }
 
-On receipt, ReactPy swaps that dictionary for a :class:`SyncEvent` or
-:class:`AsyncEvent` - both are ``dict`` subclasses which *also* hold the snapshot.
-Reading an attribute returns a lazily resolved :class:`EventProxy` whose value is
-fetched from the browser only when it is actually needed:
+On receipt, ReactPy swaps that dictionary for an :class:`Event` - a ``dict`` subclass
+which *also* holds the snapshot. Reading an attribute returns a lazily resolved
+:class:`EventProxy` whose value is fetched from the browser only when it is needed:
 
 .. code-block:: python
 
-    async def on_click(event: AsyncEvent):
+    async def on_click(event: Event):
         # one round trip: read "target.value" from the live DOM node
         value = await event.target.value
         # one round trip: call "focus()" on the live DOM node
@@ -37,10 +35,11 @@ fetched from the browser only when it is actually needed:
         # nothing is sent for values which the snapshot already contains
         print(event["type"])
 
-Which flavour a handler receives is decided by the handler itself: ``async def``
-handlers get :class:`AsyncEvent` (resolve with ``await`` or ``.resolve()``), plain
-``def`` handlers get :class:`SyncEvent` whose accessors block - transparently running
-the whole handler in a worker thread when it needs the value of a live property.
+Every event handler is a coroutine, so live values are always pulled from the browser
+with ``await`` and the event loop is never blocked. When the client did not keep the
+originating object alive - because the handler opted out, or it is too old to support
+this - the very same :class:`Event` is handed over without any backing, and awaiting
+one of its proxies raises :class:`EventProxyUnavailable`.
 
 Resolution travels over the existing connection with two extra message types:
 
@@ -115,16 +114,6 @@ class EventProxyNotFound(EventProxyError):
 
 class EventProxyAccessError(EventProxyError):
     """The client refused or failed to resolve the requested path"""
-
-
-class EventProxyBlocked(EventProxyError):
-    """Synchronous live event access was attempted from the event loop thread
-
-    A synchronous event handler which needs a live value is run in a worker thread by
-    ReactPy. Seeing this error means that a blocking access was attempted somewhere
-    which ReactPy could not run off of the event loop - typically from an ``async def``
-    handler using a :class:`SyncEvent`. Prefer ``await`` on an :class:`AsyncEvent`.
-    """
 
 
 class EventProxyBackend:
@@ -219,7 +208,6 @@ class EventProxyBackend:
         path: Sequence[str | int],
         call: bool = False,
         args: Sequence[Any] = (),
-        sync: bool = False,
     ) -> Any:
         """Resolve ``path`` against the client side event (awaited from the loop)"""
         request_id, message, future = self._begin(
@@ -234,38 +222,7 @@ class EventProxyBackend:
             )
         except (TimeoutError, FuturesTimeoutError):
             self._handle_timeout(request_id, event_id, path)
-        return self._to_value(payload, event_id, path, sync)
-
-    def resolve_blocking(
-        self,
-        event_id: str,
-        path: Sequence[str | int],
-        call: bool = False,
-        args: Sequence[Any] = (),
-    ) -> Any:
-        """Resolve ``path`` by blocking the calling (non-loop) thread until answered"""
-        if (
-            self._loop_thread_id is not None
-            and threading.get_ident() == self._loop_thread_id
-        ):
-            msg = (
-                f"cannot synchronously resolve {list(path)!r} of event {event_id!r} from "
-                "the event loop thread - access live values from a synchronous event "
-                "handler, or await them from an asynchronous one"
-            )
-            raise EventProxyBlocked(msg)
-
-        request_id, message, future = self._begin(
-            event_id, path, call, args, reply=True
-        )
-        if future is None:  # nocov - reply=True always yields a future
-            return None
-        self._submit(message, future, request_id)
-        try:
-            payload = future.result(timeout=REACTPY_EVENT_PROXY_TIMEOUT.current)
-        except (TimeoutError, FuturesTimeoutError):
-            self._handle_timeout(request_id, event_id, path)
-        return self._to_value(payload, event_id, path, sync=True)
+        return self._to_value(payload, event_id, path)
 
     def notify(
         self,
@@ -376,7 +333,6 @@ class EventProxyBackend:
         payload: Mapping[str, Any],
         event_id: str,
         path: Sequence[str | int],
-        sync: bool,
     ) -> Any:
         if not payload.get("ok"):
             code = payload.get("code") or "access"
@@ -389,7 +345,15 @@ class EventProxyBackend:
             raise EventProxyAccessError(message)
 
         self._timeouts = 0
-        return deserialize_value(payload.get("value"), event_id, self, sync)
+        return deserialize_value(payload.get("value"), event_id, self)
+
+
+_NO_PROXY_BACKEND = EventProxyBackend()
+"""A backend which is never bound to a connection, standing in for an unbacked event
+
+Since it has no sender, ``available`` is :data:`False` and any attempt to resolve
+something through it raises :class:`EventProxyUnavailable`.
+"""
 
 
 def serialize_argument(value: Any) -> Any:
@@ -420,7 +384,6 @@ def deserialize_value(
     value: Any,
     event_id: str,
     backend: EventProxyBackend,
-    sync: bool,
     depth: int = 0,
 ) -> Any:
     """Turn a client supplied value into data, replacing references with proxies"""
@@ -434,29 +397,25 @@ def deserialize_value(
     if isinstance(value, Mapping):
         reference = value.get(EVENT_REFERENCE_KEY)
         if isinstance(reference, Mapping):
-            child_class = SyncEventProxy if sync else AsyncEventProxy
-            child = child_class(
-                backend,
-                str(reference.get("eventId", event_id)),
-                tuple(reference.get("path", ())),
+            child = EventProxy(
+                backend=backend,
+                event_id=str(reference.get("eventId", event_id)),
+                path=tuple(reference.get("path", ())),
             )
             child._reactpy_callable = bool(reference.get("callable"))
             return child
         return {
-            key: deserialize_value(item, event_id, backend, sync, depth + 1)
+            key: deserialize_value(item, event_id, backend, depth + 1)
             for key, item in value.items()
         }
 
     if isinstance(value, list):
-        return [
-            deserialize_value(item, event_id, backend, sync, depth + 1)
-            for item in value
-        ]
+        return [deserialize_value(item, event_id, backend, depth + 1) for item in value]
 
     return value
 
 
-class _EventProxyBase(dict, Generic[_T]):
+class EventProxy(dict, Generic[_T]):
     """A live, lazily resolved view onto a browser object
 
     Instances are ``dict`` subclasses which hold on to whatever the client chose to
@@ -464,21 +423,30 @@ class _EventProxyBase(dict, Generic[_T]):
     further proxies for anything the snapshot does not already answer with a plain
     value, so a chain such as ``event.target.value`` costs a single round trip - and
     only when the value is genuinely needed.
-    """
 
-    _reactpy_sync: bool = False
-    """Whether resolving this proxy blocks (sync) or must be awaited (async)"""
+    Anything which has to come from the browser is awaited, because every event handler
+    is a coroutine and nothing may block the event loop::
+
+        async def on_input(event: Event):
+            value = await event.target.value
+            await event.target.focus()
+
+    A proxy which no client is backing - because the handler opted out of live access,
+    or the client is too old to support it - hands out whatever its snapshot already
+    holds, and raises :class:`EventProxyUnavailable` when asked for anything more.
+    """
 
     def __init__(
         self,
-        backend: EventProxyBackend,
-        event_id: str,
-        path: Sequence[str | int] = (),
         snapshot: Mapping[str, Any] | None = None,
+        *,
+        backend: EventProxyBackend | None = None,
+        event_id: str = "",
+        path: Sequence[str | int] = (),
         flags: dict[str, bool] | None = None,
     ) -> None:
         dict.__init__(self, snapshot or {})
-        self._reactpy_backend = backend
+        self._reactpy_backend = backend if backend is not None else _NO_PROXY_BACKEND
         self._reactpy_event_id = event_id
         self._reactpy_path: tuple[str | int, ...] = tuple(path)
         self._reactpy_flags = {} if flags is None else flags
@@ -508,6 +476,9 @@ class _EventProxyBase(dict, Generic[_T]):
         return bool(dict.__len__(self))
 
     def __repr__(self) -> str:
+        if not self._reactpy_backend.available:
+            # Nothing is behind this proxy - show the snapshot it was handed
+            return dict.__repr__(self)
         return (
             f"{type(self).__name__}(event_id={self._reactpy_event_id!r}, "
             f"path={list(self._reactpy_path)!r}, snapshot={dict.__repr__(self)})"
@@ -531,14 +502,11 @@ class _EventProxyBase(dict, Generic[_T]):
 
     def _reactpy_make_child(
         self, segment: str | int, snapshot: Mapping[str, Any] | None = None
-    ) -> _EventProxyBase[Any]:
-        child_class: type[_EventProxyBase[Any]] = (
-            SyncEventProxy if self._reactpy_sync else AsyncEventProxy
-        )
-        child = child_class(
-            self._reactpy_backend,
-            self._reactpy_event_id,
-            (*self._reactpy_path, segment),
+    ) -> EventProxy[Any]:
+        child = EventProxy(
+            backend=self._reactpy_backend,
+            event_id=self._reactpy_event_id,
+            path=(*self._reactpy_path, segment),
             flags=self._reactpy_flags,
         )
         if snapshot is None:
@@ -551,10 +519,10 @@ class _EventProxyBase(dict, Generic[_T]):
             # The snapshot only points at what the browser still holds - hand back a
             # real proxy for it rather than a dict containing the marker.
             path = tuple(reference.get("path", ())) or (*self._reactpy_path, segment)
-            child = child_class(
-                self._reactpy_backend,
-                str(reference.get("eventId", self._reactpy_event_id)),
-                path,
+            child = EventProxy(
+                backend=self._reactpy_backend,
+                event_id=str(reference.get("eventId", self._reactpy_event_id)),
+                path=path,
                 flags=self._reactpy_flags,
             )
             child._reactpy_callable = bool(reference.get("callable"))
@@ -631,9 +599,7 @@ class _EventProxyBase(dict, Generic[_T]):
         path = (*self._reactpy_path, name)
         backend = self._reactpy_backend
         if wait:
-            return backend.resolve(
-                self._reactpy_event_id, path, call=True, args=args, sync=False
-            )
+            return backend.resolve(self._reactpy_event_id, path, call=True, args=args)
         backend.notify(self._reactpy_event_id, path, args)
         return None
 
@@ -642,20 +608,38 @@ class _EventProxyBase(dict, Generic[_T]):
     def preventDefault(self) -> None:
         """Prevent the default action of the underlying DOM event
 
-        The matching JavaScript call is scheduled on the client but is *not* waited
-        for. Use :func:`reactpy.event`'s ``prevent_default=True`` if the action must be
-        cancelled before the browser carries on.
+        The body of this method is empty on purpose. ReactPy reads the bytecode of your
+        handler as it is created, and finding this call anywhere within it sets
+        :attr:`~reactpy.types.BaseEventHandler.prevent_default` to :data:`True`. The
+        browser is then asked to call ``preventDefault()`` itself, before the event is
+        ever sent to the server. Writing ``@event(prevent_default=True)`` does exactly
+        the same thing, but says so out loud.
+
+        If the object behind this proxy is still alive, the JavaScript call is also
+        scheduled on the client without being waited for. The browser has usually moved
+        on by then, so depend on the handler flag when the action truly must not happen.
         """
         self._reactpy_flags["preventDefault"] = True
         self._reactpy_invoke("preventDefault")
 
     def stopPropagation(self) -> None:
-        """Stop the underlying DOM event from propagating further up the tree"""
+        """Stop the underlying DOM event from propagating further up the tree
+
+        Like :meth:`preventDefault`, calling this is detected in the bytecode of your
+        handler and turned into
+        :attr:`~reactpy.types.BaseEventHandler.stop_propagation` - the browser stops
+        the event before it reaches the server. The call is additionally forwarded to a
+        still-live event object, but is not waited for.
+        """
         self._reactpy_flags["stopPropagation"] = True
         self._reactpy_invoke("stopPropagation")
 
     def stopImmediatePropagation(self) -> None:
-        """Also stop any remaining listeners of the underlying DOM event"""
+        """Also stop any remaining listeners of the underlying DOM event
+
+        Detected in the bytecode of your handler just like :meth:`stopPropagation`, and
+        additionally forwarded to a still-live event object.
+        """
         self._reactpy_flags["stopPropagation"] = True
         self._reactpy_flags["stopImmediatePropagation"] = True
         self._reactpy_invoke("stopImmediatePropagation")
@@ -693,66 +677,23 @@ class _EventProxyBase(dict, Generic[_T]):
         ):
             # Never resolve internals or interpreter lookups against the browser
             raise AttributeError(name)
+        if not self._reactpy_backend.available:
+            # Nothing is behind this proxy - behave like the plain snapshot it is
+            value = dict.get(self, name, _MISSING)
+            if value is _MISSING:
+                return None
+            return EventProxy(value) if isinstance(value, dict) else value
         return self._reactpy_child_or_value(name)
 
     def __getitem__(self, key: Any) -> Any:
+        if not self._reactpy_backend.available:
+            return dict.__getitem__(self, key)
         return self._reactpy_child_or_value(key)
 
     def __bool__(self) -> bool:
         return bool(dict.__len__(self)) or bool(self._reactpy_path)
 
-    # -- resolution (implemented by the sync and async flavours) ----------
-
-    def _reactpy_resolve_path(self, call: bool, args: Sequence[Any]) -> Any:
-        msg = f"{type(self).__name__} cannot resolve live event data"
-        raise NotImplementedError(msg)
-
-    def _reactpy_call_method(self, name: str, args: Sequence[Any]) -> Any:
-        path = (*self._reactpy_path, name)
-        backend = self._reactpy_backend
-        if self._reactpy_sync:
-            return backend.resolve_blocking(
-                self._reactpy_event_id, path, call=True, args=args
-            )
-        return backend.resolve(
-            self._reactpy_event_id, path, call=True, args=args, sync=False
-        )
-
-    def composedPath(self) -> Any:  # the JavaScript method name is kept as-is
-        """Return the event's path, resolving on the client if needed
-
-        This blocks for a :class:`SyncEventProxy` and must be awaited for an
-        :class:`AsyncEventProxy`.
-        """
-        return self._reactpy_call_method("composedPath", ())
-
-    def _reactpy_description(self) -> str:
-        return (
-            f"{type(self).__name__} for {list(self._reactpy_path)!r} of event "
-            f"{self._reactpy_event_id!r}"
-        )
-
-    def _reactpy_require_snapshot(self, action: str) -> None:
-        """Complain about an operation which needs a value we do not have yet"""
-        if self._reactpy_backend.available:
-            msg = (
-                f"cannot {action} {self._reactpy_description()} because nothing is "
-                "known about it yet - await the proxy (or call .resolve() on it) first"
-            )
-            raise EventProxyAccessError(msg)
-
-
-class AsyncEventProxy(_EventProxyBase[_T]):
-    """The asynchronous flavour of a live event object
-
-    Values are pulled from the browser with ``await``::
-
-        async def on_input(event: AsyncEvent):
-            value = await event.target.value
-            await event.target.focus()
-    """
-
-    _reactpy_sync = False
+    # -- resolution -------------------------------------------------------
 
     def _reactpy_resolve_path(self, call: bool, args: Sequence[Any]) -> Any:
         return self._reactpy_backend.resolve(
@@ -760,11 +701,30 @@ class AsyncEventProxy(_EventProxyBase[_T]):
             self._reactpy_path,
             call=call,
             args=args,
-            sync=False,
         )
 
+    def _reactpy_call_method(self, name: str, args: Sequence[Any]) -> Any:
+        path = (*self._reactpy_path, name)
+        return self._reactpy_backend.resolve(
+            self._reactpy_event_id, path, call=True, args=args
+        )
+
+    def composedPath(self) -> Awaitable[list[Any]]:
+        """Return the event's path, asking the client for it if the snapshot lacks it
+
+        Await the result::
+
+            async def on_click(event: Event):
+                print(await event.composedPath())
+        """
+        return self._reactpy_call_method("composedPath", ())
+
     def resolve(self) -> Awaitable[_T]:
-        """Fetch the value this proxy currently points at from the browser"""
+        """Fetch the value this proxy currently points at from the browser
+
+        Awaiting the proxy itself does the same thing; this exists for the times when
+        spelling out the round trip reads better.
+        """
         return self._reactpy_resolve_path(False, ())
 
     async def read(self, path: str | Sequence[Any], default: Any = _MISSING) -> Any:
@@ -773,7 +733,7 @@ class AsyncEventProxy(_EventProxyBase[_T]):
         Unlike awaiting an attribute, this always works - including for values which
         the snapshot already answered with a plain ``str``, ``bool`` or ``None``::
 
-            async def on_input(event: AsyncEvent):
+            async def on_input(event: Event):
                 value = await event.read("target.value")
         """
         segments = self._reactpy_normalize_path(path)
@@ -786,7 +746,6 @@ class AsyncEventProxy(_EventProxyBase[_T]):
                 (*self._reactpy_path, *segments),
                 call=False,
                 args=(),
-                sync=False,
             )
         except EventProxyError:
             if default is _MISSING:
@@ -817,186 +776,61 @@ class AsyncEventProxy(_EventProxyBase[_T]):
             self._reactpy_require_snapshot("test membership of")
         return False
 
-
-class SyncEventProxy(_EventProxyBase[_T]):
-    """The synchronous flavour of a live event object
-
-    Accessing something the snapshot does not already know about blocks until the
-    browser answers. ReactPy runs synchronous event handlers in a worker thread for
-    exactly this reason, so the event loop is never stalled.
-    """
-
-    _reactpy_sync = True
-
-    def _reactpy_resolve_segment(self, segment: str | int) -> Any:
-        """Read a value the snapshot does not have, blocking until the browser answers"""
-        try:
-            value = self._reactpy_backend.resolve_blocking(
-                self._reactpy_event_id,
-                (*self._reactpy_path, segment),
-                call=False,
-                args=(),
-            )
-        except (
-            EventProxyTimeout,
-            EventProxyNotFound,
-            EventProxyAccessError,
-            EventProxyUnavailable,
-        ):
-            # The browser could not tell us - hand back an (empty) proxy so that
-            # repr(), logging and "in" checks keep working.
-            logger.debug(
-                f"Falling back to snapshot data for {list(self._reactpy_path)!r}"
-                f" + {segment!r}",
-                exc_info=True,
-            )
-            return self._reactpy_make_child(segment)
-
-        if isinstance(value, _EventProxyBase):
-            return value
-        if isinstance(value, Mapping):
-            return self._reactpy_make_child(segment, value)
-        if isinstance(value, list | tuple):
-            return self._reactpy_wrap_sequence(segment, value)
-        return value
-
-    def _reactpy_resolve_path(self, call: bool, args: Sequence[Any]) -> Any:
-        return self._reactpy_backend.resolve_blocking(
-            self._reactpy_event_id, self._reactpy_path, call=call, args=args
+    def _reactpy_description(self) -> str:
+        return (
+            f"{type(self).__name__} for {list(self._reactpy_path)!r} of event "
+            f"{self._reactpy_event_id!r}"
         )
 
-    def resolve(self) -> _T:
-        """Fetch the value this proxy currently points at from the browser"""
-        return self._reactpy_resolve_path(False, ())
-
-    def read(self, path: str | Sequence[Any], default: Any = _MISSING) -> Any:
-        """Return the value at ``path`` whether or not the snapshot knows it
-
-        Blocking, like every other accessor on this class::
-
-            def on_input(event: SyncEvent):
-                value = event.read("target.value")
-        """
-        segments = self._reactpy_normalize_path(path)
-        value = self._reactpy_walk_snapshot(segments)
-        if value is not _MISSING:
-            return value
-        try:
-            return self._reactpy_backend.resolve_blocking(
-                self._reactpy_event_id,
-                (*self._reactpy_path, *segments),
-                call=False,
-                args=(),
+    def _reactpy_require_snapshot(self, action: str) -> None:
+        """Complain about an operation which needs a value we do not have yet"""
+        if self._reactpy_backend.available:
+            msg = (
+                f"cannot {action} {self._reactpy_description()} because nothing is "
+                "known about it yet - await the proxy (or call .resolve() on it) first"
             )
-        except EventProxyError:
-            if default is _MISSING:
-                raise
-            return default
-
-    def __call__(self, *args: Any) -> Any:
-        """Call the client side method this proxy currently points at"""
-        return self._reactpy_resolve_path(True, args)
-
-    def _reactpy_resolved_or_self(self) -> Any:
-        """The live value if we do not have a snapshot for it, else this proxy"""
-        if dict.__len__(self) or not self._reactpy_backend.available:
-            return self
-        try:
-            value = self._reactpy_resolve_path(False, ())
-        except EventProxyError:
-            logger.debug(
-                f"Could not resolve {self._reactpy_description()}", exc_info=True
-            )
-            return self
-        # a reference to something else (an object or a function) says nothing about
-        # how this proxy should be printed or compared
-        return self if isinstance(value, _EventProxyBase) else value
-
-    def __eq__(self, other: Any) -> Any:
-        if isinstance(other, _EventProxyBase):
-            if (self._reactpy_event_id, self._reactpy_path) == (
-                other._reactpy_event_id,
-                other._reactpy_path,
-            ):
-                return True
-            return dict.__eq__(self, other)
-        value = self._reactpy_resolved_or_self()
-        if value is self:
-            return dict.__eq__(self, other)
-        return bool(value == other)
-
-    def __ne__(self, other: Any) -> Any:
-        result = self.__eq__(other)
-        if result is NotImplemented:
-            return result
-        return not result
-
-    __hash__ = None  # type: ignore[assignment]
-
-    def __str__(self) -> str:
-        value = self._reactpy_resolved_or_self()
-        return dict.__repr__(self) if value is self else str(value)
-
-    def __format__(self, format_spec: str) -> str:
-        value = self._reactpy_resolved_or_self()
-        if value is self:
-            return dict.__repr__(self)
-        return format(value, format_spec)
-
-    def __len__(self) -> int:
-        if dict.__len__(self):
-            return dict.__len__(self)
-        return len(self._reactpy_resolved_or_self())
-
-    def __iter__(self) -> Any:
-        if dict.__len__(self):
-            return dict.__iter__(self)
-        value = self._reactpy_resolved_or_self()
-        return dict.__iter__(self) if value is self else iter(value)
-
-    def __contains__(self, key: Any) -> bool:
-        if dict.__contains__(self, key):
-            return True
-        if dict.__len__(self) or not self._reactpy_backend.available:
-            return False
-        try:
-            return bool(key in self._reactpy_resolve_path(False, ()))
-        except EventProxyError:
-            return False
-
-
-EventProxy = _EventProxyBase
-"""The base class of every lazily resolved live event object"""
+            raise EventProxyAccessError(msg)
 
 
 if TYPE_CHECKING:
     _ElementMembers = dict[str, Any]
 
 
-class AsyncEvent(AsyncEventProxy[_T]):
-    """The event object handed to ``async def`` event handlers
+class Event(EventProxy[_T]):
+    """The event object handed to event handler functions
 
     A ``dict`` subclass which holds the snapshot the client took when the event was
-    dispatched *and* knows how to reach back into the browser for anything missing::
+    dispatched *and*, when the client kept the originating object alive, knows how to
+    reach back into the browser for anything missing::
 
-        async def on_key_down(event: AsyncEvent):
+        async def on_key_down(event: Event):
             if await event.read("key") == "Enter":
                 await event.target.focus()
                 print(await event.target.value)
 
+    Reading a key which the snapshot already answers with a plain value never touches
+    the connection, so ``event["type"]`` and ``event.target.value`` stay as cheap as
+    they always were. Anything the snapshot left out costs a single round trip, and is
+    awaited - if the client is not holding the object alive at all, awaiting raises
+    :class:`~reactpy._event_proxy.EventProxyUnavailable`.
+
+    Handlers are always coroutines, so this is the only event object there is. See
+    :attr:`~reactpy.types.BaseEventHandler.event_proxy` for turning live access off for
+    a single handler, and ``REACTPY_ENABLE_EVENT_PROXY`` for turning it off everywhere.
+
     Every member below is a best-effort hint for editors and type checkers. At runtime
     any property of any browser object can be read - unlisted ones simply resolve to
-    :class:`AsyncEventProxy`.
+    :class:`EventProxy`.
     """
 
     if TYPE_CHECKING:
         # -- identity -----------------------------------------------------
         type: str
-        target: AsyncEventProxy[Any]
-        currentTarget: AsyncEventProxy[Any]
-        srcElement: AsyncEventProxy[Any]
-        relatedTarget: AsyncEventProxy[Any]
-        view: AsyncEventProxy[Any]
+        target: EventProxy[Any]
+        currentTarget: EventProxy[Any]
+        srcElement: EventProxy[Any]
+        relatedTarget: EventProxy[Any]
+        view: EventProxy[Any]
         # -- flags --------------------------------------------------------
         # ``defaultPrevented`` and ``propagationStopped`` are typed by the base class.
         bubbles: bool
@@ -1041,8 +875,8 @@ class AsyncEvent(AsyncEventProxy[_T]):
         # -- input / clipboard / wheel ------------------------------------
         data: str
         inputType: str
-        dataTransfer: AsyncEventProxy[Any]
-        clipboardData: AsyncEventProxy[Any]
+        dataTransfer: EventProxy[Any]
+        clipboardData: EventProxy[Any]
         touches: list[Any]
         targetTouches: list[Any]
         changedTouches: list[Any]
@@ -1052,91 +886,9 @@ class AsyncEvent(AsyncEventProxy[_T]):
         deltaMode: int
 
         # -- methods ------------------------------------------------------
-        # ``preventDefault()``, ``stopPropagation()``, ``stopImmediatePropagation()``
-        # and ``resolve()`` are typed by the base classes. Only ``composedPath()``
-        # differs, since it must be awaited here but not for a synchronous event.
-        def composedPath(self) -> Awaitable[list[Any]]: ...
-
-
-class SyncEvent(SyncEventProxy[_T]):
-    """The event object handed to plain ``def`` event handlers
-
-    Behaves like an :class:`AsyncEvent` except that reading something the snapshot does
-    not already know about blocks until the browser answers. ReactPy runs these
-    handlers in a worker thread so that blocking never stalls the event loop::
-
-        def on_key_down(event: SyncEvent):
-            if event.key == "Enter":
-                event.target.focus()
-    """
-
-    if TYPE_CHECKING:
-        # -- identity -----------------------------------------------------
-        type: str
-        target: SyncEventProxy[Any]
-        currentTarget: SyncEventProxy[Any]
-        srcElement: SyncEventProxy[Any]
-        relatedTarget: SyncEventProxy[Any]
-        view: SyncEventProxy[Any]
-        # -- flags --------------------------------------------------------
-        # ``defaultPrevented`` and ``propagationStopped`` are typed by the base class.
-        bubbles: bool
-        cancelable: bool
-        composed: bool
-        cancelBubble: bool
-        isTrusted: bool
-        eventPhase: int
-        timeStamp: float
-        returnValue: Any
-        detail: Any
-        # -- mouse --------------------------------------------------------
-        button: int
-        buttons: int
-        clientX: float
-        clientY: float
-        movementX: float
-        movementY: float
-        offsetX: float
-        offsetY: float
-        pageX: float
-        pageY: float
-        screenX: float
-        screenY: float
-        layerX: float
-        layerY: float
-        x: float
-        y: float
-        # -- keyboard -----------------------------------------------------
-        key: str
-        code: str
-        char: str
-        charCode: int
-        keyCode: int
-        location: int
-        repeat: bool
-        isComposing: bool
-        altKey: bool
-        ctrlKey: bool
-        metaKey: bool
-        shiftKey: bool
-        # -- input / clipboard / wheel ------------------------------------
-        data: str
-        inputType: str
-        dataTransfer: SyncEventProxy[Any]
-        clipboardData: SyncEventProxy[Any]
-        touches: list[Any]
-        targetTouches: list[Any]
-        changedTouches: list[Any]
-        deltaX: float
-        deltaY: float
-        deltaZ: float
-        deltaMode: int
-
-        # -- methods ------------------------------------------------------
-        # ``preventDefault()``, ``stopPropagation()``, ``stopImmediatePropagation()``
-        # and ``resolve()`` are typed by the base classes. Only ``composedPath()``
-        # differs, since it blocks here rather than returning an awaitable.
-        def composedPath(self) -> list[Any]: ...
+        # ``preventDefault()``, ``stopPropagation()``, ``stopImmediatePropagation()``,
+        # ``composedPath()``, ``resolve()`` and ``read()`` are all typed by
+        # :class:`EventProxy`, and every one of them is awaited.
 
 
 def event_marker_id(item: Any) -> str | None:
@@ -1155,28 +907,29 @@ def event_marker_id(item: Any) -> str | None:
 def build_event_args(
     data: Sequence[Any],
     backend: EventProxyBackend | None,
-    prefer_async: bool = True,
-) -> tuple[list[Any], bool | None]:
+) -> list[Any]:
     """Turn the ``data`` of a ``layout-event`` message into handler arguments
 
-    Items which the client marked as live become :class:`AsyncEvent` or
-    :class:`SyncEvent` objects, everything else stays exactly as it was. The second
-    element of the result is the flavour which was used, or :data:`None` when no live
-    event was present.
+    Items which the client marked as live become :class:`Event` objects which can be
+    read from and called into. Anything else is handed over as a plain :class:`Event`
+    snapshot, or exactly as it arrived when it was never an object at all.
     """
-    from reactpy.types import Event
-
     args: list[Any] = []
-    flavor: bool | None = None
+    is_live = backend is not None and backend.available
     for item in data:
-        event_id = event_marker_id(item)
-        if event_id is not None and backend is not None and backend.available:
-            snapshot = {
-                key: value for key, value in item.items() if key != EVENT_MARKER_KEY
-            }
-            event_class = AsyncEvent if prefer_async else SyncEvent
-            args.append(event_class(backend, event_id, snapshot=snapshot))
-            flavor = prefer_async
+        event_id = event_marker_id(item) if is_live else None
+        if event_id is not None:
+            args.append(
+                Event(
+                    {
+                        key: value
+                        for key, value in item.items()
+                        if key != EVENT_MARKER_KEY
+                    },
+                    backend=backend,
+                    event_id=event_id,
+                )
+            )
         elif isinstance(item, dict):
             args.append(
                 Event(
@@ -1189,37 +942,19 @@ def build_event_args(
             )
         else:
             args.append(item)
-    return args, flavor
+    return args
 
 
 class EventArguments(list):
     """The positional arguments a :class:`~reactpy.types.BaseEventHandler` is called with
 
-    Whether data should be handed out in blocking or awaitable form is only known once
-    the handler itself runs, and merged handlers may mix both. This list therefore
-    remembers the raw event data so that :meth:`rebuild` can hand each handler
-    arguments of the flavour it needs.
+    Every handler is a coroutine, so there is a single flavour of event data and these
+    arguments can be handed straight to whichever handlers the event is routed to.
     """
 
     def __init__(
         self,
         data: Sequence[Any],
         backend: EventProxyBackend | None = None,
-        prefer_async: bool = True,
     ) -> None:
-        built, flavor = build_event_args(data, backend, prefer_async)
-        super().__init__(built)
-        self._reactpy_data = data
-        self._reactpy_backend = backend
-        self._reactpy_flavor = flavor
-
-    def rebuild(self, prefer_async: bool) -> EventArguments:
-        """Return arguments of the requested flavour (possibly this very list)"""
-        if self._reactpy_flavor is None or self._reactpy_flavor is prefer_async:
-            return self
-        return EventArguments(self._reactpy_data, self._reactpy_backend, prefer_async)
-
-
-def uses_sync_event_proxy(args: Sequence[Any]) -> bool:
-    """Whether any of the given handler arguments blocks on the client"""
-    return any(isinstance(arg, SyncEventProxy) for arg in args)
+        super().__init__(build_event_args(data, backend))

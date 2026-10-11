@@ -59,7 +59,7 @@ def use_linked_inputs(
     """
     value, set_value = reactpy.hooks.use_state(initial_value)
 
-    def sync_inputs(event: dict[str, Any]) -> None:
+    async def sync_inputs(event: dict[str, Any]) -> None:
         new_value = event["target"]["value"]
         set_value(new_value)
         if not new_value and ignore_empty:

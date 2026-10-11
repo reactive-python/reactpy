@@ -65,6 +65,7 @@ def make_events_and_expected_model():
                         "target": STATIC_EVENT_HANDLER.target,
                         "preventDefault": False,
                         "stopPropagation": False,
+                        "eventProxy": True,
                     }
                 },
             }
@@ -94,7 +95,11 @@ def Counter():
         (lambda old_count, diff: old_count + diff),
         initial_value=0,
     )
-    handler = STATIC_EVENT_HANDLER.use(lambda: change_count(1))
+
+    async def on_event():
+        change_count(1)
+
+    handler = STATIC_EVENT_HANDLER.use(on_event)
     return reactpy.html.div({EVENT_NAME: handler, "count": count})
 
 
