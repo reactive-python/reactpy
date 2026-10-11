@@ -20,7 +20,7 @@ from reactpy.config import (
 from reactpy.core.component import component
 from reactpy.core.events import EventHandler
 from reactpy.core.hooks import use_async_effect, use_effect, use_state
-from reactpy.core.layout import Layout, _ThreadSafeQueue
+from reactpy.core.layout import Layout, _ModelState, _ThreadSafeQueue
 from reactpy.testing import (
     HookCatcher,
     StaticEventHandler,
@@ -1933,3 +1933,67 @@ async def test_a_render_asked_for_during_teardown_is_dropped(monkeypatch):
         "a render went ahead after the layout had closed, on a layout which has "
         "already let go of what it renders with"
     )
+
+
+async def test_a_closed_layout_owes_neither_an_ack_delivery_nor_a_render():
+    """Nothing is promised on behalf of a layout which has closed
+
+    An acknowledgement reaches the client inside a render of the element it
+    describes, and a render is a task belonging to the layout's loop. Once the
+    layout has closed there is no element left, no task to create, and no client
+    to receive any of it - only the memory of the tables which used to hold all
+    that, and reaching for those would raise where nothing is left to catch it.
+    """
+    static = StaticEventHandler()
+    handler = EventHandler(lambda e: None, target=static.target)
+
+    @component
+    def Root():
+        return html.input({"value": "text", "onChange": handler})
+
+    layout = Layout(Root())
+
+    async with layout:
+        await layout.render()
+
+    layout._schedule_ack_delivery(static.target, 4)
+    layout._schedule_render_task("a-component-which-is-no-longer-here")
+
+    # Neither request was allowed to reach for what teardown has released: the
+    # acknowledgement tables are gone and no task was created to replace them
+    assert getattr(layout, "_pending_ack_by_target", None) is None
+    assert layout._render_tasks == set()
+
+
+def test_an_element_with_nothing_above_it_prompts_no_render():
+    """The component which would carry an acknowledgement is the one above
+
+    Walking up from an element finds the component nearest above it, because that
+    is the one whose re-render rewrites the element's model. An element with
+    nothing left above it has no component to prompt - its model will carry the
+    acknowledgement the moment it is rendered again, which is all anyone can ask.
+    """
+    parent = _ModelState(
+        parent=None,
+        index=-1,
+        key=None,
+        model=Ref({"tagName": "", "children": []}),
+        patch_path="",
+        children_by_key={},
+        targets_by_event={},
+    )
+    element = _ModelState(
+        parent=parent,
+        index=0,
+        key=None,
+        model=Ref({"tagName": "input", "attributes": {"value": "text"}}),
+        patch_path="/children/0",
+        children_by_key={},
+        targets_by_event={"onChange": "/0:onChange"},
+    )
+
+    # Whatever was above the element is gone, so there is no component to prompt
+    del parent
+    gc.collect()
+
+    assert Layout._owner_component_id(element) is None
