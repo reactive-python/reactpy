@@ -277,27 +277,26 @@ class Layout(BaseLayout):
                         "does not exist or its component unmounted"
                     )
             finally:
-                if self._has_closed:
-                    # The layout has been torn down around this handler. There is no
-                    # client left to acknowledge to, and nothing left to record into.
-                    return None
-                # Record the client-assigned event sequence number (if any) so it can
-                # be echoed back on the originating element, once - and only once -
-                # the handler which consumed the event is out of the way. Recording it
-                # up front would let a render made while the handler is still running
-                # claim that the event has been handled, even though the value that
-                # render carries was read before the handler could update it. A client
-                # which then wrote that value over what the user has typed since would
-                # throw those keystrokes away. It is recorded even when the handler
-                # failed or was never found, because no further state change can come
-                # from that event and withholding the acknowledgement would leave the
-                # client waiting for one forever.
-                seq = event.get("seq")
-                if isinstance(seq, int) and seq >= 0:
-                    prev = self._last_event_seq_by_target.get(target, -1)
-                    if seq > prev:
-                        self._last_event_seq_by_target[target] = seq
-                        self._schedule_ack_delivery(target, seq)
+                # The loop is on its way out once teardown has started, so there is no
+                # client left to acknowledge to and nothing left to record into.
+                if not self._has_closed:
+                    # Record the client-assigned event sequence number (if any) so it can
+                    # be echoed back on the originating element, once - and only once -
+                    # the handler which consumed the event is out of the way. Recording it
+                    # up front would let a render made while the handler is still running
+                    # claim that the event has been handled, even though the value that
+                    # render carries was read before the handler could update it. A client
+                    # which then wrote that value over what the user has typed since would
+                    # throw those keystrokes away. It is recorded even when the handler
+                    # failed or was never found, because no further state change can come
+                    # from that event and withholding the acknowledgement would leave the
+                    # client waiting for one forever.
+                    seq = event.get("seq")
+                    if isinstance(seq, int) and seq >= 0:
+                        prev = self._last_event_seq_by_target.get(target, -1)
+                        if seq > prev:
+                            self._last_event_seq_by_target[target] = seq
+                            self._schedule_ack_delivery(target, seq)
 
     async def render(self) -> LayoutUpdateMessage:
         if REACTPY_ASYNC_RENDERING.current:
@@ -593,7 +592,7 @@ class Layout(BaseLayout):
         # attribute). Store it in a dedicated key the client recognizes. It has
         # to be assigned, not defaulted, because the value advances as the
         # server catches up with the keystrokes the client has sent.
-        attrs["_reactpy_ack_seq"] = ack_seq_by_event
+        attrs["_reactpy_ack_seq"] = ack_seq_by_event  # type: ignore[reportGeneralTypeIssues]
         for event, seq in ack_seq_by_event.items():
             # This render is what carries the acknowledgement, so a later
             # request to deliver the same one has nothing left to ask for.
