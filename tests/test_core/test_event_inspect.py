@@ -16,7 +16,7 @@ from reactpy.core._event_inspect import (
     _closure_lookup,
     _constant_ints_by_name,
     _function_arg_defaults,
-    _resolve_debounce_value,
+    _resolve_stored_value,
     inspect_event_handler,
 )
 
@@ -213,23 +213,23 @@ def test_constant_ints_by_name_returns_empty():
     assert _constant_ints_by_name(handler.__code__) == {}
 
 
-def test_resolve_debounce_value_returns_none_for_empty_store_index():
+def test_resolve_stored_value_returns_none_for_empty_store_index():
     # With an empty instruction list and a store index of 0, the defensive
-    # guard at the top of ``_resolve_debounce_value`` triggers.
-    assert _resolve_debounce_value([], 0, "event", {}, {}, {}) is None
+    # guard at the top of ``_resolve_stored_value`` triggers.
+    assert _resolve_stored_value([], 0, "event", {}, {}, {}) is None
 
 
-def test_resolve_debounce_value_returns_none_when_store_index_below_offset():
+def test_resolve_stored_value_returns_none_when_store_index_below_offset():
     # The defensive ``store_index < _STORE_ATTR_VALUE_OFFSET`` guard.
     # With a single preceding instruction and a store index of 1, the guard
     # at the bottom of the function triggers.
     instructions = _build_fake_instructions([("LOAD_FAST", "event")])
     # The single LOAD_FAST sits at index 0; index 1 corresponds to "STORE_ATTR"
     # which is below the offset of 2.
-    assert _resolve_debounce_value(instructions, 1, "event", {}, {}, {}) is None
+    assert _resolve_stored_value(instructions, 1, "event", {}, {}, {}) is None
 
 
-def test_resolve_debounce_value_superinstruction_with_non_event_target_returns_none():
+def test_resolve_stored_value_superinstruction_with_non_event_target_returns_none():
     """When the previous instruction IS a
     ``LOAD_FAST_LOAD_FAST``/``LOAD_FAST_BORROW_LOAD_FAST_BORROW``
     superinstruction but the fused target name does not match
@@ -246,12 +246,10 @@ def test_resolve_debounce_value_superinstruction_with_non_event_target_returns_n
     instructions = [val, prev]
     # ``store_index`` of 2 represents the (hypothetical) ``STORE_ATTR`` slot
     # after the two preceding instructions.
-    assert (
-        _resolve_debounce_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
-    )
+    assert _resolve_stored_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
 
 
-def test_resolve_debounce_value_target_opname_not_allowed_returns_none():
+def test_resolve_stored_value_target_opname_not_allowed_returns_none():
     """When the target instruction's ``opname`` is not one of the allowed
     ``LOAD_FAST`` family members, the resolver must ``return None``.
 
@@ -263,12 +261,10 @@ def test_resolve_debounce_value_target_opname_not_allowed_returns_none():
     val = types.SimpleNamespace(opname="LOAD_FAST_BORROW", argval="ms")
     prev = types.SimpleNamespace(opname="LOAD_GLOBAL", argval="event")
     instructions = [val, prev]
-    assert (
-        _resolve_debounce_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
-    )
+    assert _resolve_stored_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
 
 
-def test_resolve_debounce_value_target_argval_mismatch_returns_none():
+def test_resolve_stored_value_target_argval_mismatch_returns_none():
     """When the target ``LOAD_FAST_BORROW`` references a local that isn't
     the event argument, the resolver must ``return None``.
 
@@ -279,12 +275,10 @@ def test_resolve_debounce_value_target_argval_mismatch_returns_none():
     val = types.SimpleNamespace(opname="LOAD_FAST_BORROW", argval="ms")
     prev = types.SimpleNamespace(opname="LOAD_FAST_BORROW", argval="other")
     instructions = [val, prev]
-    assert (
-        _resolve_debounce_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
-    )
+    assert _resolve_stored_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
 
 
-def test_resolve_debounce_value_val_instr_load_fast_borrow_returns_default():
+def test_resolve_stored_value_val_instr_load_fast_borrow_returns_default():
     """When the value being stored is loaded via ``LOAD_FAST``/
     ``LOAD_FAST_BORROW`` (a local variable that's an argument), the
     resolver looks up that local in ``arg_defaults`` and returns the
@@ -300,11 +294,11 @@ def test_resolve_debounce_value_val_instr_load_fast_borrow_returns_default():
     prev = types.SimpleNamespace(opname="LOAD_FAST_BORROW", argval="event")
     instructions = [val, prev]
     assert (
-        _resolve_debounce_value(instructions, 2, "event", {"delay": 350}, {}, {}) == 350
+        _resolve_stored_value(instructions, 2, "event", {"delay": 350}, {}, {}) == 350
     )
 
 
-def test_resolve_debounce_value_superinstruction_match_returns_default():
+def test_resolve_stored_value_superinstruction_match_returns_default():
     """When the previous instruction IS a
     ``LOAD_FAST_LOAD_FAST`` / ``LOAD_FAST_BORROW_LOAD_FAST_BORROW``
     superinstruction whose fused ``(value_name, target_name)`` tuple is
@@ -322,7 +316,7 @@ def test_resolve_debounce_value_superinstruction_match_returns_default():
     )
     val = types.SimpleNamespace(opname="LOAD_CONST", argval=1)  # not used here
     instructions = [val, prev]
-    assert _resolve_debounce_value(instructions, 2, "event", {"ms": 800}, {}, {}) == 800
+    assert _resolve_stored_value(instructions, 2, "event", {"ms": 800}, {}, {}) == 800
 
 
 def test_inspect_event_handler_handles_fused_superinstruction():
@@ -354,8 +348,9 @@ def test_inspect_event_handler_handles_fused_superinstruction():
     with patch.object(dis, "get_instructions", return_value=fake_list):
         result = inspect_event_handler(handler)
 
-    # Expected: (prevent_default=False, stop_propagation=False, debounce=400).
-    assert result == (False, False, 400)
+    # Expected: (prevent_default=False, stop_propagation=False, debounce=400,
+    # event_proxy=None).
+    assert result == (False, False, 400, None)
 
 
 # ---------------------------------------------------------------------------
@@ -397,9 +392,9 @@ def test_inspect_event_handler_with_borrow_superinstruction():
     not _PYTHON_314_OR_NEWER,
     reason="LOAD_FAST_BORROW_LOAD_FAST_BORROW only exists in CPython 3.14+",
 )
-def test_resolve_debounce_value_with_borrow_superinstruction_non_event_target():
+def test_resolve_stored_value_with_borrow_superinstruction_non_event_target():
     """When the fused superinstruction's target name does not match the event
-    argument, ``_resolve_debounce_value`` falls through to ``return None``."""
+    argument, ``_resolve_stored_value`` falls through to ``return None``."""
 
     # We can't easily hand-craft bytecode on 3.14+, so test via the public
     # API by using a handler that loads two unrelated locals before the
@@ -474,5 +469,117 @@ def test_a_callable_whose_call_carries_no_bytecode_reports_nothing():
 
     handler = Talkative()
 
-    assert inspect_event_handler(handler) == (False, False, None)
+    assert inspect_event_handler(handler) == (False, False, None, None)
     assert _function_arg_defaults(handler) == {}
+
+
+# ---------------------------------------------------------------------------
+# ``event.eventProxy`` detection
+# ---------------------------------------------------------------------------
+
+
+def test_detect_event_proxy_being_turned_off():
+    """The point of the flag: a handler which will not look behind the event"""
+
+    async def handler(event):
+        event.eventProxy = False
+
+    assert inspect_event_handler(handler) == (False, False, None, False)
+
+
+def test_detect_event_proxy_being_turned_on():
+    async def handler(event):
+        event.eventProxy = True
+
+    assert inspect_event_handler(handler) == (False, False, None, True)
+
+
+def test_detect_event_proxy_alongside_everything_else():
+    async def handler(event):
+        event.preventDefault()
+        event.stopPropagation()
+        event.debounce = 150
+        event.eventProxy = False
+
+    assert inspect_event_handler(handler) == (True, True, 150, False)
+
+
+def test_detect_event_proxy_from_positional_default():
+    async def handler(event, keep=True):
+        event.eventProxy = keep
+
+    assert inspect_event_handler(handler) == (False, False, None, True)
+
+
+def test_detect_event_proxy_from_keyword_only_default():
+    async def handler(event, *, keep=False):
+        event.eventProxy = keep
+
+    assert inspect_event_handler(handler) == (False, False, None, False)
+
+
+def test_detect_event_proxy_from_closure():
+    def make(keep):
+        async def handler(event):
+            event.eventProxy = keep
+
+        return handler
+
+    assert inspect_event_handler(make(True)) == (False, False, None, True)
+
+
+def test_detect_event_proxy_from_closure_among_multiple():
+    def make(unused, keep):
+        async def handler(event):
+            event.eventProxy = keep
+
+        return handler
+
+    assert inspect_event_handler(make("x", False)) == (False, False, None, False)
+
+
+def test_no_detect_event_proxy_when_a_local_var_is_used():
+    async def handler(event):
+        keep = False
+        event.eventProxy = keep
+
+    assert inspect_event_handler(handler) == (False, False, None, None)
+
+
+def test_no_detect_event_proxy_when_an_unresolvable_fallback_is_used():
+    # An unresolvable branch makes the whole assignment ambiguous, so the handler
+    # is left without an opinion rather than a guessed one.
+    async def handler(event):
+        keep = False
+        if keep:
+            event.eventProxy = keep
+        else:
+            event.eventProxy = True
+
+    assert inspect_event_handler(handler) == (False, False, None, None)
+
+
+def test_no_detect_event_proxy_from_a_number():
+    """A number is not a flag - only ``True`` and ``False`` answer for it"""
+
+    async def handler(event):
+        event.eventProxy = 1
+
+    assert inspect_event_handler(handler) == (False, False, None, None)
+
+
+def test_no_detect_event_proxy_when_the_target_is_not_the_event():
+    async def handler(other):
+        event = other
+        event.eventProxy = False
+
+    assert inspect_event_handler(handler) == (False, False, None, None)
+
+
+def test_no_detect_debounce_from_a_bool():
+    """The reverse holds too: a bool is not a debounce window"""
+
+    async def handler(event):
+        event.debounce = False
+
+    assert inspect_event_handler(handler) == (False, False, None, None)

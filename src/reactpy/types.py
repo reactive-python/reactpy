@@ -1016,6 +1016,12 @@ class BaseEventHandler:
     continuously, such as ``onScroll``, because keeping an object alive and pruning it
     costs the browser work on every event.
 
+    A handler can also decide for itself by assigning ``event.eventProxy = False`` or
+    ``event.eventProxy = True`` in its own body. That assignment is read out of the
+    handler's bytecode when the :class:`BaseEventHandler` is made, the same way
+    ``event.debounce = <milliseconds>`` is, and it wins over whatever this attribute
+    was set to.
+
     Whatever this says, a handler is only ever given live access for data the client
     actually marked as something it is still holding. Otherwise it receives the
     :class:`~reactpy.types.Event` snapshot, and awaiting a property of it raises

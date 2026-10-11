@@ -160,12 +160,13 @@ same :class:`~reactpy.types.Event` arrives without any backing and awaiting one 
 properties raises :class:`~reactpy._event_proxy.EventProxyUnavailable`.
 
 This option is only the default for handlers which do not decide for themselves. An
-individual handler can opt out with ``EventHandler(fn, event_proxy=False)`` - worth
-doing for anything bound to an event which fires continuously, such as ``onScroll``,
-since registering and pruning a kept-alive object costs the browser work on every
-event - or insist on live access with ``event_proxy=True`` even while this option is
-off. Switching this off therefore does not override a handler which explicitly asked
-for live access; it only stops asking on every handler's behalf.
+individual handler can opt out with ``EventHandler(fn, event_proxy=False)``, or by
+assigning ``event.eventProxy = False`` inside its own body - worth doing for anything
+bound to an event which fires continuously, such as ``onScroll``, since registering and
+pruning a kept-alive object costs the browser work on every event - or insist on live
+access with ``event_proxy=True`` even while this option is off. Switching this off
+therefore does not override a handler which explicitly asked for live access; it only
+stops asking on every handler's behalf.
 
 Every event handler is a coroutine and live values are always awaited, so nothing here
 blocks the event loop.

@@ -135,8 +135,10 @@ def event(
             Also block any other listener of the same event in the browser.
         event_proxy:
             Keep the browser object this event fired from alive so the handler can
-            read past the snapshot which arrived with the event. See
-            :attr:`BaseEventHandler.event_proxy`.
+            read past the snapshot which arrived with the event. The handler can say
+            so itself as well by assigning ``event.eventProxy = True`` or
+            ``event.eventProxy = False`` in its own body, which takes precedence over
+            what is given here. See :attr:`BaseEventHandler.event_proxy`.
     """
 
     def setup(function: Callable[..., Awaitable[Any]]) -> EventHandler:
@@ -177,7 +179,9 @@ class EventHandler(BaseEventHandler):
             Also block any other listener of the same event in the browser.
         event_proxy:
             Keep the browser object this event fired from alive so the handler can
-            read past the snapshot which arrived with the event. See
+            read past the snapshot which arrived with the event. Assigning
+            ``event.eventProxy = <bool>`` inside the handler is detected the same way,
+            and takes precedence over what is given here. See
             :attr:`BaseEventHandler.event_proxy`.
     """
 
@@ -202,11 +206,14 @@ class EventHandler(BaseEventHandler):
         self.target = target
         self.event_proxy = event_proxy
 
-        # Check if our `preventDefault` or `stopPropagation` methods were called by
-        # inspecting the bytecode of the handler the user actually wrote
-        found_prevent_default, found_stop_propagation, found_debounce = (
-            inspect_event_handler(_unwrap_handler(function))
-        )
+        # Check what the handler says about the event it is handed by inspecting the
+        # bytecode of the function the user actually wrote
+        (
+            found_prevent_default,
+            found_stop_propagation,
+            found_debounce,
+            found_event_proxy,
+        ) = inspect_event_handler(_unwrap_handler(function))
 
         if found_prevent_default:
             self.prevent_default = True
@@ -216,6 +223,8 @@ class EventHandler(BaseEventHandler):
                 self.stop_immediate_propagation = True
         if found_debounce is not None:
             self.debounce = found_debounce
+        if found_event_proxy is not None:
+            self.event_proxy = found_event_proxy
 
     __hash__ = None  # type: ignore
 

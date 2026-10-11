@@ -583,6 +583,46 @@ def test_no_detect():
     assert eh.prevent_default is False
     assert eh.stop_propagation is False
     assert eh.debounce is None
+    assert eh.event_proxy is None
+
+
+def test_detect_event_proxy_being_refused():
+    async def handler(event: Event):
+        event.eventProxy = False
+
+    assert EventHandler(handler).event_proxy is False
+
+
+def test_detect_event_proxy_being_insisted_on():
+    async def handler(event: Event):
+        event.eventProxy = True
+
+    assert EventHandler(handler).event_proxy is True
+
+
+def test_detected_event_proxy_overrides_the_stated_preference():
+    """What the handler says about itself is taken over what was said about it"""
+
+    async def handler(event: Event):
+        event.eventProxy = False
+
+    assert EventHandler(handler, event_proxy=True).event_proxy is False
+
+
+def test_detect_event_proxy_when_handler_is_partial():
+    async def handler(event: Event, *, extra_param):
+        event.eventProxy = False
+
+    eh = EventHandler(partial(handler, extra_param="extra_value"))
+    assert eh.event_proxy is False
+
+
+def test_event_decorator_detects_event_proxy():
+    @event
+    async def handler(event: Event):
+        event.eventProxy = False
+
+    assert handler.event_proxy is False
 
 
 def test_event_decorator_accepts_throttle():

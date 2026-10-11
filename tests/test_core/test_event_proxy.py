@@ -28,6 +28,7 @@ from reactpy._event_proxy import (
     serialize_argument,
 )
 from reactpy.config import (
+    REACTPY_ENABLE_EVENT_PROXY,
     REACTPY_EVENT_PROXY_MAX_TIMEOUTS,
     REACTPY_EVENT_PROXY_TIMEOUT,
 )
@@ -665,6 +666,66 @@ async def test_stop_immediate_propagation_is_detected_and_forwarded():
         handler = event_handlers_of(model)["onClick"]
         assert handler["stopPropagation"] is True
         assert handler["stopImmediatePropagation"] is True
+
+
+async def test_a_handler_which_refuses_live_access_in_its_own_body():
+    """Saying it inside the handler counts as saying it on the handler
+
+    ``event.eventProxy = False`` is read out of the handler the same way
+    ``event.debounce = <milliseconds>`` is, so the spec which goes out to the client
+    already knows this one will not look behind the event it is handed - and nothing is
+    remembered about an event nobody reads past.
+    """
+    received: dict[str, Any] = {}
+
+    async def on_click(event_object):
+        event_object.eventProxy = False
+        received["event"] = event_object
+
+    @component
+    def MyComponent():
+        return reactpy.html.div({"onClick": on_click})
+
+    _backend, client = make_client(make_objects())
+
+    async with Layout(MyComponent()) as layout:
+        connect(layout, client)
+        model = (await layout.render())["model"]
+        handler_spec = event_handlers_of(model)["onClick"]
+        assert "eventProxy" not in handler_spec, (
+            "a handler which refused live access in its own body was still reported "
+            "as wanting it"
+        )
+
+        await layout.deliver(
+            event_message(
+                handler_spec["target"],
+                {EVENT_MARKER_KEY: {"id": "evt"}, "type": "click"},
+            )
+        )
+        await poll(lambda: "event" in received)
+
+    assert type(received["event"]) is Event
+    assert client.requests == [], "the browser was asked about an event nobody wanted"
+
+
+async def test_a_handler_which_asks_for_live_access_in_its_own_body(monkeypatch):
+    """The other way round works too, even while the global switch is off"""
+    monkeypatch.setattr(REACTPY_ENABLE_EVENT_PROXY, "current", False)
+
+    async def on_click(event_object):
+        event_object.eventProxy = True
+
+    @component
+    def MyComponent():
+        return reactpy.html.div({"onClick": on_click})
+
+    async with Layout(MyComponent()) as layout:
+        model = (await layout.render())["model"]
+        handler_spec = event_handlers_of(model)["onClick"]
+        assert handler_spec["eventProxy"] is True, (
+            "the handler asked for live access and the client was never told"
+        )
 
 
 # -- what a proxy says about itself -----------------------------------------

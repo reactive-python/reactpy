@@ -1,5 +1,5 @@
 """
-In order to retain a JavaScript-like event handler API, ReactPy allows users to configure event handlers with `event.debounce = <milliseconds>`.
+In order to retain a JavaScript-like event handler API, ReactPy allows users to configure event handlers with `event.debounce = <milliseconds>` or `event.eventProxy = <bool>`.
 Implementing this syntax necessitates inspecting the bytecode of event handler functions.
 """
 
@@ -17,6 +17,16 @@ _LOAD_FAST_BORROW_PAIR_SIZE = 2
 # Number of slots back from ``STORE_ATTR`` where the value expression lives
 # for the standard ``target = value; obj.attr = target`` shape.
 _STORE_ATTR_VALUE_OFFSET = 2
+
+
+def _is_plain_int(value: Any) -> bool:
+    """Whether ``value`` is an ``int`` which is not a ``bool``"""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _is_bool(value: Any) -> bool:
+    """Whether ``value`` is a ``bool`` rather than a number dressed up as one"""
+    return isinstance(value, bool)
 
 
 def _handler_code(func: Callable) -> CodeType | None:
@@ -47,8 +57,10 @@ def _event_arg_name(func: Callable, code: CodeType | None) -> str | None:
     return code.co_varnames[offset]
 
 
-def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]:
-    """Detect ``preventDefault``/``stopPropagation``/``debounce`` usage.
+def inspect_event_handler(
+    func: Callable,
+) -> tuple[bool, bool | str, int | None, bool | None]:
+    """Detect ``preventDefault``/``stopPropagation``/``debounce``/``eventProxy`` usage.
 
     Walks the bytecode of ``func`` looking for the patterns:
 
@@ -56,52 +68,61 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]
     - ``event.stopPropagation()`` -> ``stop_propagation = True``
     - ``event.stopImmediatePropagation()`` -> ``stop_propagation = "immediate"``
     - ``event.debounce = <int>``  -> ``debounce = <int>``
+    - ``event.eventProxy = <bool>`` -> ``event_proxy = <bool>``
 
-    The ``debounce`` value can come from any of the following:
+    The value behind ``debounce`` and ``eventProxy`` can come from any of the
+    following:
 
-    - An integer literal (``LOAD_CONST`` / ``LOAD_SMALL_INT``)
-    - A function argument with a numeric default
-    - A closure variable whose captured value is numeric
+    - A literal (``LOAD_CONST`` / ``LOAD_SMALL_INT``)
+    - A function argument with a matching default
+    - A closure variable whose captured value matches
     - An integer constant in ``code.co_consts`` (best-effort, covers
       certain compile-time-folded module-level names)
 
     Module-level globals looked up via ``LOAD_GLOBAL``/``LOAD_NAME`` cannot
     be resolved from the function alone, so users must pass
-    ``debounce=...`` explicitly in that case.
+    ``debounce=...``/``event_proxy=...`` explicitly in that case.
 
-    Returns ``(prevent_default, stop_propagation, debounce)``, where
+    Returns ``(prevent_default, stop_propagation, debounce, event_proxy)``, where
     ``stop_propagation`` is the string ``"immediate"`` if the handler asked to stop
-    *other listeners* as well.
+    *other listeners* as well, and ``event_proxy`` is :data:`None` for a handler
+    which never said anything about reading past the event it was handed.
     """
     prevent_default = False
     stop_propagation = False
     stop_immediate_propagation = False
     debounce: int | None = None
+    event_proxy: bool | None = None
 
     code = _handler_code(func)
     event_arg_name = _event_arg_name(func, code)
     if code is None or event_arg_name is None:
         # Nothing to walk, or nothing to walk from
-        return prevent_default, stop_propagation, debounce
+        return prevent_default, stop_propagation, debounce, event_proxy
 
     names = code.co_names
     check_prevent_default = "preventDefault" in names
     check_stop_propagation = "stopPropagation" in names
     check_stop_immediate_propagation = "stopImmediatePropagation" in names
     check_debounce = "debounce" in names
+    check_event_proxy = "eventProxy" in names
 
     if not (
         check_prevent_default
         or check_stop_propagation
         or check_stop_immediate_propagation
         or check_debounce
+        or check_event_proxy
     ):
-        return prevent_default, stop_propagation, debounce
+        return prevent_default, stop_propagation, debounce, event_proxy
 
     instructions = list(dis.get_instructions(code))
     arg_defaults = _function_arg_defaults(func)
     closure_by_name = _closure_lookup(func)
     constant_ints_by_name = _constant_ints_by_name(code)
+    # The same lookups again, keeping only the ``bool`` values ``eventProxy`` accepts
+    arg_flags = _function_arg_defaults(func, _is_bool)
+    closure_flags = _closure_lookup(func, _is_bool)
 
     last_was_event = False
     # When the function assigns ``event.debounce`` in multiple branches we
@@ -109,6 +130,7 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]
     # unresolvable value (e.g. a local variable) we treat the whole detection
     # as ambiguous and return ``None`` rather than picking a fallback literal.
     debounce_tainted = False
+    event_proxy_tainted = False
 
     for index, instr in enumerate(instructions):
         if (
@@ -155,7 +177,7 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]
             and instr.opname == "STORE_ATTR"
             and instr.argval == "debounce"
         ):
-            candidate = _resolve_debounce_value(
+            candidate = _resolve_stored_value(
                 instructions,
                 index,
                 event_arg_name,
@@ -175,12 +197,38 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]
                 debounce_tainted = True
                 debounce = None
                 check_debounce = False
+        elif (
+            check_event_proxy
+            and instr.opname == "STORE_ATTR"
+            and instr.argval == "eventProxy"
+        ):
+            candidate = _resolve_stored_value(
+                instructions,
+                index,
+                event_arg_name,
+                arg_flags,
+                closure_flags,
+                {},
+                is_value=_is_bool,
+            )
+            if isinstance(candidate, bool):
+                if not event_proxy_tainted:
+                    event_proxy = candidate
+                    check_event_proxy = False
+            elif candidate is None:
+                # Same as ``debounce`` above: a value we cannot settle from the
+                # bytecode alone leaves the handler without an opinion, rather
+                # than a guessed one.
+                event_proxy_tainted = True
+                event_proxy = None
+                check_event_proxy = False
 
         if not (
             check_prevent_default
             or check_stop_propagation
             or check_stop_immediate_propagation
             or check_debounce
+            or check_event_proxy
         ):
             break
 
@@ -190,17 +238,22 @@ def inspect_event_handler(func: Callable) -> tuple[bool, bool | str, int | None]
         prevent_default,
         "immediate" if stop_immediate_propagation else stop_propagation,
         debounce,
+        event_proxy,
     )
 
 
-def _function_arg_defaults(func: Callable) -> dict[str, int]:
-    """Return ``{arg_name: default}`` for numeric defaults of ``func``.
+def _function_arg_defaults(
+    func: Callable,
+    is_value: Callable[[Any], bool] = _is_plain_int,
+) -> dict[str, Any]:
+    """Return ``{arg_name: default}`` for the defaults of ``func`` which ``is_value``
+    accepts - plain integers unless another shape is asked for.
 
     Includes positional defaults (``__defaults__``) and keyword-only defaults
     (``__kwdefaults__``).
     """
     code = _handler_code(func)
-    result: dict[str, int] = {}
+    result: dict[str, Any] = {}
     if code is None:
         return result
 
@@ -210,27 +263,32 @@ def _function_arg_defaults(func: Callable) -> dict[str, int]:
         n_defaults = len(positional_defaults)
         first_default_idx = argcount - n_defaults
         for offset, value in enumerate(positional_defaults):
-            if not (isinstance(value, int) and not isinstance(value, bool)):
+            if not is_value(value):
                 continue
             name = code.co_varnames[first_default_idx + offset]
             result[name] = value
 
     kwdefaults = getattr(func, "__kwdefaults__", None) or {}
     for name, value in kwdefaults.items():
-        if isinstance(value, int) and not isinstance(value, bool):
+        if is_value(value):
             result[name] = value
 
     return result
 
 
-def _closure_lookup(func: Callable) -> dict[str, int]:
-    """Return ``{name: captured_value}`` for numeric closure variables on ``func``."""
+def _closure_lookup(
+    func: Callable,
+    is_value: Callable[[Any], bool] = _is_plain_int,
+) -> dict[str, Any]:
+    """Return ``{name: captured_value}`` for the closure variables of ``func`` which
+    ``is_value`` accepts - plain integers unless another shape is asked for.
+    """
     closure = getattr(func, "__closure__", None)
     if not closure:
         return {}
     code = _handler_code(func)
     freevars = getattr(code, "co_freevars", ()) if code is not None else ()
-    result: dict[str, int] = {}
+    result: dict[str, Any] = {}
     for idx, cell in enumerate(closure):
         if idx >= len(freevars):
             break
@@ -238,7 +296,7 @@ def _closure_lookup(func: Callable) -> dict[str, int]:
             value = cell.cell_contents
         except ValueError:
             continue
-        if isinstance(value, int) and not isinstance(value, bool):
+        if is_value(value):
             result[freevars[idx]] = value
     return result
 
@@ -255,17 +313,19 @@ def _constant_ints_by_name(code: CodeType) -> dict[str, int]:
     return {}
 
 
-def _resolve_debounce_value(
+def _resolve_stored_value(
     instructions: list[dis.Instruction],
     store_index: int,
     event_arg_name: str,
-    arg_defaults: dict[str, int],
-    closure_by_name: dict[str, int],
-    constant_ints_by_name: dict[str, int],
+    values_by_name: dict[str, Any],
+    closure_by_name: dict[str, Any],
+    constant_ints_by_name: dict[str, Any],
+    is_value: Callable[[Any], bool] = _is_plain_int,
 ) -> Any:
-    """Inspect the bytecode immediately before ``STORE_ATTR debounce`` to find
-    the value being stored. Returns the resolved value, ``None`` when the
-    value cannot be determined.
+    """Inspect the bytecode immediately before ``STORE_ATTR`` to find the value being
+    stored on the event, where ``values_by_name`` and ``closure_by_name`` hold the
+    names whose values ``is_value`` accepts. Returns the resolved value, ``None`` when
+    the value cannot be determined.
     """
     if store_index < 1:
         return None
@@ -282,7 +342,7 @@ def _resolve_debounce_value(
         if isinstance(names, Iterable) and not isinstance(names, str):
             names = list(names)
             if len(names) == _LOAD_FAST_BORROW_PAIR_SIZE and names[1] == event_arg_name:
-                return arg_defaults.get(names[0])
+                return values_by_name.get(names[0])
         return None
 
     # Otherwise the value is loaded by the instruction two slots back, with
@@ -298,9 +358,9 @@ def _resolve_debounce_value(
         "LOAD_FAST_BORROW",
         # CPython 3.13+ may fuse two ``LOAD_FAST`` instructions into
         # ``LOAD_FAST_LOAD_FAST`` whose argval is ``(value_name, target_name)``.
-        # The detector above already covers this case for debounce values,
-        # but the standalone form can also appear if the value isn't a
-        # default and the event is loaded separately.
+        # The detector above already covers this case whenever the value comes
+        # from a default, but the standalone form can also appear if the value
+        # isn't a default and the event is loaded separately.
         "LOAD_FAST_LOAD_FAST",
     ):
         return None
@@ -309,12 +369,12 @@ def _resolve_debounce_value(
 
     if val_instr.opname in ("LOAD_CONST", "LOAD_SMALL_INT"):
         value = val_instr.argval
-        if isinstance(value, int) and not isinstance(value, bool):
+        if is_value(value):
             return value
         return None
 
     if val_instr.opname in ("LOAD_FAST", "LOAD_FAST_BORROW"):
-        return arg_defaults.get(val_instr.argval)
+        return values_by_name.get(val_instr.argval)
 
     if val_instr.opname == "LOAD_DEREF":
         return closure_by_name.get(val_instr.argval)
