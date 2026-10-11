@@ -66,7 +66,7 @@ Aren't Enough>`:
     -    index = 0
     +    index, set_index = use_state
 
-         def handle_click(event):
+         async def handle_click(event):
     -        index = index + 1
     +        set_index(index + 1)
 
@@ -78,7 +78,7 @@ After making those changes we should get:
 
         index, set_index = use_state(0)
 
-        def handle_click(event):
+        async def handle_click(event):
             set_index(index + 1)
 
 We'll talk more about what this is doing :ref:`shortly <your first hook>`, but for

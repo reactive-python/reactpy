@@ -85,12 +85,11 @@ want to create a generic ``Button`` component that can be used for a variety of 
 Async Event Handlers
 --------------------
 
-Sometimes event handlers need to execute asynchronous tasks when they are triggered.
-Behind the scenes, ReactPy is running an :mod:`asyncio` event loop for just this purpose.
-By defining your event handler as an asynchronous function instead of a normal
-synchronous one. In the layout below we sleep for several seconds before printing out a
-message in the first button. However, because the event handler is asynchronous, the
-handler for the second button is still able to respond:
+Sometimes event handlers need to await something - a trip to the browser for the details
+of an event, or any other asynchronous task. Behind the scenes, ReactPy is running an
+:mod:`asyncio` event loop for just this purpose. In the layout below we sleep for several
+seconds before printing out a message in the first button. However, because that handler
+spends its time awaiting, the handler for the second button is still able to respond:
 
 .. reactpy:: _examples/button_async_handlers
 

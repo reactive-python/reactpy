@@ -57,8 +57,9 @@ Section 1: Responding to Events
 -------------------------------
 
 ReactPy lets you add event handlers to your parts of the interface. This means that you can
-define synchronous or asynchronous functions that are triggered when a particular user
-interaction occurs like clicking, hovering, focusing on form inputs, and more.
+define coroutine functions (declared with ``async def``) that are triggered when a
+particular user interaction occurs like clicking, hovering, focusing on form inputs, and
+more.
 
 .. reactpy:: responding-to-events/_examples/button_prints_message
 
@@ -158,9 +159,8 @@ As we saw in an earlier example, :ref:`setting state triggers renders`. In other
 changes to state only take effect in the next render, not in the current one. Further,
 changes to state are batched, calling a particular state setter 3 times won't trigger 3
 renders, it will only trigger 1. This means that multiple state assignments are batched
-- so long as the event handler is synchronous (i.e. the event handler is not an
-``async`` function), ReactPy waits until all the code in an event handler has run before
-processing state and starting the next render:
+- until an event handler awaits something, ReactPy waits until all the code in that
+handler has run before processing state and starting the next render:
 
 .. reactpy:: multiple-state-updates/_examples/set_color_3_times
 

@@ -22,7 +22,7 @@ Don't forget to remove deprecated code on each major release!
 - Event functions can now call `event.preventDefault()` and `event.stopPropagation()` methods directly on the event data object, rather than using the `@event` decorator.
 - Event data now supports accessing properties via dot notation (ex. `event.target.value`).
 - Added support for partial functions in EventHandler
-- Added `reactpy.types.Event` to provide type hints for the standard `data` function argument (for example `def on_click(event: Event): ...`).
+- Added `reactpy.types.Event` to provide type hints for the standard `data` function argument (for example `async def on_click(event: Event): ...`).
 - Added `asgi` and `jinja` installation extras (for example `pip install reactpy[asgi, jinja]`).
 - Added `reactpy.executors.asgi.ReactPy` that can be used to run ReactPy in standalone mode via ASGI.
 - Added `reactpy.executors.asgi.ReactPyCsr` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
@@ -40,8 +40,8 @@ Don't forget to remove deprecated code on each major release!
 - Events now support `debounce` and `throttle`, configurable per event via `event.debounce = <milliseconds>` and `EventHandler(fn, throttle=<milliseconds>)` respectively.
     - `debounce` waits until activity stops, then fires once. Default is 200 ms on `input`/`select`/`textarea`, 0 ms elsewhere.
     - `throttle` caps the rate how often an event is allowed to execute. No default; opt in per event.
-- Added a live event proxy which lets event handlers read properties from, and call methods on, the browser objects which triggered them rather than being limited to the snapshot sent along with the event. Handlers can `await event.target.value` or `await event.target.focus()` when asynchronous, or simply use `event.target.value` and `event.target.focus()` when synchronous. The new `reactpy.types.AsyncEvent` and `reactpy.types.SyncEvent` types describe these objects for editors and type checkers.
-    - Live access is opt-in. Ask for it on a single handler with `EventHandler(fn, event_proxy=True)` or `@event(event_proxy=True)`, or for every handler with `reactpy.config.REACTPY_ENABLE_EVENT_PROXY`. Until the server has asked, the browser holds nothing back and a handler is simply handed the plain `reactpy.types.Event` snapshot which arrived with the event - so an application which never reaches into the page pays nothing for the possibility. Reading something the client did not send up front costs a round trip to the browser, so synchronous handlers which do are run in a worker thread where they are free to block.
+- Added a live event proxy which lets event handlers read properties from, and call methods on, the browser objects which triggered them rather than being limited to the snapshot sent along with the event. A handler awaits what it needs (`await event.target.value`, `await event.target.focus()`), and reading something the client did not send up front costs a single round trip to the browser. What arrives with the event is a `reactpy.types.Event` snapshot; whatever the handler reaches past is an `EventProxy` describing where in the browser to look for it.
+    - Live access is on by default via `reactpy.config.REACTPY_ENABLE_EVENT_PROXY`, and can be settled per handler with `EventHandler(fn, event_proxy=False)` for one which knows it will not look behind the event, or `event_proxy=True` for one which must have it even while that option is off. The browser registers only the events of handlers which asked to read them, so dispatching an event nobody looks behind costs the page nothing to remember.
     - Unanswered requests are bounded by `reactpy.config.REACTPY_EVENT_PROXY_TIMEOUT`, `reactpy.config.REACTPY_EVENT_PROXY_MAX_TIMEOUTS`, and `reactpy.config.REACTPY_EVENT_PROXY_MAX_DEPTH`.
 
 ### Changed
@@ -67,6 +67,7 @@ Don't forget to remove deprecated code on each major release!
 - `reactpy.types.VdomDictConstructor` has been renamed to `reactpy.types.VdomConstructor`.
 - `REACTPY_ASYNC_RENDERING` can now de-duplicate renders where necessary.
 - `REACTPY_ASYNC_RENDERING` is now defaulted to `True` for up to 40x performance improvements in environments with high concurrency.
+- Event handlers must be coroutines. Whatever is handed to `EventHandler`, `@event`, or an `on_*` attribute has to be awaitable, and anything which is not is refused with a `TypeError` as it is made into a handler. This is what makes it safe for a handler to read live event data without stalling the layout, and to call `set_state()` while it waits.
 
 ### Deprecated
 

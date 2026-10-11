@@ -17,27 +17,27 @@ This is why, in the example below, even though it might seem like clicking the
 
 .. reactpy:: ../state-as-a-snapshot/_examples/set_counter_3_times
 
-The reason this happens is because, so long as the event handler is synchronous (i.e.
-the event handler is not an ``async`` function), ReactPy waits until all the code in an
-event handler has run before processing state and starting the next render. Thus, it's
-the last call to a given state setter that matters. In the example below, even though we
-set the color of the button to ``"orange"`` and then ``"pink"`` before ``"blue"``,
-the color does not quickly flash orange and pink before blue - it always remains blue:
+The reason this happens is because, until an event handler awaits something, ReactPy
+waits until all the code in that handler has run before processing state and starting the
+next render. Thus, it's the last call to a given state setter that matters. In the example
+below, even though we set the color of the button to ``"orange"`` and then ``"pink"``
+before ``"blue"``, the color does not quickly flash orange and pink before blue - it
+always remains blue:
 
 .. reactpy:: _examples/set_color_3_times
 
 This behavior let's you make multiple state changes without triggering unnecessary
 renders or renders with inconsistent state where only some of the variables have been
-updated. With that said, it also means that the UI won't change until after synchronous
-handlers have finished running.
+updated. With that said, it also means that the UI won't change until the handler which
+changed state has finished, or paused to await something.
 
 .. note::
 
-    For asynchronous event handlers, ReactPy will not render until you ``await`` something.
-    As we saw in :ref:`prior examples <State And Delayed Reactions>`, if you introduce
-    an asynchronous delay to an event handler after changing state, renders may take
+    ReactPy will not render until an event handler ``await``s something. As we saw in
+    :ref:`prior examples <State And Delayed Reactions>`, if you introduce an
+    asynchronous delay to an event handler after changing state, renders may take
     place before the remainder of the event handler completes. However, state variables
-    within handlers, even async ones, always remains static.
+    within handlers always remain static.
 
 This behavior of ReactPy to "batch" state changes that take place inside a single event
 handler, do not extend across event handlers. In other words, distinct events will
