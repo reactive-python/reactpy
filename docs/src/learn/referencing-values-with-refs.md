@@ -55,7 +55,9 @@ Note that **the component doesn't re-render with every increment.** Like state, 
 
 !!! tip "Pass the initial value"
 
-    `#!python use_ref()` accepts the initial value as an optional argument, but unlike `useRef()` in React, calling it with no arguments leaves `#!python current` **unset** rather than set to `#!python None`. The first read then raises `#!python AttributeError: 'Ref' object has no attribute 'current'`. Pass `#!python None` explicitly when you have no better starting value: `#!python tick_task = use_ref(None)`.
+    Unlike `#!python useRef()` in React, `#!python use_ref()` has no no-argument form — `#!python initial_value` is required, so `#!python use_ref()` fails outright with `#!python TypeError: use_ref() missing 1 required positional argument: 'initial_value'`. Pass `#!python None` explicitly when you have no better starting value: `#!python tick_task = use_ref(None)`.
+
+    The lower-level `#!python reactpy.utils.Ref()` is the one that accepts no arguments, and there `#!python current` starts **unset** rather than at `#!python None`, so the first read raises `#!python AttributeError: 'Ref' object has no attribute 'current'`. Components should call `#!python use_ref` rather than construct a `#!python Ref` directly.
 
 ## Example: building a stopwatch
 

@@ -188,13 +188,24 @@ html.svg(
 
 ### Raw HTML { #raw-html }
 
-There is no way to hand ReactPy a block of HTML and have it parsed into VDOM. To put a raw HTML string into the page, use `#!python dangerouslySetInnerHTML`:
+Two different jobs get confused here. To put a raw HTML string into the page *as-is*, without ReactPy parsing it, use `#!python dangerouslySetInnerHTML`:
 
 ```python linenums="0"
 html.div({"dangerouslySetInnerHTML": {"__html": "<b>bold</b>"}})
 ```
 
-Never pass untrusted input to it, and note that a `#!python dangerouslySetInnerHTML` attribute cannot be combined with children. See [Common Props](common-props.md#dangerouslysetinnerhtml).
+To hand ReactPy a block of HTML and have it **parsed into VDOM** — real elements you can then inspect and transform — use `#!python string_to_reactpy()` instead, which is exported at the top of the package:
+
+```python linenums="0"
+from reactpy import string_to_reactpy
+
+string_to_reactpy("<b>bold</b>")
+# {'children': ['bold'], 'tagName': 'b'}
+```
+
+See [Convert Between VDOM and HTML](../learn/convert-between-vdom-and-html.md) for the parse direction in full, including the `#!python *transforms` argument.
+
+Never pass untrusted input to either one: `#!python dangerouslySetInnerHTML` is inserted without sanitizing, and `#!python string_to_reactpy()` parses whatever you give it. Note also that a `#!python dangerouslySetInnerHTML` attribute suppresses children rather than raising — nothing checks the combination, the raw HTML simply wins and the children are dropped. See [Common Props](common-props.md#dangerouslysetinnerhtml).
 
 ### Inspecting what a tag produced
 

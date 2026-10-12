@@ -38,7 +38,7 @@ from reactpy.executors.asgi import ReactPyCsr
 
 -   **`extra_py`** *(optional)*: Additional Python packages to install into the PyScript runtime, as version specifier strings.
 
--   **`extra_js`** *(optional)*: Additional JavaScript modules, as a `#!python dict[str, str]` mapping import names to URLs.
+-   **`extra_js`** *(optional)*: Additional JavaScript modules, as a `#!python dict[str, str]` where each **key is the URL** of the JavaScript file and the **value is the name** to export it as — `#!python {"/static/foo.js": "foo"}`. The name is how the module is reached from the component, via `#!python pyscript.js_modules.foo`. Same direction as the `#!python js_modules.main` block PyScript itself consumes.
 
 -   **`pyscript_config`** *(optional)*: Raw PyScript configuration dictionary.
 

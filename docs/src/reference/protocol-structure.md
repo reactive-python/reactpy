@@ -63,7 +63,7 @@ The model is JSON, not a `#!python VdomDict`. Six key names are legal (`core/vdo
 | --- | --- | --- |
 | `#!python "tagName"` | `#!python str` | The DOM tag, or `#!python ""` for a wrapper element. |
 | `#!python "children"` | `#!python list` | Nested models or plain strings. |
-| `#!python "attributes"` | `#!python dict` | Forwarded to the DOM verbatim. Includes `#!python key`. |
+| `#!python "attributes"` | `#!python dict` | Sent to the client as written, and written to the DOM essentially verbatim. Two ReactPy-specific exceptions: `#!python key` is read for reconciliation and consumed, never becoming an attribute, and `#!python _reactpy_ack_seq` is deleted by the client before render. |
 | `#!python "eventHandlers"` | `#!python dict` | Handler name to target spec, described below. |
 | `#!python "inlineJavaScript"` | `#!python dict` | Handler name to JavaScript source string. |
 | `#!python "importSource"` | `#!python dict` | Marks an element as coming from a JavaScript module. |

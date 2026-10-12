@@ -168,7 +168,7 @@ The key is the plain string `#!python "dangerouslySetInnerHTML"` — not a class
 !!! danger "This is the XSS hole"
     ReactPy does nothing to sanitize the string. Never put user input in it.
 
-    A `#!python dangerouslySetInnerHTML` attribute is also not allowed alongside children.
+    A `#!python dangerouslySetInnerHTML` attribute also **suppresses children**. Nothing enforces the combination — no error, no warning, at the tag call or at render time — so the children you passed are simply never displayed. Verified in the browser: for `#!python html.div({"dangerouslySetInnerHTML": {"__html": "<b>RAW</b>"}}, "CHILDTEXT")` the server sends both the attribute and `#!python "children": ["CHILDTEXT"]`, and the rendered element contains only `<b>RAW</b>`. Pass the children *or* the raw HTML, never both, because the silent one is your children.
 
 ---
 
