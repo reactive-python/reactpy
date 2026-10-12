@@ -24,8 +24,11 @@ from reactpy import (
 ```
 
 Prefer `from reactpy import component, html` (matches every file in `docs/examples/`).
-`reactpy.hooks` and `reactpy.utils` submodules are also reachable (`reactpy.hooks.use_state`,
-`reactpy.utils.Ref`). `h` is a documented alias of `html` (`_html.py`, `h = html  # shorthand alias for html`).
+`reactpy.hooks` and `reactpy.utils` are reachable as **attributes** (`reactpy.hooks.use_state`,
+`reactpy.utils.Ref`), but `reactpy.hooks` is an attribute alias, not a module: `import
+reactpy.hooks` and `from reactpy.hooks import use_state` both raise `ModuleNotFoundError`.
+For an import statement use `reactpy.core.hooks`. `h` is a documented alias of `html`
+(`_html.py`, `h = html  # shorthand alias for html`).
 
 **Hooks that exist (all 13):** `use_state`, `use_effect`, `use_async_effect`,
 `use_reducer`, `use_context`, `use_ref`, `use_memo`, `use_callback`, `use_debug_value`,
@@ -239,11 +242,14 @@ use_debug_value(message, dependencies=...)
   ```python
   theme_context = create_context("light")
   ...
-  return theme_context({"value": "dark"}, html.div(...))   # children, then value= keyword
+  return theme_context(html.div(...), value="dark")   # children positional, value= keyword
   use_context(theme_context)
   ```
   Signature: `context(*children, value=default_value, key=None)` (`core/hooks.py`, `create_context`).
-  Reading outside a provider returns the default value.
+  Every positional argument is a **child** — there is no attribute dict slot. Passing
+  `theme_context({"value": "dark"}, html.div(...))` makes the dict a child and the provider
+  renders `ValueError: Expected a VDOM element dict, not {'value': 'dark'}`. The `value` is
+  always the keyword. Reading outside a provider returns the default value.
 
 ## 6. Context / connection
 
