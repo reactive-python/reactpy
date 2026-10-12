@@ -144,7 +144,7 @@ All of these approaches also work for conditionally specifying attributes. If yo
 
 ## Rendering lists
 
-You will rely on Python features like [`#!python for` loop](https://www.w3schools.com/python/quick_start/python_for_loops.asp) and [list comprehension](https://www.w3schools.com/python/quick_start/python_lists_comprehension.asp) to render lists of components.
+You will rely on Python features like [`#!python for` loop](https://www.w3schools.com/python/python_for_loops.asp) and [list comprehension](https://www.w3schools.com/python/python_lists_comprehension.asp) to render lists of components.
 
 For example, let's say you have an array of products:
 

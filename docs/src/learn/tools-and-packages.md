@@ -17,4 +17,4 @@ The Reactive Python organization provides several packages and tools to help you
 
 There are also a number of third-party packages that can help you build your projects.
 
-You can find a list of these packages on the [ReactPy GitHub Discussions](https://github.com/reactive-python/reactpy/discussions/categories/third-party-packages).
+You can find a list of these packages on the [ReactPy GitHub Discussions](https://github.com/reactive-python/reactpy/discussions/categories/downloadable-packages).

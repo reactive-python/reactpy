@@ -14,7 +14,7 @@ ReactPy's source is MIT-licensed. Much of the prose you are reading is derived f
 
 ## Source code
 
-The ReactPy package is released under the MIT licence, copyright Reactive Python and affiliates. The full text lives in [`LICENSE.md`](https://github.com/reactive-python/reactpy/blob/main/LICENSE.md) at the repository root and is reproduced below.
+The ReactPy package is released under the MIT licence, copyright Reactive Python and affiliates. The full text lives in the license file at the [repository root](https://github.com/reactive-python/reactpy/tree/main) and is reproduced below.
 
 MIT is permissive: use, copy, modify, merge, publish, distribute, sublicense, and sell, subject to keeping the copyright notice and licence text in copies of the software. It comes with no warranty, and liability is excluded.
 
