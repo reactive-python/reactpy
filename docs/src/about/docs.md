@@ -46,7 +46,7 @@ The pages derive from [react.dev](https://react.dev/learn). Editing means deleti
 
 Things that do not survive a rename:
 
--   **Hooks that do not exist.** ReactPy has twelve hooks. There is no `use_id`, `use_transition`, `use_deferred_value`, `use_layout_effect`, `use_insertion_effect`, `use_imperative_handle`, or `use_sync_external_store`, and their `reference/use-*.md` pages are parked as planned. Never port a page that depends on one as if it worked.
+-   **Hooks that do not exist.** ReactPy has twelve hooks. There is no `use_id`, `use_transition`, `use_deferred_value`, `use_layout_effect`, `use_insertion_effect`, `use_imperative_handle`, or `use_sync_external_store`. Some of the react.dev pages for them are parked as `🚫`; `use_id` has no page at all, because the upstream issue was closed as not planned. Never port a page that depends on one as if it worked.
 -   **Naming rules.** Components are snake_case and lowercase — `my_button`, not `MyButton`. React's capital-letter rule does not apply, because ReactPy distinguishes a component from a tag by the call, not the case. Attribute keys stay camelCase (`className`, `onClick`), because those pass through to the DOM untouched.
 -   **JSX mechanics.** Children are positional arguments after an optional attribute dict. There is no JSX, and no PSX in this release.
 -   **StrictMode and `memo`.** Neither exists. React's double-invoke warnings and its "skip re-rendering unchanged children" optimisation have no ReactPy equivalent, so port those sections as a warning that ReactPy will not catch the problem for you.
