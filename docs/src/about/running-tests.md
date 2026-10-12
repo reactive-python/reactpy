@@ -118,7 +118,7 @@ Plus the type check over the example files, which are real Python:
 pyright --pythonpath <your-env>/bin/python docs/
 ```
 
-`mkdocs build --strict` is the important one: it turns broken internal links, unresolvable includes, and pages missing from `nav:` into build failures. But the examples in `docs/examples/` are the source of truth for every snippet on the site, and a snippet that does not *run* is a docs bug the build will not catch on its own. That part is on you.
+`mkdocs build --strict` is the important one: it turns broken internal links and unresolvable includes into build failures, both of which abort with a nonzero exit. It does **not** fail on two things you would expect it to: a page missing from `nav:` (only an `INFO` line, and the build still exits 0 while serving the orphaned page), and a link whose `#anchor` does not exist inside an otherwise valid target file (also exit 0). Read that `nav:` list yourself and check anchors by eye. Nor can it tell you whether a snippet works: the examples in `docs/examples/` are the source of truth for every snippet on the site, and a snippet that does not *run* is a docs bug the build will not catch on its own. That part is on you.
 
 !!! warning "Pitfall"
 

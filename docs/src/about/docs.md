@@ -25,7 +25,7 @@ docs/
 └── overrides/          # template overrides
 ```
 
-Page files are `kebab-case.md`; example directories are the same name with underscores (`learn/scaling-up-with-reducer-and-context.md` → `examples/scaling_up_with_reducer_and_context/`). A new page must be added to `nav:` in `mkdocs.yml` or `mkdocs build --strict` fails.
+Page files are `kebab-case.md`; example directories are the same name with underscores (`learn/scaling-up-with-reducer-and-context.md` → `examples/scaling_up_with_reducer_and_context/`). A new page must be added to `nav:` in `mkdocs.yml`, but the build will not tell you when you forget: a page missing from `nav:` is still built and served, and `mkdocs build --strict` exits **0**. The only trace is an `INFO` line listing the unlisted pages. Read it: every page currently on that list carries a `Planned / Undeveloped` banner in its body and can be ignored, which is exactly how a page you did mean to publish would hide among them. Adding the entry is what puts the page in the site's navigation, which is the actual reason to do it.
 
 ## What "done" means
 
@@ -134,7 +134,7 @@ pyright --pythonpath <your-env>/bin/python docs/
 cd docs && mkdocs build --strict; echo "exit=$?"
 ```
 
-Then run the examples themselves and open the built page in a browser. `mkdocs build --strict` catches broken links, unresolvable includes, and pages missing from `nav:`; it cannot catch a snippet that renders nothing.
+Then run the examples themselves and open the built page in a browser. `mkdocs build --strict` catches broken internal links and unresolvable includes — both abort the build with a nonzero exit. Two things it does **not** catch: a page missing from `nav:` (an `INFO` line, exit 0), and a link whose `#anchor` does not exist in an otherwise valid target file (also exit 0), so check both by eye. And it cannot catch a snippet that renders nothing.
 
 You are the only gate. The single workflow on `new-docs` runs `mkdocs gh-deploy --force` on push, and `gh-deploy` does not pass `--strict` — a build with broken links exits 0 and publishes. A miss does not fail a pipeline; it goes live.
 
