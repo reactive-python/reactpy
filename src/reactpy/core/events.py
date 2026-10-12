@@ -291,6 +291,11 @@ def merge_event_handlers(
     :attr:`~reactpy.core.proto.EventHandlerType.prevent_default`,
     :attr:`~reactpy.core.proto.EventHandlerType.debounce`,
     :attr:`~reactpy.core.proto.EventHandlerType.throttle` attributes.
+
+    Live access is not among the things they can conflict over. Every handler is
+    handed the same event, so the merged one asks the client to keep that event alive
+    unless every handler given to it refused - see
+    :attr:`~reactpy.types.BaseEventHandler.event_proxy`.
     """
     if not event_handlers:
         msg = "No event handlers to merge"
@@ -326,12 +331,20 @@ def merge_event_handlers(
             raise ValueError(msg)
 
     # Asking the client to keep the originating object alive is not something the
-    # handlers can disagree about: if any of them wants it, the merged handler asks
-    # for it, and the others simply receive objects they never read past.
-    wants_proxy = [getattr(handler, "event_proxy", None) for handler in event_handlers]
-    event_proxy: bool | None = (
-        True if True in wants_proxy else False if False in wants_proxy else None
-    )
+    # handlers can disagree about. Stating nothing wants it just as much as saying so
+    # does, so the merged handler refuses only when every one of them refused - one
+    # handler declining cannot take live access away from another which never said it
+    # would not use it. Those which asked for less simply receive objects they never
+    # read past, since every handler here is handed the very same event.
+    preferences: list[bool | None] = [
+        getattr(handler, "event_proxy", None) for handler in event_handlers
+    ]
+    if all(preference is False for preference in preferences):
+        event_proxy: bool | None = False
+    elif True in preferences:
+        event_proxy = True
+    else:
+        event_proxy = None
 
     return EventHandler(
         merge_event_handler_funcs([h.function for h in event_handlers]),

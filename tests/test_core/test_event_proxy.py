@@ -772,6 +772,57 @@ async def test_a_handler_which_asks_for_live_access_in_its_own_body():
         )
 
 
+async def test_one_declining_handler_cannot_speak_for_a_merged_pair():
+    """Merged handlers are handed the very same event, so one refusal is not theirs to give
+
+    Both functions below run off one handler spec. Had the declining one been allowed
+    to settle it, the one which never refused would have been handed a dead snapshot
+    and its read would have raised rather than reached the page.
+    """
+    received: dict[str, Any] = {}
+
+    async def reads_past_the_snapshot(event_object):
+        received["value"] = await event_object.read("target.value")
+
+    async def stays_where_it_is(event_object):
+        received["event"] = event_object
+
+    @component
+    def MyComponent():
+        return reactpy.html.div(
+            {
+                "onClick": merge_event_handlers(
+                    [
+                        event(reads_past_the_snapshot),
+                        event(stays_where_it_is, event_proxy=False),
+                    ]
+                )
+            }
+        )
+
+    _backend, client = make_client(make_objects())
+
+    async with Layout(MyComponent()) as layout:
+        connect(layout, client)
+        model = (await layout.render())["model"]
+        handler_spec = event_handlers_of(model)["onClick"]
+        assert handler_spec["eventProxy"] is True, (
+            "a handler which never refused was merged with one which did, and the "
+            "refusal was taken to speak for both"
+        )
+
+        await layout.deliver(
+            event_message(
+                handler_spec["target"],
+                {EVENT_MARKER_KEY: {"id": "evt"}, "type": "click"},
+            )
+        )
+        await poll(lambda: "value" in received and "event" in received)
+
+    assert received["value"] == "typed"
+    assert requested_paths(client) == [["target", "value"]]
+
+
 # -- what a proxy says about itself -----------------------------------------
 
 

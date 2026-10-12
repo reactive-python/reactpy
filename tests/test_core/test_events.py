@@ -223,19 +223,24 @@ def test_merge_event_handlers_event_proxy():
     """Merging never has to settle an argument about live access
 
     Whether the browser object behind an event should be kept alive is not something
-    two handlers can contradict each other over - one of them simply wants it. The
-    merged handler asks for it whenever any of the originals did, and states nothing
-    at all when none of them said either way.
+    two handlers can contradict each other over - one of them simply wants it, and a
+    handler which says nothing wants it just as much. The merged handler therefore
+    refuses only when every original refused, and states nothing at all - which means
+    the same thing as asking - when none of them said either way.
     """
     plain = EventHandler(_noop_handler)
     wants = EventHandler(_noop_handler, event_proxy=True)
     declines = EventHandler(_noop_handler, event_proxy=False)
     other_plain = EventHandler(_noop_handler)
+    other_declines = EventHandler(_noop_handler, event_proxy=False)
 
     assert merge_event_handlers([plain, other_plain]).event_proxy is None
     assert merge_event_handlers([plain, wants]).event_proxy is True
-    assert merge_event_handlers([plain, declines]).event_proxy is False
+    assert merge_event_handlers([plain, declines]).event_proxy is None, (
+        "a handler which never refused lost live access to one which did"
+    )
     assert merge_event_handlers([declines, wants]).event_proxy is True
+    assert merge_event_handlers([declines, other_declines]).event_proxy is False
 
 
 async def test_can_prevent_event_default_operation(display: DisplayFixture):
