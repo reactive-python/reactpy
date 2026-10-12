@@ -1009,12 +1009,13 @@ class BaseEventHandler:
     carried. :data:`False` takes the snapshot and nothing else - the browser is not
     asked to remember anything for this handler.
 
-    The default, :data:`None`, follows
-    :data:`reactpy.config.REACTPY_ENABLE_EVENT_PROXY`, which is switched on because
-    reading the object an event fired from is what people expect. Opt a single handler
-    out by setting this to :data:`False` - worthwhile for anything which fires
-    continuously, such as ``onScroll``, because keeping an object alive and pruning it
-    costs the browser work on every event.
+    The default, :data:`None`, wants live access, because reading the object an event
+    fired from is what people expect - ``await event.target.value`` should just work
+    rather than having to be anticipated when the handler is written. This attribute is
+    the only say in the matter: there is no global switch. Opt a single handler out by
+    setting it to :data:`False` - worthwhile for anything which fires continuously,
+    such as ``onScroll``, because keeping an object alive and pruning it costs the
+    browser work on every event.
 
     A handler can also decide for itself by assigning ``event.eventProxy = False`` or
     ``event.eventProxy = True`` in its own body. That assignment is read out of the

@@ -40,7 +40,6 @@ from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
     REACTPY_CHECK_VDOM_SPEC,
     REACTPY_DEBUG,
-    REACTPY_ENABLE_EVENT_PROXY,
     REACTPY_MAX_QUEUE_SIZE,
 )
 from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
@@ -235,9 +234,9 @@ class Layout(BaseLayout):
 
         A handler which asks for live access is given it, and one which declines is
         given the snapshot and nothing else. With no preference stated the data
-        decides: the client marks whatever it has agreed to keep hold of - which
-        ``REACTPY_ENABLE_EVENT_PROXY`` asks it to do for every handler by default -
-        and marked data comes back as a live object. A client which has gone away
+        decides: the client marks whatever it has agreed to keep hold of - which is
+        whatever it dispatched, since live access is on unless a handler has declined
+        it - and marked data comes back as a live object. A client which has gone away
         cannot answer for that mark either way, because a backend without a sender
         reports itself unavailable and the mark is dropped with the rest of the
         overhead.
@@ -680,9 +679,9 @@ class Layout(BaseLayout):
         forwarded when set and applies to every element. Both are omitted
         from the payload when ``None`` so the wire format stays minimal.
 
-        ``eventProxy`` is only forwarded when live event access is wanted for this
-        handler: an absent key means "this server cannot do live access" which keeps
-        the client from holding on to events nobody will ask about.
+        ``eventProxy`` is forwarded unless this handler has declined live access: an
+        absent key tells the client not to hold on to an event it knows nobody will ask
+        about, which is the whole cost of an event nobody reads past.
         """
         entry: dict[str, Any] = {
             "target": target,
@@ -696,10 +695,9 @@ class Layout(BaseLayout):
         if handler.throttle is not None:
             entry["throttle"] = handler.throttle
 
-        want_proxy = getattr(handler, "event_proxy", None)
-        if want_proxy is None:
-            want_proxy = REACTPY_ENABLE_EVENT_PROXY.current
-        if want_proxy:
+        # Live access is on unless the handler has refused it, whether on the handler
+        # itself or from inside its own body - see ``BaseEventHandler.event_proxy``
+        if getattr(handler, "event_proxy", None) is not False:
             entry["eventProxy"] = True
 
         return entry

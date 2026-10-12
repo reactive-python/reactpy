@@ -139,39 +139,6 @@ REACTPY_MAX_QUEUE_SIZE = Option(
 )
 """The maximum size for internal queues used by ReactPy"""
 
-REACTPY_ENABLE_EVENT_PROXY = Option(
-    "REACTPY_ENABLE_EVENT_PROXY",
-    default=True,
-    mutable=True,
-    validator=boolean,
-)
-"""Whether event handlers are given live client-backed event objects by default.
-
-Enabled by default, because reading the object an event fired from is what people
-expect - ``await event.target.value`` should just work, rather than having to be
-anticipated when the handler is written. When enabled the client keeps a reference to
-the dispatched JavaScript ``Event`` around, and the server can read properties from it
-and call methods on it.
-
-Handlers receive a :class:`reactpy.types.Event` either way. It is a ``dict`` subclass
-holding the usual snapshot, and additionally reaches back into the browser for anything
-the snapshot left out. When the client cannot or should not keep the object alive, the
-same :class:`~reactpy.types.Event` arrives without any backing and awaiting one of its
-properties raises :class:`~reactpy._event_proxy.EventProxyUnavailable`.
-
-This option is only the default for handlers which do not decide for themselves. An
-individual handler can opt out with ``EventHandler(fn, event_proxy=False)``, or by
-assigning ``event.eventProxy = False`` inside its own body - worth doing for anything
-bound to an event which fires continuously, such as ``onScroll``, since registering and
-pruning a kept-alive object costs the browser work on every event - or insist on live
-access with ``event_proxy=True`` even while this option is off. Switching this off
-therefore does not override a handler which explicitly asked for live access; it only
-stops asking on every handler's behalf.
-
-Every event handler is a coroutine and live values are always awaited, so nothing here
-blocks the event loop.
-"""
-
 REACTPY_EVENT_PROXY_TIMEOUT = Option(
     "REACTPY_EVENT_PROXY_TIMEOUT",
     default=5.0,

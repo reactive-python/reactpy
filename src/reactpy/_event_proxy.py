@@ -814,9 +814,10 @@ class Event(EventProxy[_T]):
     awaited - if the client is not holding the object alive at all, awaiting raises
     :class:`~reactpy._event_proxy.EventProxyUnavailable`.
 
-    Handlers are always coroutines, so this is the only event object there is. See
-    :attr:`~reactpy.types.BaseEventHandler.event_proxy` for turning live access off for
-    a single handler, and ``REACTPY_ENABLE_EVENT_PROXY`` for turning it off everywhere.
+    Handlers are always coroutines, so this is the only event object there is. Live
+    access is what a handler gets unless it has declined it - see
+    :attr:`~reactpy.types.BaseEventHandler.event_proxy` for turning it off for a single
+    handler, which is the only knob there is.
 
     Every member below is a best-effort hint for editors and type checkers. At runtime
     any property of any browser object can be read - unlisted ones simply resolve to

@@ -28,7 +28,6 @@ from reactpy._event_proxy import (
     serialize_argument,
 )
 from reactpy.config import (
-    REACTPY_ENABLE_EVENT_PROXY,
     REACTPY_EVENT_PROXY_MAX_TIMEOUTS,
     REACTPY_EVENT_PROXY_TIMEOUT,
 )
@@ -598,12 +597,53 @@ async def test_a_handler_which_declines_live_access_takes_the_snapshot():
     assert client.requests == [], "the browser was asked about an event nobody wanted"
 
 
+async def test_live_access_is_on_for_a_handler_which_says_nothing():
+    """A handler which states no preference is given live access
+
+    There is no global switch to lean on: not saying anything is itself the answer, so
+    the client is told to hold on to the object the event came from, and the mark it
+    leaves behind is turned into something the handler can read through.
+    """
+    received: dict[str, Any] = {}
+
+    async def handler(event_object):
+        received["event"] = event_object
+
+    @component
+    def MyComponent():
+        return reactpy.html.div({"onClick": event(handler)})
+
+    _backend, client = make_client(make_objects())
+
+    async with Layout(MyComponent()) as layout:
+        connect(layout, client)
+        model = (await layout.render())["model"]
+        handler_spec = event_handlers_of(model)["onClick"]
+        assert handler_spec["eventProxy"] is True, (
+            "a handler which said nothing was left without live access"
+        )
+
+        await layout.deliver(
+            event_message(
+                handler_spec["target"],
+                {EVENT_MARKER_KEY: {"id": "evt"}, "type": "click"},
+            )
+        )
+        await poll(lambda: "event" in received)
+
+        assert isinstance(received["event"], Event)
+        assert await received["event"].read("target.value") == "typed"
+
+    assert requested_paths(client) == [["target", "value"]]
+
+
 async def test_a_handler_which_asks_for_live_access_gets_it():
-    """Asking on the handler is enough; the global switch is not needed
+    """Asking on the handler says so out loud rather than leaving it to the default
 
     Saying so on the handler does two things: the client is told to hold on to the
     object the event came from, and the server turns the mark the client leaves
-    behind into something the handler can actually read through.
+    behind into something the handler can actually read through - the latter even for
+    data the client never marked, which is what separates asking from not saying.
     """
     received: dict[str, Any] = {}
 
@@ -709,16 +749,20 @@ async def test_a_handler_which_refuses_live_access_in_its_own_body():
     assert client.requests == [], "the browser was asked about an event nobody wanted"
 
 
-async def test_a_handler_which_asks_for_live_access_in_its_own_body(monkeypatch):
-    """The other way round works too, even while the global switch is off"""
-    monkeypatch.setattr(REACTPY_ENABLE_EVENT_PROXY, "current", False)
+async def test_a_handler_which_asks_for_live_access_in_its_own_body():
+    """The other way round works too, overruling what was set on the handler
+
+    This one was told not to look behind the event, and then said otherwise from
+    inside its own body - which is read out of the handler the same way
+    ``event.debounce = <milliseconds>`` is, and wins.
+    """
 
     async def on_click(event_object):
         event_object.eventProxy = True
 
     @component
     def MyComponent():
-        return reactpy.html.div({"onClick": on_click})
+        return reactpy.html.div({"onClick": EventHandler(on_click, event_proxy=False)})
 
     async with Layout(MyComponent()) as layout:
         model = (await layout.render())["model"]
