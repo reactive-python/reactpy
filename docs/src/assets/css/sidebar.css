@@ -1,104 +1,103 @@
 :root {
-	--sizebar-font-size: 0.62rem;
+    --sizebar-font-size: 0.62rem;
+    --sizebar-font-size-2: 0.56rem;
 }
 
 .md-nav__link {
-	word-break: break-word;
+    word-break: break-word;
+}
+
+/* Center the docs content  */
+.md-content {
+    justify-self: center;
+    width: 100%;
+    margin: 0 auto;
 }
 
 /* Desktop Styling */
 @media screen and (min-width: 76.1875em) {
-	/* Move the sidebar and TOC to the edge of the page */
-	.md-main__inner.md-grid {
-		margin-left: 0;
-		margin-right: 0;
-		max-width: unset;
-		display: grid;
-		grid-template-columns: auto 1fr auto;
-	}
+    /* Move the sidebar and TOC to the edge of the page */
+    .md-main__inner.md-grid {
+        margin-left: 0;
+        margin-right: 0;
+        max-width: unset;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+    }
+    [dir="ltr"] .md-nav--primary > .md-nav__list {
+        padding-left: 0;
+    }
 
-	.md-content {
-		justify-self: center;
-		width: 100%;
-	}
-	/* Made the sidebar buttons look React-like */
-	.md-nav--lifted > .md-nav__list > .md-nav__item--active > .md-nav__link {
-		text-transform: uppercase;
-	}
+    /* Btn section (title)     */
+    .md-nav--lifted > .md-nav__list > .md-nav__item--active > .md-nav__link {
+        text-transform: uppercase;
+        color: rgb(133, 142, 159);
+        background: transparent;
+        box-shadow: none;
+    }
 
-	.md-nav__title[for="__toc"] {
-		text-transform: uppercase;
-		margin: 0.5rem;
-	}
+    /* Btn hover styling */
+    .md-nav__item .md-nav__link {
+        position: relative;
+    }
+    .md-nav__link:is(:focus, :hover):not(.md-nav__link--active) {
+        color: unset;
+    }
+    .md-nav__item .md-nav__link:is(:focus, :hover):not(.md-nav__link--active):before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.2;
+        z-index: -1;
+        background: grey;
+    }
 
-	.md-nav--lifted > .md-nav__list > .md-nav__item--active > .md-nav__link {
-		color: rgb(133, 142, 159);
-		margin: 0.5rem;
-	}
+    /*  Btn currently selected  */
+    .md-nav__item .md-nav__link--active:before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background: var(--reactpy-color-opacity-10);
+    }
 
-	.md-nav__item .md-nav__link {
-		position: relative;
-	}
+    /* Btn shape & font  */
+    .md-nav__link {
+        padding: 0.5rem 0.5rem 0.5rem 1rem;
+        margin: 0;
+        border-radius: 0 10px 10px 0;
+        font-weight: 500;
+        overflow: hidden;
+        font-size: var(--sizebar-font-size);
+    }
+    .md-sidebar__scrollwrap {
+        margin: 0;
+    }
+    .md-nav__item--nested .md-nav__item .md-nav__item .md-nav__link {
+        font-weight: 300;
+        font-size: var(--sizebar-font-size-2);
+    }
+    [dir="ltr"] .md-nav--primary .md-nav__list {
+        padding: 0;
+    }
+    [dir="ltr"] .md-nav--lifted > .md-nav__list > .md-nav__item > .md-nav:not(.md-nav--secondary) {
+        margin-left: 0;
+    }
+    .md-nav {
+        margin: 0;
+    }
+    .md-nav__toggle ~ .md-nav {
+        grid-template-rows: minmax(0rem, 0fr);
+    }
 
-	.md-nav__link:is(:focus, :hover):not(.md-nav__link--active) {
-		color: unset;
-	}
-
-	.md-nav__item
-		.md-nav__link:is(:focus, :hover):not(.md-nav__link--active):before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		opacity: 0.2;
-		z-index: -1;
-		background: grey;
-	}
-
-	.md-nav__item .md-nav__link--active:before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		z-index: -1;
-		background: var(--reactpy-color-opacity-10);
-	}
-
-	.md-nav__link {
-		padding: 0.5rem 0.5rem 0.5rem 1rem;
-		margin: 0;
-		border-radius: 0 10px 10px 0;
-		font-weight: 500;
-		overflow: hidden;
-		font-size: var(--sizebar-font-size);
-	}
-
-	.md-sidebar__scrollwrap {
-		margin: 0;
-	}
-
-	[dir="ltr"]
-		.md-nav--lifted
-		.md-nav[data-md-level="1"]
-		> .md-nav__list
-		> .md-nav__item {
-		padding: 0;
-	}
-
-	.md-nav__item--nested .md-nav__item .md-nav__item {
-		padding: 0;
-	}
-
-	.md-nav__item--nested .md-nav__item .md-nav__item .md-nav__link {
-		font-weight: 300;
-	}
-
-	.md-nav__item--nested .md-nav__item .md-nav__item .md-nav__link {
-		font-weight: 400;
-		padding-left: 1.25rem;
-	}
+    /* Collapse icon */
+    .md-nav__icon:hover {
+        background: transparent;
+    }
 }
