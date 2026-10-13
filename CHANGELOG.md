@@ -40,8 +40,10 @@ Don't forget to remove deprecated code on each major release!
 - Events now support `debounce` and `throttle`, configurable per event via `event.debounce = <milliseconds>` and `EventHandler(fn, throttle=<milliseconds>)` respectively.
     - `debounce` waits until activity stops, then fires once. Default is 200 ms on `input`/`select`/`textarea`, 0 ms elsewhere.
     - `throttle` caps the rate how often an event is allowed to execute. No default; opt in per event.
-- Added a live event proxy which lets event handlers read properties from, and call methods on, the browser objects which triggered them rather than being limited to the snapshot sent along with the event. A handler awaits what it needs (`await event.target.value`, `await event.target.focus()`), and reading something the client did not send up front costs a single round trip to the browser. What arrives with the event is a `reactpy.types.Event` snapshot; whatever the handler reaches past is an `EventProxy` describing where in the browser to look for it.
-    - Live access is on unless a handler turns it off, which it can do either by being set with `EventHandler(fn, event_proxy=False)` for one which knows it will not look behind the event, or by assigning `event.eventProxy = False` inside its own body - the same way `event.debounce = <milliseconds>` is read out of the handler, and it takes precedence over what was set on it. There is no global switch. The browser registers only the events of handlers which have not refused, so dispatching an event nobody looks behind costs the page nothing to remember, and a group merged with `merge_event_handlers()` asks for it unless every handler in it refused - one declining cannot speak for the rest.
+- Added a live event proxy which lets event handlers read properties from, and call methods on, the browser objects which triggered them rather than being limited to the snapshot sent along with the event.
+    - A handler awaits what it needs (`await event.target.value`, `await event.target.focus()`).
+    - The initial event is a snapshot of serializable event data; whatever the handler reaches past is an `EventProxy` describing where in the browser to look for it.
+    - Live access is on unless a handler turns it off by assigning `event.eventProxy = False` inside its own body.
     - Unanswered requests are bounded by `reactpy.config.REACTPY_EVENT_PROXY_TIMEOUT`, `reactpy.config.REACTPY_EVENT_PROXY_MAX_TIMEOUTS`, and `reactpy.config.REACTPY_EVENT_PROXY_MAX_DEPTH`.
 
 ### Changed
