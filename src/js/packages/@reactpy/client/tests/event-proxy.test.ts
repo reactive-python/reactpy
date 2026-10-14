@@ -15,6 +15,7 @@ import {
   type EventProxyResponse,
   LIVE_OBJECT_TTL_MS,
   MAX_ALLOWED_DEPTH,
+  MAX_CALL_RESULTS_PER_OBJECT,
   MAX_LIVE_OBJECTS,
   MAX_REQUESTS_PER_MESSAGE,
   ProxyAccessError,
@@ -538,6 +539,104 @@ test("calling refuses the event itself, non-functions, and blocked members", () 
       }),
     ).code,
   ).toBe("access");
+});
+
+test("a path which leads through a call result is still walkable", () => {
+  // What comes back out of a call is named by a path leading through it, and the only
+  // thing such a path can be resolved against is the answer the page already gave. It
+  // used to lead to a function with no such property, and answer "not-found" - leaving
+  // the server holding a reference to something it could never reach.
+  const { registry } = make_registry();
+  const note: Record<string, unknown> = { text: "written by the browser" };
+  note["about"] = note; // a cycle, which is handed over as a reference
+  const eventId = registry.register({
+    reveal() {
+      return note;
+    },
+  });
+
+  const called = registry.resolve(
+    request({ requestId: "call", eventId, path: ["reveal"], call: true }),
+  );
+  expect(called.ok).toBe(true);
+  expect(readReference(called.value["about"])).toEqual({
+    eventId,
+    path: ["reveal", "about"],
+    callable: false,
+  });
+
+  const walked = registry.resolve(
+    request({ requestId: "walk", eventId, path: ["reveal", "about", "text"] }),
+  );
+  expect(walked.ok).toBe(true);
+  expect(walked.value).toBe("written by the browser");
+});
+
+test("walking through a call result does not run the method again", () => {
+  // The answer is kept rather than the call being made again: a method may have side
+  // effects, and by now it may not even be there.
+  const { registry } = make_registry();
+  let runs = 0;
+  const eventId = registry.register({
+    make() {
+      runs++;
+      return { deep: { value: 42 } };
+    },
+  });
+
+  const called = registry.resolve(
+    request({
+      requestId: "call",
+      eventId,
+      path: ["make"],
+      call: true,
+      maxDepth: 1,
+    }),
+  );
+  expect(runs).toBe(1);
+  expect(readReference(called.value["deep"])?.path).toEqual(["make", "deep"]);
+
+  const walked = registry.resolve(
+    request({ requestId: "walk", eventId, path: ["make", "deep", "value"] }),
+  );
+  expect(walked.ok).toBe(true);
+  expect(walked.value).toBe(42);
+  expect(runs).toBe(1);
+});
+
+test("only the most recent call results are kept to walk through", () => {
+  // Keeping results is what keeps a page's memory bounded, so the oldest make room for
+  // the newest rather than being held for as long as the event itself is.
+  const { registry } = make_registry();
+  const methods: Record<string, () => unknown> = {};
+  for (let index = 0; index <= MAX_CALL_RESULTS_PER_OBJECT; index++)
+    methods[`item${index}`] = () => ({ at: index });
+  const eventId = registry.register(methods);
+
+  for (let index = 0; index <= MAX_CALL_RESULTS_PER_OBJECT; index++)
+    registry.resolve(
+      request({
+        requestId: `call-${index}`,
+        eventId,
+        path: [`item${index}`],
+        call: true,
+      }),
+    );
+
+  const kept = registry.resolve(
+    request({
+      eventId,
+      path: [`item${MAX_CALL_RESULTS_PER_OBJECT}`, "at"],
+    }),
+  );
+  expect(kept.ok).toBe(true);
+  expect(kept.value).toBe(MAX_CALL_RESULTS_PER_OBJECT);
+
+  const forgotten = registry.resolve(
+    request({ eventId, path: ["item0", "at"] }),
+  );
+  expect(forgotten.ok).toBe(false);
+  expect(forgotten.code).toBe("not-found");
 });
 
 test("arguments which are references are resolved on the page", () => {

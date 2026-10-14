@@ -406,22 +406,94 @@ export function readProperty(node: any, name: string): any {
   }
 }
 
-/** Follow a full property path, refusing anything blocked along the way */
-export function readPath(root: any, path: string[]): any {
+/**
+ * Follow a full property path, refusing anything blocked along the way.
+ *
+ * ``calls`` is what this object has already answered to for a method on it, which is
+ * what lets a path leading through that method be resolved against the answer rather
+ * than against the function itself.
+ */
+export function readPath(
+  root: any,
+  path: string[],
+  calls?: ReadonlyMap<string, unknown>,
+): any {
   let node = root;
-  for (const segment of path) node = readProperty(node, segment);
+  for (let index = 0; index < path.length; index++)
+    node = stepDown(node, path, index, calls);
   return node;
 }
 
-function parentAndKey(root: any, path: string[]): { parent: any; key: string } {
+function parentAndKey(
+  root: any,
+  path: string[],
+  calls?: ReadonlyMap<string, unknown>,
+): { parent: any; key: string } {
   if (path.length === 0)
     throw new ProxyAccessError("an empty path cannot be resolved");
   let node = root;
-  for (const segment of path.slice(0, -1)) node = readProperty(node, segment);
+  for (let index = 0; index < path.length - 1; index++)
+    node = stepDown(node, path, index, calls);
   return { parent: node, key: path[path.length - 1] };
 }
 
-type LiveObject = { value: any; added: number };
+type LiveObject = {
+  value: any;
+  added: number;
+  /**
+   * What each path called on this object answered with, most recent last.
+   *
+   * A reference which came back from inside the result of a call names a place inside
+   * that result, and the result is the only thing it can be resolved against. Keeping
+   * it is what makes such a path walkable; replaying the call is not an option, since a
+   * method may have side effects and may not even be there any more.
+   */
+  calls: Map<string, unknown>;
+};
+
+/** How many call results one object keeps around to walk paths through */
+export const MAX_CALL_RESULTS_PER_OBJECT = 16;
+
+/** What a recorded call is filed under - its own path, and nothing else's */
+function callKey(path: string[]): string {
+  return JSON.stringify(path);
+}
+
+/** Keep what a call answered, so that a path which leads through it still resolves */
+function rememberCall(entry: LiveObject, path: string[], value: unknown): void {
+  if (
+    value === null ||
+    (typeof value !== "object" && typeof value !== "function")
+  )
+    return; // a primitive has nothing inside it to walk into
+  entry.calls.set(callKey(path), value);
+  while (entry.calls.size > MAX_CALL_RESULTS_PER_OBJECT) {
+    const oldest = entry.calls.keys().next();
+    if (oldest.done === true) break;
+    entry.calls.delete(oldest.value);
+  }
+}
+
+/**
+ * Step one segment deeper into a live value.
+ *
+ * A path which leads through a method is stepped through what that method answered
+ * instead, whenever the page has been asked to call it before: the reference the server
+ * is holding came out of that answer, and asking the method again would be both a second
+ * side effect and a different answer.
+ */
+function stepDown(
+  node: any,
+  path: string[],
+  index: number,
+  calls?: ReadonlyMap<string, unknown>,
+): any {
+  if (typeof node === "function" && calls) {
+    const answer = calls.get(callKey(path.slice(0, index)));
+    if (answer !== undefined) node = answer;
+  }
+  return readProperty(node, path[index]);
+}
 
 /**
  * Keeps the objects which recently triggered an event around so the server can walk
@@ -431,6 +503,9 @@ type LiveObject = { value: any; added: number };
  * about them is sent when the event is dispatched, so forgetting one is not a slowdown
  * but a dead end - every later request for it is answered with "not-found". Entries are
  * still bounded in count and in age, since a page cannot hold on to events forever.
+ * Whatever a method on one of them answered is kept alongside it, for as long as the
+ * entry lasts and up to a small number of calls, because a reference which came out of
+ * such an answer names a place inside it and has nowhere else to be resolved against.
  * Every value which leaves this registry goes through ``serializeValue``, so functions
  * and anything which could be used to escape the page never do.
  */
@@ -451,7 +526,7 @@ export class EventProxyRegistry {
   /** Remember ``value`` and return the id the server will address it by */
   register(value: any): string {
     const eventId = `${this.clock().toString(36)}-${(this.nextId++).toString(36)}`;
-    this.live.set(eventId, { value, added: this.clock() });
+    this.live.set(eventId, { value, added: this.clock(), calls: new Map() });
     this.prune();
     return eventId;
   }
@@ -588,7 +663,11 @@ export class EventProxyRegistry {
           path,
           message.args || [],
           maxDepth,
+          entry.calls,
         );
+        // Whatever the server was handed may have come out of this value, so it has to
+        // stay around or the path to it leads nowhere.
+        rememberCall(entry, path, value);
         return reply(true, {
           value: serializeValue(value, eventId, path, options),
         });
@@ -599,8 +678,7 @@ export class EventProxyRegistry {
           value: serializeValue(entry.value, eventId, path, options),
         });
 
-      const { parent, key } = parentAndKey(entry.value, path);
-      const value = readProperty(parent, key);
+      const value = readPath(entry.value, path, entry.calls);
       if (typeof value === "function")
         return reply(true, { value: reference(eventId, path, true) });
       return reply(true, {
@@ -620,10 +698,11 @@ export class EventProxyRegistry {
     path: string[],
     args: any[],
     maxDepth: number,
+    calls?: ReadonlyMap<string, unknown>,
   ): any {
     if (path.length === 0)
       throw new ProxyAccessError("the event object itself cannot be called");
-    const { parent, key } = parentAndKey(root, path);
+    const { parent, key } = parentAndKey(root, path, calls);
     const method = readProperty(parent, key);
     if (typeof method !== "function")
       throw new ProxyAccessError(`${JSON.stringify(key)} is not a function`);
@@ -657,7 +736,7 @@ export class EventProxyRegistry {
           `nothing is registered for event ${JSON.stringify(ref.eventId)}`,
         );
       entry.added = this.clock();
-      return readPath(entry.value, ref.path);
+      return readPath(entry.value, ref.path, entry.calls);
     }
     if (Array.isArray(argument))
       return argument.map((item) =>
