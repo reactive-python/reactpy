@@ -128,6 +128,24 @@ class EventProxyAccessError(EventProxyError):
     """The client refused or failed to resolve the requested path"""
 
 
+def _prefer_failure(
+    current: BaseException | None, candidate: BaseException
+) -> BaseException:
+    """Pick what to raise when several paths of one batch went wrong
+
+    A timeout says nothing about the property which was asked for - only that the
+    client was not there to answer. Any other failure explains something about the
+    data, which is the more useful of the two to put in front of a handler.
+    """
+    if current is None:
+        return candidate
+    if isinstance(current, EventProxyTimeout) and not isinstance(
+        candidate, EventProxyTimeout
+    ):
+        return candidate
+    return current
+
+
 class EventProxyBackend:
     """Sends live event access requests and routes the answers back to waiters
 
@@ -283,6 +301,12 @@ class EventProxyBackend:
 
         Anything already cached is answered on the spot. Everything else is enqueued
         together, so it leaves the process as a single batched request.
+
+        Whatever the client did answer is kept even when another path of the same
+        batch went wrong - that round trip has already been paid for. When more than
+        one path fails, the failure which says something about the data is the one
+        which reaches the handler rather than the one which only says the client was
+        slow to answer.
         """
         values: list[Any] = [None] * len(paths)
         outstanding: list[
@@ -308,14 +332,34 @@ class EventProxyBackend:
                 *(
                     self._await(request_id, future, event_id, paths[index])
                     for index, _, (request_id, future) in outstanding
-                )
+                ),
+                # One path going wrong must not throw away the answers the client
+                # already gave to its neighbours in the same batch.
+                return_exceptions=True,
             )
         finally:
             for key in ours:
                 self._inflight.pop(key, None)
+
+        failure: BaseException | None = None
         for (index, key, _), payload in zip(outstanding, payloads, strict=True):
-            values[index] = self._to_value(payload, event_id, paths[index])
-            self._remember(key, values[index])
+            if isinstance(payload, asyncio.CancelledError):
+                raise payload
+            if isinstance(payload, BaseException):
+                failure = _prefer_failure(failure, payload)
+                continue
+            try:
+                value = self._to_value(payload, event_id, paths[index])
+            except BaseException as error:
+                # Kept rather than raised on the spot, so that the rest of the batch
+                # still gets as far as the cache before something is re-raised
+                failure = _prefer_failure(failure, error)
+                continue
+            values[index] = value
+            self._remember(key, value)
+
+        if failure is not None:
+            raise failure
         return values
 
     def notify(

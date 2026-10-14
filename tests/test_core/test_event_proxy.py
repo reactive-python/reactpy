@@ -959,6 +959,83 @@ async def test_failures_the_client_cannot_explain_are_still_reported():
     assert len(client.requests) == 1
 
 
+class ScriptedClient(FakeClient):
+    """Answers like a real client, except on the paths it has been told to misbehave on"""
+
+    def __init__(
+        self,
+        backend: EventProxyBackend,
+        objects: dict[str, Any],
+        hung: set[tuple[str, ...]] | None = None,
+        silent: set[tuple[str, ...]] | None = None,
+    ) -> None:
+        super().__init__(backend, objects)
+        self.hung = set() if hung is None else hung
+        self.silent = set() if silent is None else silent
+
+    def _reply_for(self, message: dict[str, Any]) -> dict[str, Any] | None:
+        if tuple(message["path"]) in self.silent:
+            # The browser never gets round to this one
+            return None
+        reply = super()._reply_for(message)
+        if reply is not None and tuple(message["path"]) in self.hung:
+            # The browser hung while working this one out, and said as much
+            reply.update(ok=False, error="browser hung", code="timeout")
+        return reply
+
+
+def make_scripted_client(
+    objects: dict[str, Any],
+    *,
+    hung: set[tuple[str, ...]] | None = None,
+    silent: set[tuple[str, ...]] | None = None,
+) -> tuple[EventProxyBackend, ScriptedClient]:
+    """Build a backend whose client hangs on, or stays quiet about, named paths"""
+    backend = EventProxyBackend()
+    client = ScriptedClient(backend, objects, hung, silent)
+    backend.set_sender(client.send)
+    return backend, client
+
+
+async def test_a_batch_keeps_the_answers_it_already_paid_for(monkeypatch):
+    """One path going wrong must not throw away the answers beside it
+
+    A batch used to give up as soon as one of its paths raised: the client had already
+    answered the rest, and all of it was discarded anyway. Reading those properties
+    again then paid for a round trip the browser had already carried out.
+    """
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    backend, client = make_scripted_client(make_objects(), silent={("gone",)})
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyTimeout):
+        await event_object.read("gone", "target.value")
+
+    assert len(client.messages) == 1, "both paths travelled as one message"
+
+    asked_for_before = len(client.requests)
+    assert await event_object.read("target.value") == ("typed",)
+    assert len(client.requests) == asked_for_before, "the answer is not asked for twice"
+
+
+async def test_a_batch_reports_the_failure_which_explains_something():
+    """A timeout must not bury the reason another property was refused
+
+    Both failures below come back in the same message, and the timeout is the one which
+    is listed first. Raising the first failure to exist reported a client which never
+    answered, when in fact it had answered - and had explained that the other property
+    simply does not exist.
+    """
+    backend, _client = make_scripted_client(make_objects(), hung={("target", "value")})
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyNotFound, match="does not exist") as info:
+        await event_object.read("target.value", "does_not_exist")
+
+    assert "does_not_exist" in str(info.value)
+    assert not backend.disabled, "one hung request is not yet a dead connection"
+
+
 async def test_a_failed_send_switches_live_access_off():
     backend = EventProxyBackend()
     sent: list[dict[str, Any]] = []
