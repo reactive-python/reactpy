@@ -433,6 +433,51 @@ async def test_a_property_is_read_from_the_browser_only_once():
     assert len(client.messages) == 1
 
 
+async def test_a_property_can_be_asked_of_the_browser_again():
+    """What is remembered is the default; asking again is the caller's call
+
+    A resolved property is remembered against its event, which is what makes a handler
+    which reads one twice cost nothing - and it also means the second read hands back the
+    first answer however much the page has moved on since. Refreshing reads the way the
+    browser holds it by now, and pays for that round trip again.
+    """
+    objects = make_objects()
+    backend, client = make_client(objects)
+    event_object = make_event(backend, "evt", known={"type": "click"})
+
+    assert await event_object.target.value == "typed"
+    assert await event_object.target.value == "typed"
+    assert requested_paths(client) == [
+        ["target", "value"]
+    ], "two reads of one property cost one round trip"
+
+    objects["evt"]["target"]["value"] = "retyped while the handler thought"
+
+    assert await event_object.target.value == "typed"
+    assert await event_object.read("target.value") == ("typed",)
+    assert requested_paths(client) == [
+        ["target", "value"]
+    ], "what is remembered costs nothing at all"
+
+    assert await event_object.target.value.resolve(refresh=True) == (
+        "retyped while the handler thought"
+    )
+    refreshed, = await event_object.read("target.value", refresh=True)
+    assert refreshed == "retyped while the handler thought"
+    assert requested_paths(client) == [
+        ["target", "value"],
+        ["target", "value"],
+        ["target", "value"],
+    ], "each refresh paid for itself"
+
+    # What the client volunteered with the event is remembered too, and refreshing goes
+    # to the browser for it like anything else
+    assert await event_object.read("type") == ("click",)
+    assert requested_paths(client)[-1] == ["target", "value"]
+    assert await event_object.read("type", refresh=True) == ("click",)
+    assert requested_paths(client)[-1] == ["type"], "even what came free is asked again"
+
+
 async def test_reads_which_are_in_flight_together_travel_as_one_message():
     backend, client = make_client(make_objects())
     event_object = make_event(backend, "evt")

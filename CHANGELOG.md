@@ -44,6 +44,7 @@ Don't forget to remove deprecated code on each major release!
     - Only an id and the event's `type` travel with the event. Whatever a handler reaches past is fetched from the browser on demand, one round trip at a time, and resolved against the object itself.
     - Properties which are in flight at the same moment go out as a single message, and `await event.read("target.value", "key")` reads several at once.
     - A read belongs to the moment it is awaited: it reports the current state of the browser object, not the state it held when the event was dispatched.
+    - Whatever a read found is remembered against the event, so reading one property twice costs one round trip - and a handler which wants what the browser holds by now asks again with `await event.read("target.value", refresh=True)`.
     - Unanswered requests are bounded by `reactpy.config.REACTPY_EVENT_PROXY_TIMEOUT`, `reactpy.config.REACTPY_EVENT_PROXY_MAX_TIMEOUTS`, and `reactpy.config.REACTPY_EVENT_PROXY_MAX_DEPTH`.
 
 ### Changed

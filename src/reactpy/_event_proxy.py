@@ -306,19 +306,23 @@ class EventProxyBackend:
         path: Sequence[str | int],
         call: bool = False,
         args: Sequence[Any] = (),
+        refresh: bool = False,
     ) -> Any:
         """Resolve ``path`` against the client side event (awaited from the loop)
 
         Reads are remembered against the event, so asking for the same property twice
         sends one request. A request which is already in flight is shared rather than
-        duplicated.
+        duplicated. ``refresh`` asks the browser what it holds now instead, which costs
+        the round trip again and replaces what was remembered.
         """
         key = None if call else self._cache_key(event_id, path)
         if key is not None:
-            if key in self._cache:
+            if not refresh and key in self._cache:
                 return self._cache[key]
             shared = self._inflight.get(key)
             if shared is not None:
+                # Somebody else has already asked for this, so there is no sense in
+                # asking twice - whether or not the answer is wanted fresh
                 payload = await self._await(*shared, event_id, path)
                 return self._to_value(payload, event_id, path)
 
@@ -340,12 +344,16 @@ class EventProxyBackend:
         return value
 
     async def resolve_many(
-        self, event_id: str, paths: Sequence[Sequence[str | int]]
+        self,
+        event_id: str,
+        paths: Sequence[Sequence[str | int]],
+        refresh: bool = False,
     ) -> list[Any]:
         """Resolve several paths of one event in as few messages as possible
 
         Anything already cached is answered on the spot. Everything else is enqueued
-        together, so it leaves the process as a single batched request.
+        together, so it leaves the process as a single batched request. Pass ``refresh``
+        to ask the browser about all of them again, whatever is remembered.
 
         Whatever the client did answer is kept even when another path of the same
         batch went wrong - that round trip has already been paid for. When more than
@@ -360,7 +368,7 @@ class EventProxyBackend:
         ours: list[tuple[str, tuple[str, ...]]] = []
         for index, path in enumerate(paths):
             key = self._cache_key(event_id, path)
-            if key in self._cache:
+            if not refresh and key in self._cache:
                 values[index] = self._cache[key]
                 continue
             shared = self._inflight.get(key)
@@ -744,6 +752,14 @@ class EventProxy(Generic[_T]):
 
         value, key = await event.read("target.value", "key")
 
+    The cache is keyed on the event and the path, so a property is asked for at most
+    once and a second read hands back what the first one found. That is what makes a
+    handler which reads the same property twice free rather than expensive - and it is
+    also why a property the page may have changed in the meantime is read with
+    ``refresh``::
+
+        (latest,) = await event.read("target.value", refresh=True)
+
     A property the browser will not give - a blocked member, an object it has forgotten,
     a path which is not there - raises a subclass of :class:`EventProxyError`. Nothing is
     ever quietly answered with :data:`None`.
@@ -944,12 +960,15 @@ class EventProxy(Generic[_T]):
 
     # -- resolution -------------------------------------------------------
 
-    def _reactpy_resolve_path(self, call: bool, args: Sequence[Any]) -> Any:
+    def _reactpy_resolve_path(
+        self, call: bool, args: Sequence[Any], refresh: bool = False
+    ) -> Any:
         return self._reactpy_backend.resolve(
             self._reactpy_event_id,
             self._reactpy_path,
             call=call,
             args=args,
+            refresh=refresh,
         )
 
     def _reactpy_call_method(self, name: str, args: Sequence[Any]) -> Any:
@@ -968,15 +987,21 @@ class EventProxy(Generic[_T]):
         """
         return self._reactpy_call_method("composedPath", ())
 
-    def resolve(self) -> Awaitable[_T]:
+    def resolve(self, *, refresh: bool = False) -> Awaitable[_T]:
         """Fetch the value this proxy currently points at from the browser
 
         Awaiting the proxy itself does the same thing; this exists for the times when
         spelling out the round trip reads better.
-        """
-        return self._reactpy_resolve_path(False, ())
 
-    async def read(self, *paths: str | Sequence[Any]) -> tuple[Any, ...]:
+        A value which has been read before is handed back from what was read then, which
+        is what makes reading one property twice free. Pass ``refresh=True`` to ask the
+        browser what it holds by now instead.
+        """
+        return self._reactpy_resolve_path(False, (), refresh)
+
+    async def read(
+        self, *paths: str | Sequence[Any], refresh: bool = False
+    ) -> tuple[Any, ...]:
         """Read one or more properties in as few round trips as possible
 
         Each argument is a dotted path, or a sequence of segments, relative to this
@@ -992,7 +1017,11 @@ class EventProxy(Generic[_T]):
 
         Values are fetched when the read is made rather than when the event fired, so a
         read made after other work has intervened reports what the browser holds at that
-        moment. Whatever was read is cached, and a cached answer is not re-fetched.
+        moment. Whatever was read is remembered against the event and is not asked for
+        again, which is what makes two reads of one property cost one round trip. Pass
+        ``refresh=True`` to take the browser's answer afresh::
+
+            (latest,) = await event.read("target.value", refresh=True)
         """
         if not paths:
             return ()
@@ -1001,7 +1030,7 @@ class EventProxy(Generic[_T]):
         wanted: list[list[str | int]] = []
         wanted_at: list[int] = []
         for index, item in enumerate(segments):
-            if len(item) == 1 and item[0] in self._reactpy_known:
+            if not refresh and len(item) == 1 and item[0] in self._reactpy_known:
                 # The client sent this with the event, so asking costs nothing
                 values[index] = self._reactpy_known[item[0]]
             else:
@@ -1009,7 +1038,7 @@ class EventProxy(Generic[_T]):
                 wanted_at.append(index)
         if wanted:
             resolved = await self._reactpy_backend.resolve_many(
-                self._reactpy_event_id, wanted
+                self._reactpy_event_id, wanted, refresh
             )
             for index, value in zip(wanted_at, resolved, strict=True):
                 values[index] = value
@@ -1051,6 +1080,12 @@ class Event(EventProxy[_T]):
     Each read is a round trip, so reads which are in flight together travel together::
 
         value, key = await event.read("target.value", "key")
+
+    What was read is remembered against the event, so reading one property twice costs
+    one round trip - and the second read hands back the first answer. Ask the browser
+    what it holds by now with ``refresh``::
+
+        (value,) = await event.read("target.value", refresh=True)
 
     A property the browser will not give - one which is blocked, or an object it has
     already forgotten - raises a subclass of :class:`EventProxyError`.
