@@ -151,7 +151,7 @@ plugins:
     - search
     - include-markdown
     - git-authors
-    # - section-index
+    - section-index
     - minify:
           minify_html: true
           minify_js: true
