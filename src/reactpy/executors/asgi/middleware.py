@@ -258,13 +258,11 @@ class ReactPyWebsocket(ResponseWebSocket):
         This runs on the same event loop as the layout, which is the loop the request
         was made from and the only one allowed to resolve what is waiting on it.
 
-        Returns :data:`False` if there is no layout to take the message, or the layout
-        does not recognise it as an answer to one of its own requests.
+        Returns :data:`False` if there is no layout to take the message yet, or the
+        layout does not recognise it as an answer to one of its own requests.
         """
         layout = self.layout
-        if layout is None:
-            return False
-        return layout.handle_event_proxy_response(message)
+        return layout is not None and layout.handle_event_proxy_response(message)
 
     async def send_json(self, data: Any) -> None:
         return await self._send(

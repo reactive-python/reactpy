@@ -872,12 +872,6 @@ class EventProxy(Generic[_T]):
     def __bool__(self) -> bool:
         return True
 
-    def _reactpy_description(self) -> str:
-        return (
-            f"{type(self).__name__} for {list(self._reactpy_path)!r} of event "
-            f"{self._reactpy_event_id!r}"
-        )
-
 
 if TYPE_CHECKING:
     _ElementMembers = dict[str, Any]

@@ -478,6 +478,47 @@ async def test_sequential_reads_are_not_batched():
     assert requested_paths(client) == [["target", "value"], ["target", "tagName"]]
 
 
+async def test_a_read_already_in_flight_is_shared_rather_than_duplicated():
+    """Two readers of one property send one request
+
+    The second does not ask the browser again and does not collect an answer of its
+    own; it waits on the request which is already on its way. Sharing has to outlast
+    the queueing of a request, so the read is remembered as in flight until the answer
+    has been delivered - which is also what stops a timed out request from being
+    joined by anyone later.
+    """
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    value, again = await asyncio.gather(
+        event_object.target.value, event_object.target.value
+    )
+
+    assert value == again == "typed"
+    assert requested_paths(client) == [
+        ["target", "value"]
+    ], "the browser was asked once for what two readers wanted"
+    assert len(client.messages) == 1
+
+
+async def test_a_batch_adopts_a_read_which_is_already_in_flight():
+    """A batch does not re-ask for what a lone read is already waiting on"""
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    lone = asyncio.ensure_future(event_object.target.value)
+    await asyncio.sleep(0)  # let it set off, and register itself as in flight
+
+    value, tag_name = await event_object.read("target.value", "target.tagName")
+
+    assert await lone == value == "typed", "both readers got the one answer"
+    assert tag_name == "INPUT"
+    assert requested_paths(client) == [
+        ["target", "value"],
+        ["target", "tagName"],
+    ], "the batch asked only for the property nobody had asked about yet"
+
+
 async def test_read_of_no_paths_returns_an_empty_tuple():
     backend, client = make_client(make_objects())
     event_object = make_event(backend, "evt")
@@ -511,6 +552,33 @@ async def test_a_proxy_is_not_a_container():
         len(event_object)
     with pytest.raises(TypeError):
         list(event_object)
+
+
+async def test_a_proxy_is_always_truthy():
+    """A proxy stands for its browser object even before that object is known
+
+    ``bool`` answers True without leaving the process, so ``if event.target:`` cannot
+    quietly drop an element whose value turns out to be an empty string, a zero or
+    :data:`None`. What is unknown is not the same as absent.
+    """
+    backend, _client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    assert bool(event_object) is True
+    assert bool(event_object.target) is True
+
+
+async def test_the_debounce_a_handler_sets_can_be_read_back():
+    """``debounce`` is a setting on the handler rather than a trip to the browser"""
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    assert event_object.debounce is None
+
+    event_object.debounce = 150
+
+    assert event_object.debounce == 150
+    assert client.messages == [], "a setting the server keeps costs nothing"
 
 
 # -- what a proxy says about itself -----------------------------------------
@@ -800,6 +868,50 @@ def test_backend_without_a_sender_is_unavailable():
     args = build_event_args(data, backend)
     assert isinstance(args[0], Event)
     assert args[1] == 5
+
+
+async def test_a_request_whose_sender_went_away_is_abandoned():
+    """Losing the connection between queueing and sending strands nobody
+
+    Requests leave together at the end of a pass round the loop, so there is a moment
+    when a request is committed but the browser has not been asked. If the way to the
+    client disappears in that moment the waiter is told plainly, rather than being
+    left to sit on a request which will never be sent.
+    """
+    backend, _client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    pending = asyncio.ensure_future(event_object.target.value)
+    await asyncio.sleep(0)  # the request is queued, waiting for the flush to carry it
+
+    backend._send = None  # the connection went away before the queue was drained
+    backend._flush()
+
+    with pytest.raises(EventProxyUnavailable):
+        await pending
+
+
+def test_a_response_before_the_layout_runs_has_nobody_to_wake():
+    """An answer arriving outside the layout's life has no request to satisfy
+
+    The backend belongs to the running layout, so before it has started - or after it
+    has stopped - there is nothing to hand the answer to. It is refused rather than
+    raising, because the connection has no way to know the difference and should not
+    be blamed for the timing.
+    """
+
+    @component
+    def MyComponent():
+        return reactpy.html.div()
+
+    layout = Layout(MyComponent())
+
+    assert (
+        layout.handle_event_proxy_response(
+            {"type": EVENT_PROXY_RESPONSE_TYPE, "requestId": "gone", "ok": True}
+        )
+        is False
+    )
 
 
 async def test_unanswered_requests_eventually_disable_live_access(monkeypatch):
