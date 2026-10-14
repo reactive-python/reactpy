@@ -33,6 +33,7 @@ from reactpy._event_proxy import (
     serialize_argument,
 )
 from reactpy.config import (
+    REACTPY_EVENT_PROXY_MAX_DEPTH,
     REACTPY_EVENT_PROXY_MAX_TIMEOUTS,
     REACTPY_EVENT_PROXY_TIMEOUT,
 )
@@ -882,6 +883,32 @@ def test_excessively_nested_references_are_refused():
 
     with pytest.raises(EventProxyAccessError):
         deserialize_value(value, "evt", backend)
+
+
+def test_arguments_nested_too_deeply_are_refused_without_overflowing():
+    """A deep argument is refused rather than overflowing the stack
+
+    Arguments were handed to the client by recursing through them with no bound at all,
+    so a value which went deep enough raised ``RecursionError`` from inside the call -
+    which is not a failure a handler has much hope of reading, and not one it can
+    recover from by asking for something shallower.
+    """
+    value: Any = "leaf"
+    for _ in range(2000):
+        value = {"nested": value}
+
+    with pytest.raises(EventProxyAccessError, match="nested more deeply than"):
+        serialize_argument(value)
+
+
+def test_arguments_as_deep_as_the_client_accepts_still_travel(monkeypatch):
+    """The bound is the one reading already uses, and it is not off by one"""
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_DEPTH, "current", 3)
+
+    assert serialize_argument([[["leaf"]]]) == [[["leaf"]]]
+
+    with pytest.raises(EventProxyAccessError, match="nested more deeply than"):
+        serialize_argument([[[[["leaf"]]]]])
 
 
 # -- when there is nobody on the other end to answer -------------------------

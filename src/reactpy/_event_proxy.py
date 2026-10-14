@@ -629,8 +629,20 @@ async def _immediate(value: Any) -> Any:
     return value
 
 
-def serialize_argument(value: Any) -> Any:
-    """Prepare a Python value to be handed to a client side method"""
+def serialize_argument(value: Any, depth: int = 0) -> Any:
+    """Prepare a Python value to be handed to a client side method
+
+    Nesting is bounded the way reading is, so that a value which goes deeper than the
+    connection can carry is refused in a way a handler can read, instead of overflowing
+    the stack on its way out.
+    """
+    if depth > REACTPY_EVENT_PROXY_MAX_DEPTH.current:
+        msg = (
+            f"arguments for a live event call are nested more deeply than "
+            f"{REACTPY_EVENT_PROXY_MAX_DEPTH.current} levels"
+        )
+        raise EventProxyAccessError(msg)
+
     if isinstance(value, EventProxy):
         return {
             EVENT_REFERENCE_KEY: {
@@ -641,9 +653,11 @@ def serialize_argument(value: Any) -> Any:
     if value is None or isinstance(value, bool | int | float | str):
         return value
     if isinstance(value, Mapping):
-        return {str(key): serialize_argument(item) for key, item in value.items()}
+        return {
+            str(key): serialize_argument(item, depth + 1) for key, item in value.items()
+        }
     if isinstance(value, Sequence) and not isinstance(value, bytes | bytearray):
-        return [serialize_argument(item) for item in value]
+        return [serialize_argument(item, depth + 1) for item in value]
 
     try:
         json.dumps(value)
