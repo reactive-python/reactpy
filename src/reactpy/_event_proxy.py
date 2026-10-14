@@ -1,45 +1,50 @@
 """Client-backed ("live") proxies for browser events.
 
-Every event handler is handed a snapshot of the JavaScript ``Event`` object. Snapshots
-are cheap and never block, but they are frozen at the moment the event was dispatched:
-methods such as ``focus()`` or ``composedPath()`` cannot be called from Python, and any
-property that the snapshot left out is simply gone.
-
-This module implements the machinery which lets a handler reach *live* into the browser
-instead. Alongside the snapshot it serialized, the client marks every object it kept
-alive with an id::
+Nothing about the object behind an event is sent to the server when it is dispatched.
+The client keeps the object alive and sends only an id::
 
     {
         "type": "layout-event",
         "target": "key-path:onClick",
-        "data": [
-            {
-                "type": "click",
-                "target": {"tagName": "INPUT", "value": "hello"},
-                "__reactpy_event__": {"id": "5b1c..."},
-            }
-        ],
+        "data": [{"__reactpy_event__": {"id": "5b1c..."}, "type": "click"}],
+        "seq": 3,
     }
 
-On receipt, ReactPy swaps that dictionary for an :class:`Event` - a ``dict`` subclass
-which *also* holds the snapshot. Reading an attribute returns a lazily resolved
-:class:`EventProxy` whose value is fetched from the browser only when it is needed:
+ReactPy turns that into an :class:`Event`. Reading any property of it hands back
+another :class:`EventProxy`, and *awaiting* that proxy is what asks the browser for the
+value:
 
 .. code-block:: python
 
     async def on_click(event: Event):
-        # one round trip: read "target.value" from the live DOM node
-        value = await event.target.value
-        # one round trip: call "focus()" on the live DOM node
-        await event.target.focus()
-        # nothing is sent for values which the snapshot already contains
-        print(event["type"])
+        value = await event.target.value  # one round trip
+        await event.target.focus()  # one round trip
 
-Every event handler is a coroutine, so live values are always pulled from the browser
-with ``await`` and the event loop is never blocked. When the client did not keep the
-originating object alive - because the handler opted out, or it is too old to support
-this - the very same :class:`Event` is handed over without any backing, and awaiting
-one of its proxies raises :class:`EventProxyUnavailable`.
+This is deliberately the same shape as JavaScript. ``event.target.value`` names the same
+property chain in both places; the only difference is that reading it from Python is an
+``await``, because the value lives in the browser rather than in this process. Every
+proxy is awaitable, always - whether the value happens to be known already or not.
+
+A read belongs to the moment it is awaited rather than to the event which woke the
+handler. ``await event.target.value`` asks the browser what the element holds *now*,
+just as the same expression would in JavaScript, so a handler which is still queued
+behind another event's work sees whatever that element has become by then - not the
+value which triggered it. This is the whole of the difference between reading live and
+being handed a snapshot: nothing is remembered about the past, and a handler which must
+act on the value as it stood when its own event fired should read it before anything
+else is given the chance to change it.
+
+Waiting costs a round trip, so two things keep the count down. A property which has been
+read is cached against its event, so reading it again sends nothing. Properties which are
+in flight at the same moment are sent together as one message:
+
+.. code-block:: python
+
+    value, key = await event.read("target.value", "key")
+    value, key = await asyncio.gather(event.target.value, event.key)
+
+Both cost a single round trip. Two ``await`` expressions written one after the other
+cannot be batched, because the second is not known until the first has landed.
 
 Resolution travels over the existing connection with two extra message types:
 
@@ -51,6 +56,9 @@ Resolution travels over the existing connection with two extra message types:
 
     {"type": "event-proxy-response", "requestId": "...", "ok": true,
      "value": "hello", "error": null, "code": null}
+
+Several requests travel as one ``{"type": "event-proxy-request", "requests": [...]}``
+and are answered by one ``{"type": "event-proxy-response", "responses": [...]}``.
 
 Objects which cannot be serialized (DOM nodes, functions, ...) come back as a
 reference - ``{"__reactpy_ref__": {"path": ["target"]}}`` - which ReactPy turns into
@@ -92,6 +100,10 @@ EVENT_REFERENCE_KEY = "__reactpy_ref__"
 _T = TypeVar("_T")
 _MISSING = object()
 
+CACHE_LIMIT = 2048
+"""How many resolved property values a single connection remembers before starting over
+"""
+
 SendCoroutine = Callable[[dict[str, Any]], Awaitable[None]]
 """Sends a single message to the client which owns a given event"""
 
@@ -131,6 +143,12 @@ class EventProxyBackend:
         self._send_tasks: set[Any] = set()
         self._timeouts = 0
         self._disabled = False
+        self._cache: dict[tuple[str, tuple[str, ...]], Any] = {}
+        self._inflight: dict[
+            tuple[str, tuple[str, ...]], tuple[str, Future | None]
+        ] = {}
+        self._outgoing: list[dict[str, Any]] = []
+        self._flush_scheduled = False
 
     @property
     def available(self) -> bool:
@@ -170,15 +188,33 @@ class EventProxyBackend:
             if not future.done():
                 future.set_exception(EventProxyUnavailable(reason))
         self._pending.clear()
+        self._inflight.clear()
+        self._outgoing.clear()
+        self._flush_scheduled = False
 
     def handle_response(self, message: Mapping[str, Any]) -> bool:
         """Route a ``event-proxy-response`` message to whoever is waiting for it
+
+        A message either answers one request or, when several went out together, carries
+        a ``responses`` list answering each of them in turn.
 
         Returns :data:`True` if the message was meant for this backend.
         """
         if message.get("type") != EVENT_PROXY_RESPONSE_TYPE:
             return False
 
+        responses = message.get("responses")
+        if isinstance(responses, list):
+            for entry in responses:
+                if isinstance(entry, Mapping):
+                    self._route(entry)
+            return True
+
+        self._route(message)
+        return True
+
+    def _route(self, message: Mapping[str, Any]) -> None:
+        """Deliver one answer to the request which asked for it"""
         request_id = message.get("requestId")
         future = (
             self._pending.pop(request_id, None) if isinstance(request_id, str) else None
@@ -189,7 +225,7 @@ class EventProxyBackend:
             logger.debug(
                 f"Ignored live event response to unknown request {request_id!r}"
             )
-            return True
+            return
 
         if not future.done():
             future.set_result(
@@ -200,7 +236,6 @@ class EventProxyBackend:
                     "code": message.get("code"),
                 }
             )
-        return True
 
     async def resolve(
         self,
@@ -209,20 +244,79 @@ class EventProxyBackend:
         call: bool = False,
         args: Sequence[Any] = (),
     ) -> Any:
-        """Resolve ``path`` against the client side event (awaited from the loop)"""
-        request_id, message, future = self._begin(
-            event_id, path, call, args, reply=True
-        )
-        self._submit(message, future, request_id)
-        if future is None:  # nocov - reply=True always yields a future
-            return None
+        """Resolve ``path`` against the client side event (awaited from the loop)
+
+        Reads are remembered against the event, so asking for the same property twice
+        sends one request. A request which is already in flight is shared rather than
+        duplicated.
+        """
+        key = None if call else self._cache_key(event_id, path)
+        if key is not None:
+            if key in self._cache:
+                return self._cache[key]
+            shared = self._inflight.get(key)
+            if shared is not None:
+                payload = await self._await(*shared, event_id, path)
+                return self._to_value(payload, event_id, path)
+
+        request_id, future = self._enqueue(event_id, path, call, args, reply=True)
+        if key is not None and future is not None:
+            self._inflight[key] = (request_id, future)
         try:
-            payload = await asyncio.wait_for(
-                asyncio.wrap_future(future), REACTPY_EVENT_PROXY_TIMEOUT.current
+            payload = await self._await(request_id, future, event_id, path)
+        finally:
+            # Whatever happened, nobody may keep waiting on a future which is already
+            # done - on a timeout it has been cancelled, and leaving it here would hand
+            # that cancellation to the next reader of this path instead of letting it
+            # ask the browser again.
+            if key is not None:
+                self._inflight.pop(key, None)
+        value = self._to_value(payload, event_id, path)
+        if key is not None:
+            self._remember(key, value)
+        return value
+
+    async def resolve_many(
+        self, event_id: str, paths: Sequence[Sequence[str | int]]
+    ) -> list[Any]:
+        """Resolve several paths of one event in as few messages as possible
+
+        Anything already cached is answered on the spot. Everything else is enqueued
+        together, so it leaves the process as a single batched request.
+        """
+        values: list[Any] = [None] * len(paths)
+        outstanding: list[
+            tuple[int, tuple[str, tuple[str, ...]], tuple[str, Future | None]]
+        ] = []
+        ours: list[tuple[str, tuple[str, ...]]] = []
+        for index, path in enumerate(paths):
+            key = self._cache_key(event_id, path)
+            if key in self._cache:
+                values[index] = self._cache[key]
+                continue
+            shared = self._inflight.get(key)
+            if shared is not None:
+                outstanding.append((index, key, shared))
+                continue
+            entry = self._enqueue(event_id, path, False, (), True)
+            self._inflight[key] = entry
+            ours.append(key)
+            outstanding.append((index, key, entry))
+
+        try:
+            payloads = await asyncio.gather(
+                *(
+                    self._await(request_id, future, event_id, paths[index])
+                    for index, _, (request_id, future) in outstanding
+                )
             )
-        except (TimeoutError, FuturesTimeoutError):
-            self._handle_timeout(request_id, event_id, path)
-        return self._to_value(payload, event_id, path)
+        finally:
+            for key in ours:
+                self._inflight.pop(key, None)
+        for (index, key, _), payload in zip(outstanding, payloads, strict=True):
+            values[index] = self._to_value(payload, event_id, paths[index])
+            self._remember(key, values[index])
+        return values
 
     def notify(
         self,
@@ -232,17 +326,99 @@ class EventProxyBackend:
     ) -> None:
         """Call a client side method without waiting for its result (best effort)"""
         try:
-            request_id, message, future = self._begin(
-                event_id, path, True, args, reply=False
-            )
+            self._enqueue(event_id, path, True, args, reply=False)
         except EventProxyError:
             logger.debug(
                 f"Could not schedule live call to {list(path)!r} of {event_id!r}"
             )
             return
-        self._submit(message, future, request_id)
 
     # -- internals --------------------------------------------------------
+
+    @staticmethod
+    def _cache_key(
+        event_id: str, path: Sequence[str | int]
+    ) -> tuple[str, tuple[str, ...]]:
+        return event_id, tuple(str(segment) for segment in path)
+
+    def _remember(self, key: tuple[str, tuple[str, ...]], value: Any) -> None:
+        if len(self._cache) >= CACHE_LIMIT:
+            # Reading is meant to be cheap, not a place to accumulate memory
+            self._cache.clear()
+        self._cache[key] = value
+
+    async def _await(
+        self,
+        request_id: str,
+        future: Future | None,
+        event_id: str,
+        path: Sequence[str | int],
+    ) -> dict[str, Any]:
+        if future is None:  # nocov - only reply=False requests have no future
+            return {"ok": True, "value": None, "error": None, "code": None}
+        try:
+            return await asyncio.wait_for(
+                asyncio.wrap_future(future), REACTPY_EVENT_PROXY_TIMEOUT.current
+            )
+        except (TimeoutError, FuturesTimeoutError):
+            self._handle_timeout(request_id, event_id, path)
+
+    def _enqueue(
+        self,
+        event_id: str,
+        path: Sequence[str | int],
+        call: bool,
+        args: Sequence[Any],
+        reply: bool,
+    ) -> tuple[str, Future | None]:
+        """Queue one request to leave with whatever else is waiting, and await it"""
+        request_id, message, future = self._begin(
+            event_id, path, call, args, reply=reply
+        )
+        self._outgoing.append(message)
+        self._schedule_flush()
+        return request_id, future
+
+    def _schedule_flush(self) -> None:
+        """Send everything queued, once, at the end of the current pass round the loop"""
+        loop = self._loop
+        if loop is None or self._flush_scheduled:
+            return
+        self._flush_scheduled = True
+        if threading.get_ident() == self._loop_thread_id:
+            loop.call_soon(self._flush)
+        else:
+            loop.call_soon_threadsafe(self._flush)
+
+    def _flush(self) -> None:
+        self._flush_scheduled = False
+        batch, self._outgoing = self._outgoing, []
+        if not batch:
+            return
+        if self._loop is None or self._send is None:
+            self._abandon(batch)
+            return
+        message = (
+            batch[0]
+            if len(batch) == 1
+            else {"type": EVENT_PROXY_REQUEST_TYPE, "requests": batch}
+        )
+        task = self._loop.create_task(self._send_message(message))
+        self._send_tasks.add(task)
+        task.add_done_callback(self._send_tasks.discard)
+
+    def _abandon(self, batch: Sequence[dict[str, Any]]) -> None:
+        for message in batch:
+            request_id = message.get("requestId")
+            future = (
+                self._pending.pop(request_id, None)
+                if isinstance(request_id, str)
+                else None
+            )
+            if future is not None and not future.done():
+                future.set_exception(
+                    EventProxyUnavailable("no sender is bound to this connection")
+                )
 
     def _begin(
         self,
@@ -276,33 +452,9 @@ class EventProxyBackend:
             self._pending[request_id] = future
         return request_id, message, future
 
-    def _submit(
-        self,
-        message: dict[str, Any],
-        future: Future | None,
-        request_id: str,
-    ) -> None:
-        loop, send = self._loop, self._send
-        if loop is None or send is None:
-            self._discard(request_id)
-            if future is not None and not future.done():
-                future.set_exception(
-                    EventProxyUnavailable("no sender is bound to this connection")
-                )
-            return
-
-        if threading.get_ident() == self._loop_thread_id:
-            task = loop.create_task(self._send_message(message, future))
-            self._send_tasks.add(task)
-            task.add_done_callback(self._send_tasks.discard)
-        else:
-            asyncio.run_coroutine_threadsafe(self._send_message(message, future), loop)
-
-    async def _send_message(
-        self, message: dict[str, Any], future: Future | None
-    ) -> None:
+    async def _send_message(self, message: dict[str, Any]) -> None:
         send = self._send
-        if send is None:  # nocov - guarded by _submit
+        if send is None:  # nocov - guarded by _flush
             return
         try:
             await send(message)
@@ -354,6 +506,15 @@ _NO_PROXY_BACKEND = EventProxyBackend()
 Since it has no sender, ``available`` is :data:`False` and any attempt to resolve
 something through it raises :class:`EventProxyUnavailable`.
 """
+
+
+async def _immediate(value: Any) -> Any:
+    """Answer an await without asking the browser anything
+
+    Used by a proxy whose value the client already gave us - the event ``type`` - so
+    that awaiting any proxy behaves the same whether or not it is already known.
+    """
+    return value
 
 
 def serialize_argument(value: Any) -> Any:
@@ -415,43 +576,62 @@ def deserialize_value(
     return value
 
 
-class EventProxy(dict, Generic[_T]):
+class EventProxy(Generic[_T]):
     """A live, lazily resolved view onto a browser object
 
-    Instances are ``dict`` subclasses which hold on to whatever the client chose to
-    serialize when the event was dispatched (the "snapshot"). Attribute access returns
-    further proxies for anything the snapshot does not already answer with a plain
-    value, so a chain such as ``event.target.value`` costs a single round trip - and
-    only when the value is genuinely needed.
-
-    Anything which has to come from the browser is awaited, because every event handler
-    is a coroutine and nothing may block the event loop::
+    Nothing about the object is known until it is asked for. Reading any property hands
+    back another proxy, and *awaiting* that proxy is what sends the request::
 
         async def on_input(event: Event):
             value = await event.target.value
             await event.target.focus()
 
-    A proxy which no client is backing - because the handler opted out of live access,
-    or the client is too old to support it - hands out whatever its snapshot already
-    holds, and raises :class:`EventProxyUnavailable` when asked for anything more.
+    This is the same property chain the browser sees. The one difference is that reading
+    it from Python is an ``await``, because the value lives over the connection. Every
+    proxy is awaitable, whether or not its value happens to be known already - there is
+    no second, non-awaitable kind of value to trip over.
+
+    A property which has been read is cached against its event, and properties which are
+    in flight at the same moment travel together as one message::
+
+        value, key = await event.read("target.value", "key")
+
+    A property the browser will not give - a blocked member, an object it has forgotten,
+    a path which is not there - raises a subclass of :class:`EventProxyError`. Nothing is
+    ever quietly answered with :data:`None`.
     """
+
+    __slots__ = (
+        "_reactpy_backend",
+        "_reactpy_callable",
+        "_reactpy_debounce",
+        "_reactpy_event_id",
+        "_reactpy_flags",
+        "_reactpy_has_value",
+        "_reactpy_known",
+        "_reactpy_path",
+        "_reactpy_value",
+    )
 
     def __init__(
         self,
-        snapshot: Mapping[str, Any] | None = None,
         *,
         backend: EventProxyBackend | None = None,
         event_id: str = "",
         path: Sequence[str | int] = (),
         flags: dict[str, bool] | None = None,
+        value: Any = _MISSING,
+        known: Mapping[str, Any] | None = None,
     ) -> None:
-        dict.__init__(self, snapshot or {})
         self._reactpy_backend = backend if backend is not None else _NO_PROXY_BACKEND
         self._reactpy_event_id = event_id
         self._reactpy_path: tuple[str | int, ...] = tuple(path)
         self._reactpy_flags = {} if flags is None else flags
         self._reactpy_debounce: int | None = None
         self._reactpy_callable = False
+        self._reactpy_has_value = value is not _MISSING
+        self._reactpy_value = None if value is _MISSING else value
+        self._reactpy_known = {} if known is None else dict(known)
 
     # -- identity ---------------------------------------------------------
 
@@ -471,120 +651,44 @@ class EventProxy(dict, Generic[_T]):
         return self._reactpy_backend
 
     @property
-    def has_snapshot(self) -> bool:
-        """Whether the client already gave us the value of this proxy"""
-        return bool(dict.__len__(self))
+    def is_known(self) -> bool:
+        """Whether the value is already held here, so awaiting sends nothing"""
+        return self._reactpy_has_value
 
     def __repr__(self) -> str:
-        if not self._reactpy_backend.available:
-            # Nothing is behind this proxy - show the snapshot it was handed
-            return dict.__repr__(self)
         return (
             f"{type(self).__name__}(event_id={self._reactpy_event_id!r}, "
-            f"path={list(self._reactpy_path)!r}, snapshot={dict.__repr__(self)})"
+            f"path={list(self._reactpy_path)!r})"
         )
 
     def __dir__(self) -> list[str]:
-        return sorted(
-            {
-                *dir(type(self)),
-                *(key for key in dict.keys(self) if isinstance(key, str)),
-            }
-        )
+        return sorted({*dir(type(self)), *self._reactpy_known_members()})
+
+    def _reactpy_known_members(self) -> list[str]:
+        """Properties the client told us about when it dispatched the event"""
+        return list(self._reactpy_known)
 
     # -- child access -----------------------------------------------------
 
-    def _reactpy_snapshot_value(self, segment: str | int) -> Any:
-        try:
-            return dict.__getitem__(self, segment)
-        except KeyError:
-            return _MISSING
-
     def _reactpy_make_child(
-        self, segment: str | int, snapshot: Mapping[str, Any] | None = None
+        self, segment: str | int, value: Any = _MISSING
     ) -> EventProxy[Any]:
-        child = EventProxy(
+        """A proxy one segment deeper, awaiting which reads it from the browser
+
+        The value comes free in one case only: the client volunteered it when it
+        dispatched the event (the event ``type``, which is small and needed to describe
+        the event even after the object behind it has been forgotten). The child is
+        awaitable either way - a known value just means awaiting it sends nothing.
+        """
+        if value is _MISSING and self._reactpy_known:
+            value = self._reactpy_known.get(str(segment), _MISSING)
+        return EventProxy(
             backend=self._reactpy_backend,
             event_id=self._reactpy_event_id,
             path=(*self._reactpy_path, segment),
             flags=self._reactpy_flags,
+            value=value,
         )
-        if snapshot is None:
-            value = self._reactpy_snapshot_value(segment)
-            snapshot = value if isinstance(value, Mapping) else {}
-        reference = (
-            snapshot.get(EVENT_REFERENCE_KEY) if isinstance(snapshot, Mapping) else None
-        )
-        if isinstance(reference, Mapping):
-            # The snapshot only points at what the browser still holds - hand back a
-            # real proxy for it rather than a dict containing the marker.
-            path = tuple(reference.get("path", ())) or (*self._reactpy_path, segment)
-            child = EventProxy(
-                backend=self._reactpy_backend,
-                event_id=str(reference.get("eventId", self._reactpy_event_id)),
-                path=path,
-                flags=self._reactpy_flags,
-            )
-            child._reactpy_callable = bool(reference.get("callable"))
-            return child
-        dict.update(child, snapshot)
-        return child
-
-    def _reactpy_wrap_sequence(
-        self, segment: str | int, value: Sequence[Any]
-    ) -> list[Any]:
-        """Copy a list of snapshot data, promoting object entries to child proxies"""
-        parent = self._reactpy_make_child(segment)
-        items: list[Any] = []
-        for index, item in enumerate(value):
-            if isinstance(item, Mapping):
-                items.append(parent._reactpy_make_child(str(index), item))
-            elif isinstance(item, list | tuple):
-                items.append(parent._reactpy_wrap_sequence(str(index), item))
-            else:
-                items.append(item)
-        return items
-
-    def _reactpy_child_or_value(self, segment: str | int) -> Any:
-        """Return the snapshot value, or a proxy for whatever the browser holds"""
-        value = self._reactpy_snapshot_value(segment)
-        if value is _MISSING:
-            return self._reactpy_resolve_segment(segment)
-        if isinstance(value, Mapping):
-            return self._reactpy_make_child(segment)
-        if isinstance(value, list | tuple):
-            return self._reactpy_wrap_sequence(segment, value)
-        return value
-
-    def _reactpy_resolve_segment(self, segment: str | int) -> Any:
-        """Read something the snapshot does not know about
-
-        Nothing is asked of the browser yet - the child handed back stays lazy, and
-        it is awaiting that child which sends the request.
-        """
-        return self._reactpy_make_child(segment)
-
-    def _reactpy_walk_snapshot(self, segments: Sequence[str]) -> Any:
-        """Follow ``segments`` through the snapshot, or return ``_MISSING``"""
-        node: Any = self
-        for segment in segments:
-            if isinstance(node, dict):
-                if not dict.__contains__(node, segment):
-                    return _MISSING
-                # bypass proxy __getitem__ so nested data stays plain JSON
-                node = dict.__getitem__(node, segment)
-            elif isinstance(node, Mapping):
-                if segment not in node:
-                    return _MISSING
-                node = node[segment]
-            elif isinstance(node, Sequence) and not isinstance(node, str | bytes):
-                try:
-                    node = node[int(segment)]
-                except (ValueError, IndexError):
-                    return _MISSING
-            else:
-                return _MISSING
-        return node
 
     @staticmethod
     def _reactpy_normalize_path(path: str | Sequence[Any]) -> list[str]:
@@ -646,19 +750,18 @@ class EventProxy(dict, Generic[_T]):
 
     @property
     def defaultPrevented(self) -> bool:
-        """Whether :meth:`preventDefault` has been called for this event"""
-        return bool(
-            self._reactpy_flags.get("preventDefault")
-            or dict.get(self, "defaultPrevented", False),
-        )
+        """Whether :meth:`preventDefault` has been asked for on this proxy
+
+        This reports what Python has asked the browser to do, not what the browser
+        settled on - read the live value with ``await event.defaultPrevented`` if the
+        distinction matters.
+        """
+        return bool(self._reactpy_flags.get("preventDefault"))
 
     @property
     def propagationStopped(self) -> bool:
-        """Whether :meth:`stopPropagation` has been called for this event"""
-        return bool(
-            self._reactpy_flags.get("stopPropagation")
-            or dict.get(self, "propagationStopped", False),
-        )
+        """Whether :meth:`stopPropagation` has been asked for on this proxy"""
+        return bool(self._reactpy_flags.get("stopPropagation"))
 
     @property
     def debounce(self) -> int | None:
@@ -669,7 +772,7 @@ class EventProxy(dict, Generic[_T]):
     def debounce(self, value: int | None) -> None:
         self._reactpy_debounce = value
 
-    # -- dict like behaviour ----------------------------------------------
+    # -- property access ----------------------------------------------------
 
     def __getattr__(self, name: str) -> Any:
         if name.startswith("_reactpy") or (
@@ -677,21 +780,12 @@ class EventProxy(dict, Generic[_T]):
         ):
             # Never resolve internals or interpreter lookups against the browser
             raise AttributeError(name)
-        if not self._reactpy_backend.available:
-            # Nothing is behind this proxy - behave like the plain snapshot it is
-            value = dict.get(self, name, _MISSING)
-            if value is _MISSING:
-                return None
-            return EventProxy(value) if isinstance(value, dict) else value
-        return self._reactpy_child_or_value(name)
+        return self._reactpy_make_child(name)
 
-    def __getitem__(self, key: Any) -> Any:
-        if not self._reactpy_backend.available:
-            return dict.__getitem__(self, key)
-        return self._reactpy_child_or_value(key)
-
-    def __bool__(self) -> bool:
-        return bool(dict.__len__(self)) or bool(self._reactpy_path)
+    # Deliberately no __getitem__, __len__, __iter__ or __contains__: a proxy is not a
+    # container, and there is nothing to enumerate about an object which still lives in
+    # the browser. Define __getitem__ without __iter__ and ``x in event`` would fall
+    # back to trying event[0], event[1], ... forever, since no index is ever missing.
 
     # -- resolution -------------------------------------------------------
 
@@ -710,7 +804,7 @@ class EventProxy(dict, Generic[_T]):
         )
 
     def composedPath(self) -> Awaitable[list[Any]]:
-        """Return the event's path, asking the client for it if the snapshot lacks it
+        """Return the event's path, read from the browser
 
         Await the result::
 
@@ -727,69 +821,62 @@ class EventProxy(dict, Generic[_T]):
         """
         return self._reactpy_resolve_path(False, ())
 
-    async def read(self, path: str | Sequence[Any], default: Any = _MISSING) -> Any:
-        """Return the value at ``path`` whether or not the snapshot knows it
+    async def read(self, *paths: str | Sequence[Any]) -> tuple[Any, ...]:
+        """Read one or more properties in as few round trips as possible
 
-        Unlike awaiting an attribute, this always works - including for values which
-        the snapshot already answered with a plain ``str``, ``bool`` or ``None``::
+        Each argument is a dotted path, or a sequence of segments, relative to this
+        proxy; the result is a tuple of the same length. Whatever is already known is
+        answered on the spot and the rest goes to the browser as one message::
 
             async def on_input(event: Event):
-                value = await event.read("target.value")
+                value, key = await event.read("target.value", "key")
+
+        Awaiting the proxies directly reads just as well and shares the same cache::
+
+            value, key = await asyncio.gather(event.target.value, event.key)
+
+        Values are fetched when the read is made rather than when the event fired, so a
+        read made after other work has intervened reports what the browser holds at that
+        moment. Whatever was read is cached, and a cached answer is not re-fetched.
         """
-        segments = self._reactpy_normalize_path(path)
-        value = self._reactpy_walk_snapshot(segments)
-        if value is not _MISSING:
-            return value
-        try:
-            return await self._reactpy_backend.resolve(
-                self._reactpy_event_id,
-                (*self._reactpy_path, *segments),
-                call=False,
-                args=(),
+        if not paths:
+            return ()
+        segments = [self._reactpy_normalize_path(path) for path in paths]
+        values: list[Any] = [None] * len(segments)
+        wanted: list[list[str | int]] = []
+        wanted_at: list[int] = []
+        for index, item in enumerate(segments):
+            if len(item) == 1 and item[0] in self._reactpy_known:
+                # The client sent this with the event, so asking costs nothing
+                values[index] = self._reactpy_known[item[0]]
+            else:
+                wanted.append([*self._reactpy_path, *item])
+                wanted_at.append(index)
+        if wanted:
+            resolved = await self._reactpy_backend.resolve_many(
+                self._reactpy_event_id, wanted
             )
-        except EventProxyError:
-            if default is _MISSING:
-                raise
-            return default
+            for index, value in zip(wanted_at, resolved, strict=True):
+                values[index] = value
+        return tuple(values)
 
     def __await__(self) -> Any:
+        if self._reactpy_has_value:
+            return _immediate(self._reactpy_value).__await__()
         return self._reactpy_resolve_path(False, ()).__await__()
 
     def __call__(self, *args: Any) -> Awaitable[Any]:
         """Call the client side method this proxy currently points at"""
         return self._reactpy_resolve_path(True, args)
 
-    def __len__(self) -> int:
-        if not dict.__len__(self):
-            self._reactpy_require_snapshot("measure")
-        return dict.__len__(self)
-
-    def __iter__(self) -> Any:
-        if not dict.__len__(self):
-            self._reactpy_require_snapshot("iterate over")
-        return dict.__iter__(self)
-
-    def __contains__(self, key: Any) -> bool:
-        if dict.__contains__(self, key):
-            return True
-        if not dict.__len__(self):
-            self._reactpy_require_snapshot("test membership of")
-        return False
+    def __bool__(self) -> bool:
+        return True
 
     def _reactpy_description(self) -> str:
         return (
             f"{type(self).__name__} for {list(self._reactpy_path)!r} of event "
             f"{self._reactpy_event_id!r}"
         )
-
-    def _reactpy_require_snapshot(self, action: str) -> None:
-        """Complain about an operation which needs a value we do not have yet"""
-        if self._reactpy_backend.available:
-            msg = (
-                f"cannot {action} {self._reactpy_description()} because nothing is "
-                "known about it yet - await the proxy (or call .resolve() on it) first"
-            )
-            raise EventProxyAccessError(msg)
 
 
 if TYPE_CHECKING:
@@ -799,25 +886,25 @@ if TYPE_CHECKING:
 class Event(EventProxy[_T]):
     """The event object handed to event handler functions
 
-    A ``dict`` subclass which holds the snapshot the client took when the event was
-    dispatched *and*, when the client kept the originating object alive, knows how to
-    reach back into the browser for anything missing::
+    Reading any property of it hands back a proxy, and awaiting that proxy asks the
+    browser for the value::
 
         async def on_key_down(event: Event):
-            if await event.read("key") == "Enter":
+            if await event.key == "Enter":
                 await event.target.focus()
                 print(await event.target.value)
 
-    Reading a key which the snapshot already answers with a plain value never touches
-    the connection, so ``event["type"]`` and ``event.target.value`` stay as cheap as
-    they always were. Anything the snapshot left out costs a single round trip, and is
-    awaited - if the client is not holding the object alive at all, awaiting raises
-    :class:`~reactpy._event_proxy.EventProxyUnavailable`.
+    This is the property chain the browser itself uses. The only difference is that a
+    read from Python is an ``await``, because the value lives in the browser. There is
+    no snapshot to be surprised by, and no value which is sometimes awaitable and
+    sometimes not - every proxy is awaitable, always.
 
-    Handlers are always coroutines, so this is the only event object there is. Live
-    access is what a handler gets unless it has declined it - see
-    :attr:`~reactpy.types.BaseEventHandler.event_proxy` for turning it off for a single
-    handler, which is the only knob there is.
+    Each read is a round trip, so reads which are in flight together travel together::
+
+        value, key = await event.read("target.value", "key")
+
+    A property the browser will not give - one which is blocked, or an object it has
+    already forgotten - raises a subclass of :class:`EventProxyError`.
 
     Every member below is a best-effort hint for editors and type checkers. At runtime
     any property of any browser object can be read - unlisted ones simply resolve to
@@ -911,38 +998,23 @@ def build_event_args(
 ) -> list[Any]:
     """Turn the ``data`` of a ``layout-event`` message into handler arguments
 
-    Items which the client marked as live become :class:`Event` objects which can be
-    read from and called into. Anything else is handed over as a plain :class:`Event`
-    snapshot, or exactly as it arrived when it was never an object at all.
+    Items which the client marked as live become :class:`Event` objects which read from
+    and call into the browser. Nothing about them is filled in here beyond what the
+    client chose to send alongside the id - plain scalars only, which in practice means
+    the event ``type``. Anything that was never an object is handed over as it arrived.
     """
     args: list[Any] = []
-    is_live = backend is not None and backend.available
     for item in data:
-        event_id = event_marker_id(item) if is_live else None
-        if event_id is not None:
-            args.append(
-                Event(
-                    {
-                        key: value
-                        for key, value in item.items()
-                        if key != EVENT_MARKER_KEY
-                    },
-                    backend=backend,
-                    event_id=event_id,
-                )
-            )
-        elif isinstance(item, dict):
-            args.append(
-                Event(
-                    {
-                        key: value
-                        for key, value in item.items()
-                        if key != EVENT_MARKER_KEY
-                    }
-                )
-            )
-        else:
+        event_id = event_marker_id(item) if backend is not None else None
+        if event_id is None:
             args.append(item)
+            continue
+        known = {
+            key: value
+            for key, value in item.items()
+            if key != EVENT_MARKER_KEY and isinstance(value, str | int | float | bool)
+        }
+        args.append(Event(backend=backend, event_id=event_id, known=known))
     return args
 
 

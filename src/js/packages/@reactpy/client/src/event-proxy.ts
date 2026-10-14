@@ -1,16 +1,17 @@
 /**
  * Live ("event proxy") access to the objects which triggered a ReactPy event.
  *
- * Every object dispatched by a VDOM event handler is registered here, so the server
- * can reach back into whatever actually triggered the event. What the client sends
- * alongside the ``layout-event`` is the serializable half of that object plus an id:
+ * Nothing about the object which triggered an event is sent to the server when the event
+ * is dispatched. The client keeps the object alive here and puts only its id - plus the
+ * event ``type``, the one plain value cheap enough to volunteer - into the
+ * ``layout-event``:
  *
  * ```js
- * { type: "click", target: { tagName: "INPUT" }, __reactpy_event__: { id: "..." } }
+ * { type: "click", __reactpy_event__: { id: "..." } }
  * ```
  *
- * The server can then walk that object property by property, and call its methods, by
- * sending ``event-proxy-request`` messages:
+ * Everything else is read on demand. Each read is a round trip, so the server asks for
+ * whatever it is missing as an ``event-proxy-request``:
  *
  * ```js
  * { type: "event-proxy-request", requestId: "...", eventId: "...",
@@ -24,9 +25,14 @@
  * { __reactpy_ref__: { eventId: "...", path: ["target"], callable?: boolean } }
  * ```
  *
- * Only what is needed is serialized, which removes the fixed recursion depth that the
- * snapshot alone imposes, while keeping anything which could be used to break out of
- * the page (window, document, prototype, eval, ...) firmly out of reach.
+ * Requests which are outstanding at the same moment travel together as one message
+ * carrying a ``requests`` list, and are answered by one message carrying the matching
+ * ``responses`` list. A lone request keeps its unwrapped shape in both directions.
+ *
+ * Since there is no snapshot to fall back on, what keeps this safe is the blocklist
+ * below: anything which could be used to break out of the page (window, document,
+ * prototype, eval, ...) is refused on every read, whether it is asked for one property
+ * at a time or handed over as part of a subtree.
  */
 
 export const EVENT_PROXY_REQUEST_TYPE = "event-proxy-request";
@@ -34,8 +40,17 @@ export const EVENT_PROXY_RESPONSE_TYPE = "event-proxy-response";
 export const EVENT_MARKER_KEY = "__reactpy_event__";
 export const EVENT_REFERENCE_KEY = "__reactpy_ref__";
 
-/** How many dispatched objects are kept around at most */
-export const MAX_LIVE_OBJECTS = 100;
+/**
+ * How many dispatched objects are kept around at most.
+ *
+ * This is a correctness limit rather than a memory one. There is no snapshot left to
+ * fall back on, so an object which has been evicted cannot be read again: every later
+ * request for it is answered with a hard "not-found" error. The cap therefore has to
+ * leave room for every event a single page can have in flight - a handler awaiting
+ * several events, or a burst of keystrokes still being read - rather than merely being
+ * small enough to be harmless.
+ */
+export const MAX_LIVE_OBJECTS = 512;
 /** How long an object may sit unused before it is forgotten (ms) */
 export const LIVE_OBJECT_TTL_MS = 60_000;
 /** How many properties of a single object are handed over at most */
@@ -63,6 +78,25 @@ export type EventProxyResponse = {
   code?: "not-found" | "access" | null;
 };
 
+/**
+ * Several requests sent as a single message, each shaped exactly like the one above.
+ *
+ * The server queues whatever it wants to know during a pass round its loop and sends it
+ * all at once, so that a handler which reads a dozen properties pays for one round trip
+ * instead of a dozen. Each entry keeps its own ``requestId``, and keeps the ``type`` of
+ * the message it would have arrived in on its own.
+ */
+export type EventProxyRequestBatch = {
+  type: typeof EVENT_PROXY_REQUEST_TYPE;
+  requests: EventProxyRequest[];
+};
+
+/** The single message which answers a {@link EventProxyRequestBatch} */
+export type EventProxyResponseBatch = {
+  type: typeof EVENT_PROXY_RESPONSE_TYPE;
+  responses: EventProxyResponse[];
+};
+
 export type EventMarker = {
   id: string;
 };
@@ -76,7 +110,10 @@ export class ProxyAccessError extends Error {}
  * Properties which must never leave the page. Anything which could be used to reach
  * the wider document, walk a prototype chain, or evaluate code is refused. Ordinary
  * data properties (``value``, ``checked``, ``key``, ``className``, ...) are fine - they
- * are what the snapshot the client sends up front is made of.
+ * are what a handler reads out of an event, one property per round trip.
+ *
+ * This is a security control, not a size control: with nothing sent up front, it is the
+ * only thing standing between a request and the rest of the browser.
  */
 const BLOCKED_MEMBERS = new Set<string>([
   // reaching the rest of the document, or the browser itself
@@ -179,7 +216,9 @@ export function readReference(value: unknown): Reference | null {
  * Collect the readable, non-function properties of ``value``.
  *
  * Own properties are not enough for DOM objects - nearly everything interesting lives
- * on the prototype - so the chain is walked the same way the snapshot serializer does.
+ * on the prototype - so the chain is walked the same way a property read on the page
+ * would resolve it. Blocked names simply never make it into the result, and methods do
+ * not either: those are called by an explicit path, not handed over as data.
  */
 export function collectProperties(
   value: object,
@@ -208,10 +247,11 @@ export function collectProperties(
 }
 
 /**
- * Turn a live browser value into something JSON can carry.
+ * Turn a live browser value into the answer to a single on-demand read.
  *
  * Anything which is too deep, too large, recursive, or simply not data (a function) is
- * replaced with a :data:`Reference` so the server can ask for it later.
+ * replaced with a :data:`Reference` so the server can ask about it separately - which is
+ * exactly what a handler which reaches further down does.
  */
 export function serializeValue(
   value: unknown,
@@ -237,10 +277,13 @@ export function serializeValue(
   if (depth >= (options.maxDepth ?? DEFAULT_MAX_DEPTH))
     return reference(eventId, path);
 
-  const nested = new Set(seen);
-  nested.add(value);
+  // A single "seen" set covers the whole answer rather than being copied per node. One
+  // read reaches at most a bounded subtree of an object the server is already holding,
+  // so anything met twice - a cycle, or a node shared between two properties - is better
+  // handed back as a reference than expanded again.
+  seen.add(value);
   const next = (item: unknown, segment: string, at: number) =>
-    serializeValue(item, eventId, [...path, segment], options, at, nested);
+    serializeValue(item, eventId, [...path, segment], options, at, seen);
 
   if (value instanceof Date) return value.toISOString();
   if (value instanceof RegExp) return String(value);
@@ -275,36 +318,6 @@ export function serializeValue(
     result[name] = next(properties[name], name, depth + 1);
   }
   return result;
-}
-
-/**
- * Replace every reference in a serialized value with ``null``.
- *
- * ``serializeValue`` leans on references for whatever JSON cannot carry - a function,
- * a DOM node, something too deep or already seen. Those are only worth sending to a
- * server which can ask about them afterwards, which in turn needs the object to still
- * be held here. A snapshot taken for a handler which never asked for live access has
- * nothing behind it, so the references are emptied rather than handed over as
- * something nobody will ever be able to answer.
- */
-export function dropReferences(value: any): any {
-  if (Array.isArray(value)) return value.map(dropReferences);
-  if (value === null || typeof value !== "object") return value;
-  if (readReference(value)) return null;
-  return Object.fromEntries(
-    Object.entries(value).map(([key, item]) => [key, dropReferences(item)]),
-  );
-}
-
-/**
- * Serialize an event for a handler which will not be reaching back into the page.
- *
- * The object is not registered, so dispatching it costs the page nothing to remember,
- * and the snapshot carries no references which could only be answered by a lookup that
- * would never succeed. The empty event id is never resolved against the registry.
- */
-export function serializeSnapshot(value: any): any {
-  return dropReferences(serializeValue(value, ""));
 }
 
 /** Read a single property of a live object, refusing anything blocked */
@@ -353,10 +366,12 @@ type LiveObject = { value: any; added: number };
  * Keeps the objects which recently triggered an event around so the server can walk
  * their properties and call their methods.
  *
- * Entries are bounded in count and in age: an object which nobody has asked about for
- * a while, or which does not fit alongside the most recent ones, is forgotten. Every
- * value which leaves this registry goes through ``serializeValue``, so functions and
- * anything which could be used to escape the page never do.
+ * This is the only place those objects exist as far as the server is concerned: nothing
+ * about them is sent when the event is dispatched, so forgetting one is not a slowdown
+ * but a dead end - every later request for it is answered with "not-found". Entries are
+ * still bounded in count and in age, since a page cannot hold on to events forever.
+ * Every value which leaves this registry goes through ``serializeValue``, so functions
+ * and anything which could be used to escape the page never do.
  */
 export class EventProxyRegistry {
   private readonly live = new Map<string, LiveObject>();
@@ -395,7 +410,12 @@ export class EventProxyRegistry {
     this.live.clear();
   }
 
-  /** Drop objects which went unused for too long, or which no longer fit */
+  /**
+   * Drop objects which went unused for too long, or which no longer fit
+   *
+   * Whatever is dropped here is gone for good as far as the server is concerned: the id
+   * it holds keeps working, and keeps answering "not-found".
+   */
   prune(): void {
     const now = this.clock();
     for (const [eventId, entry] of this.live) {
@@ -408,11 +428,44 @@ export class EventProxyRegistry {
     }
   }
 
-  /** Answer an incoming ``event-proxy-request``, replying unless told not to */
-  handleMessage(message: EventProxyRequest): void {
+  /**
+   * Answer an incoming ``event-proxy-request``, replying unless told not to
+   *
+   * Requests which were outstanding at the same moment arrive together as one message
+   * carrying a ``requests`` list. Such a batch is answered by exactly one message whose
+   * ``responses`` list holds one entry per request which wanted an answer - and by no
+   * message at all when none of them did. A request which arrived on its own keeps its
+   * unwrapped shape in both directions, so the common single read stays one small
+   * message instead of paying for a wrapper around it.
+   */
+  handleMessage(message: EventProxyRequest | EventProxyRequestBatch): void {
     if (!message || message.type !== EVENT_PROXY_REQUEST_TYPE) return;
-    const response = this.resolve(message);
-    if (message.reply !== false) this.send(response);
+
+    const requests = (message as EventProxyRequestBatch).requests;
+    if (!Array.isArray(requests)) {
+      const request = message as EventProxyRequest;
+      // Resolved whether or not an answer is wanted: a request which does not want one
+      // is usually a call whose only point was to run a method in the page.
+      const response = this.resolve(request);
+      if (request.reply !== false) this.send(response);
+      return;
+    }
+
+    const responses: EventProxyResponse[] = [];
+    for (const request of requests) {
+      // Anything which is not a request at all cannot be answered meaningfully, so it
+      // is passed over. Everything else is carried out; only the answering is optional.
+      if (!request || typeof request !== "object") continue;
+      const response = this.resolve(request);
+      if (request.reply !== false) responses.push(response);
+    }
+    if (responses.length > 0) {
+      const answered: EventProxyResponseBatch = {
+        type: EVENT_PROXY_RESPONSE_TYPE,
+        responses,
+      };
+      this.send(answered);
+    }
   }
 
   /** Resolve a single request into the response for it */

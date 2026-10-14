@@ -348,9 +348,8 @@ def test_inspect_event_handler_handles_fused_superinstruction():
     with patch.object(dis, "get_instructions", return_value=fake_list):
         result = inspect_event_handler(handler)
 
-    # Expected: (prevent_default=False, stop_propagation=False, debounce=400,
-    # event_proxy=None).
-    assert result == (False, False, 400, None)
+    # Expected: (prevent_default=False, stop_propagation=False, debounce=400).
+    assert result == (False, False, 400)
 
 
 # ---------------------------------------------------------------------------
@@ -469,111 +468,8 @@ def test_a_callable_whose_call_carries_no_bytecode_reports_nothing():
 
     handler = Talkative()
 
-    assert inspect_event_handler(handler) == (False, False, None, None)
+    assert inspect_event_handler(handler) == (False, False, None)
     assert _function_arg_defaults(handler) == {}
-
-
-# ---------------------------------------------------------------------------
-# ``event.eventProxy`` detection
-# ---------------------------------------------------------------------------
-
-
-def test_detect_event_proxy_being_turned_off():
-    """The point of the flag: a handler which will not look behind the event"""
-
-    async def handler(event):
-        event.eventProxy = False
-
-    assert inspect_event_handler(handler) == (False, False, None, False)
-
-
-def test_detect_event_proxy_being_turned_on():
-    async def handler(event):
-        event.eventProxy = True
-
-    assert inspect_event_handler(handler) == (False, False, None, True)
-
-
-def test_detect_event_proxy_alongside_everything_else():
-    async def handler(event):
-        event.preventDefault()
-        event.stopPropagation()
-        event.debounce = 150
-        event.eventProxy = False
-
-    assert inspect_event_handler(handler) == (True, True, 150, False)
-
-
-def test_detect_event_proxy_from_positional_default():
-    async def handler(event, keep=True):
-        event.eventProxy = keep
-
-    assert inspect_event_handler(handler) == (False, False, None, True)
-
-
-def test_detect_event_proxy_from_keyword_only_default():
-    async def handler(event, *, keep=False):
-        event.eventProxy = keep
-
-    assert inspect_event_handler(handler) == (False, False, None, False)
-
-
-def test_detect_event_proxy_from_closure():
-    def make(keep):
-        async def handler(event):
-            event.eventProxy = keep
-
-        return handler
-
-    assert inspect_event_handler(make(True)) == (False, False, None, True)
-
-
-def test_detect_event_proxy_from_closure_among_multiple():
-    def make(unused, keep):
-        async def handler(event):
-            event.eventProxy = keep
-
-        return handler
-
-    assert inspect_event_handler(make("x", False)) == (False, False, None, False)
-
-
-def test_no_detect_event_proxy_when_a_local_var_is_used():
-    async def handler(event):
-        keep = False
-        event.eventProxy = keep
-
-    assert inspect_event_handler(handler) == (False, False, None, None)
-
-
-def test_no_detect_event_proxy_when_an_unresolvable_fallback_is_used():
-    # An unresolvable branch makes the whole assignment ambiguous, so the handler
-    # is left without an opinion rather than a guessed one.
-    async def handler(event):
-        keep = False
-        if keep:
-            event.eventProxy = keep
-        else:
-            event.eventProxy = True
-
-    assert inspect_event_handler(handler) == (False, False, None, None)
-
-
-def test_no_detect_event_proxy_from_a_number():
-    """A number is not a flag - only ``True`` and ``False`` answer for it"""
-
-    async def handler(event):
-        event.eventProxy = 1
-
-    assert inspect_event_handler(handler) == (False, False, None, None)
-
-
-def test_no_detect_event_proxy_when_the_target_is_not_the_event():
-    async def handler(other):
-        event = other
-        event.eventProxy = False
-
-    assert inspect_event_handler(handler) == (False, False, None, None)
 
 
 def test_no_detect_debounce_from_a_bool():
@@ -582,4 +478,4 @@ def test_no_detect_debounce_from_a_bool():
     async def handler(event):
         event.debounce = False
 
-    assert inspect_event_handler(handler) == (False, False, None, None)
+    assert inspect_event_handler(handler) == (False, False, None)

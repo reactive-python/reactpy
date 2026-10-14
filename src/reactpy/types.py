@@ -946,7 +946,6 @@ class BaseEventHandler:
     __slots__ = (
         "__weakref__",
         "debounce",
-        "event_proxy",
         "function",
         "prevent_default",
         "stop_immediate_propagation",
@@ -1000,33 +999,6 @@ class BaseEventHandler:
     Distinct from :attr:`debounce`, which limits server-→client value
     updates on input elements. ``throttle`` defaults to ``None`` (no
     throttling)."""
-
-    event_proxy: bool | None
-    """Whether this handler wants the event's originating browser object kept alive.
-
-    :data:`True` asks the client to hold on to the object the event fired from, so the
-    handler can read properties from it and call methods on it past what the snapshot
-    carried. :data:`False` takes the snapshot and nothing else - the browser is not
-    asked to remember anything for this handler.
-
-    The default, :data:`None`, wants live access, because reading the object an event
-    fired from is what people expect - ``await event.target.value`` should just work
-    rather than having to be anticipated when the handler is written. This attribute is
-    the only say in the matter: there is no global switch. Opt a single handler out by
-    setting it to :data:`False` - worthwhile for anything which fires continuously,
-    such as ``onScroll``, because keeping an object alive and pruning it costs the
-    browser work on every event.
-
-    A handler can also decide for itself by assigning ``event.eventProxy = False`` or
-    ``event.eventProxy = True`` in its own body. That assignment is read out of the
-    handler's bytecode when the :class:`BaseEventHandler` is made, the same way
-    ``event.debounce = <milliseconds>`` is, and it wins over whatever this attribute
-    was set to.
-
-    Whatever this says, a handler is only ever given live access for data the client
-    actually marked as something it is still holding. Otherwise it receives the
-    :class:`~reactpy.types.Event` snapshot, and awaiting a property of it raises
-    :class:`~reactpy._event_proxy.EventProxyUnavailable`."""
 
     target: str | None
     """Typically left as ``None`` except when a static target is useful.

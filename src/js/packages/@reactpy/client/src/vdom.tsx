@@ -1,9 +1,5 @@
 import { Fragment } from "preact";
-import {
-  EVENT_MARKER_KEY,
-  serializeSnapshot,
-  serializeValue,
-} from "./event-proxy";
+import { EVENT_MARKER_KEY } from "./event-proxy";
 import {
   HANDLER_DEBOUNCE,
   HANDLER_MARKER,
@@ -225,7 +221,6 @@ function createEventHandler(
     stopImmediatePropagation,
     debounce,
     throttle,
-    eventProxy,
   }: ReactPyVdomEventHandler,
 ): [string, TaggedEventHandler] {
   // Sequence number for the next outgoing event on this handler.
@@ -249,27 +244,21 @@ function createEventHandler(
         event.stopImmediatePropagation();
       }
 
-      // Whatever came out of the page can be kept alive by the registry so the server
-      // can read any property it likes and call methods such as "focus()" on it. Only
-      // the serializable half of the object goes over the wire, alongside a marker
-      // which the server turns back into a live proxy for the rest.
-      //
-      // That is only done for a handler which asked for it. Remembering an event costs
-      // the page memory, and an event nobody intends to look behind is memory spent
-      // for nothing; without the marker the server hands the handler the snapshot and
-      // leaves it at that.
-      if (typeof event === "object" && event !== null) {
-        if (eventProxy) {
-          const id = client.eventProxy.register(event);
-          return {
-            ...serializeValue(event, id),
-            [EVENT_MARKER_KEY]: { id },
-          };
-        }
-        return serializeSnapshot(event);
-      } else {
+      // Whatever came out of the page is kept alive by the registry so the server can
+      // read any property of it, and call methods such as "focus()" on it, one round
+      // trip at a time. Nothing is serialized up front: the marker carrying the id is
+      // all the server gets, plus the event "type" - the one plain value too cheap, and
+      // too useful for telling the handler what kind of event it is holding, to withhold.
+      if (typeof event !== "object" || event === null) {
         return event;
       }
+      const id = client.eventProxy.register(event);
+      const payload: Record<string, unknown> = { [EVENT_MARKER_KEY]: { id } };
+      // Real events always carry a string "type". Odd objects handed to a handler by
+      // something other than the DOM need not, and a made-up one would only send the
+      // server looking for an event kind which was never dispatched.
+      if (typeof event.type === "string") payload["type"] = event.type;
+      return payload;
     });
     const seq = outgoingSeq++;
     // Tell the element which sequence number really reached the wire. The

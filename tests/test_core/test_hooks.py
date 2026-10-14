@@ -248,8 +248,9 @@ async def test_simple_input_with_use_state(display: DisplayFixture):
         message_ref.current = message
 
         async def on_change(event):
-            if event["target"]["value"] == "this is a test":
-                set_message(event["target"]["value"])
+            value = await event.target.value
+            if value == "this is a test":
+                set_message(value)
 
         if message is None:
             return reactpy.html.input({"id": "input", "onChange": on_change})

@@ -174,7 +174,7 @@ class ComponentDispatchApp:
                     msg: dict[str, str] = orjson.loads(event["text"])
                     if msg.get("type") == "layout-event":
                         await ws.rendering_queue.put(msg)
-                    else:  # nocov
+                    elif not ws.handle_event_proxy_response(msg):  # nocov
                         await asyncio.to_thread(
                             _logger.warning, f"Unknown message type: {msg.get('type')}"
                         )
@@ -199,6 +199,9 @@ class ReactPyWebsocket(ResponseWebSocket):
             config.REACTPY_MAX_QUEUE_SIZE.current
         )
         self.dispatcher: asyncio.Task[Any] | None = None
+        # Set once the rendering loop has a layout, so that answers to live event
+        # access requests can be handed back to the handler which asked for them.
+        self.layout: Layout | None = None
 
     async def __aenter__(self) -> ReactPyWebsocket:
         self.dispatcher = asyncio.create_task(self.run_dispatcher())
@@ -238,8 +241,9 @@ class ReactPyWebsocket(ResponseWebSocket):
             )
 
             # Start the ReactPy component rendering loop
+            self.layout = Layout(ConnectionContext(component(), value=connection))
             await serve_layout(
-                Layout(ConnectionContext(component(), value=connection)),
+                self.layout,
                 self.send_json,
                 self.rendering_queue.get,
             )
@@ -247,6 +251,20 @@ class ReactPyWebsocket(ResponseWebSocket):
         # Manually log exceptions since this function is running in a separate asyncio task.
         except Exception as error:
             await asyncio.to_thread(_logger.error, f"{error}\n{traceback.format_exc()}")
+
+    def handle_event_proxy_response(self, message: dict[str, Any]) -> bool:
+        """Hand the answer to a live event access request to the waiting handler
+
+        This runs on the same event loop as the layout, which is the loop the request
+        was made from and the only one allowed to resolve what is waiting on it.
+
+        Returns :data:`False` if there is no layout to take the message, or the layout
+        does not recognise it as an answer to one of its own requests.
+        """
+        layout = self.layout
+        if layout is None:
+            return False
+        return layout.handle_event_proxy_response(message)
 
     async def send_json(self, data: Any) -> None:
         return await self._send(

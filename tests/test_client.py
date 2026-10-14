@@ -116,7 +116,7 @@ async def test_slow_server_response_on_input_change(display: DisplayFixture):
 
         async def handle_change(event):
             await asyncio.sleep(delay)
-            set_value(event["target"]["value"])
+            set_value(await event.target.value)
 
         return reactpy.html.input({"onChange": handle_change, "id": "test-input"})
 

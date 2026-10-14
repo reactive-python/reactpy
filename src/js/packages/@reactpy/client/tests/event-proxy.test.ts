@@ -1,6 +1,7 @@
-// Tests for the live "event proxy" boundary. Everything which leaves the page goes
-// through one of these functions, so the interesting cases are the ones where a value
-// must *not* be handed over.
+// Tests for the live "event proxy" boundary. Nothing about a dispatched object is sent
+// to the server any more - it all goes out through these functions, one property at a
+// time - so the interesting cases are the ones where a value must *not* be handed over,
+// and the ones where the shape of a request or its answer is what the server depends on.
 import { test, expect } from "bun:test";
 import {
   DEFAULT_MAX_DEPTH,
@@ -10,18 +11,18 @@ import {
   EVENT_REFERENCE_KEY,
   EventProxyRegistry,
   type EventProxyRequest,
+  type EventProxyRequestBatch,
+  type EventProxyResponse,
   LIVE_OBJECT_TTL_MS,
   MAX_LIVE_OBJECTS,
   ProxyAccessError,
   ProxyNotFoundError,
   collectProperties,
-  dropReferences,
   isBlockedMember,
   readPath,
   readProperty,
   readReference,
   reference,
-  serializeSnapshot,
   serializeValue,
 } from "../src/event-proxy";
 
@@ -276,6 +277,24 @@ function request(
     reply: true,
     ...fields,
   };
+}
+
+/**
+ * Build the one message the server sends when several reads were outstanding at the end
+ * of a pass round its loop. Each entry keeps the shape it would have had alone.
+ */
+function batch(...requests: EventProxyRequest[]): EventProxyRequestBatch {
+  return { type: EVENT_PROXY_REQUEST_TYPE, requests };
+}
+
+/** Index the entries of an answered batch by the request each one belongs to */
+function responses_of(message: any): Record<string, EventProxyResponse> {
+  return Object.fromEntries(
+    (message.responses as EventProxyResponse[]).map((entry) => [
+      entry.requestId,
+      entry,
+    ]),
+  );
 }
 
 function make_event() {
@@ -546,6 +565,11 @@ test("handleMessage only answers proxy requests, and only when asked", () => {
     eventId,
   } as unknown as EventProxyRequest);
   registry.handleMessage(null as unknown as EventProxyRequest);
+  // a batch which was never a proxy request is ignored as a whole
+  registry.handleMessage({
+    type: "layout-update",
+    requests: [request({ eventId, path: ["type"] })],
+  } as unknown as EventProxyRequestBatch);
   expect(replies).toEqual([]);
 
   registry.handleMessage(
@@ -578,26 +602,288 @@ test("handleMessage only answers proxy requests, and only when asked", () => {
   });
 });
 
-test("serializeSnapshot hands over data and nothing which needs asking about", () => {
-  // A handler which never asked to reach back into the page gets the serializable half
-  // of the event, and no handle which could only be answered by a lookup that would
-  // fail - the object was never registered here in the first place.
-  const loop: Record<string, unknown> = { type: "click", value: "typed" };
-  loop["again"] = loop;
+test("one request is answered by one unbatched response", () => {
+  // The wrapper is reserved for batches: wrapping the single read which most events
+  // need would only add bytes to the common case.
+  const { registry, replies } = make_registry();
+  const eventId = registry.register(make_event());
 
-  expect(serializeSnapshot(loop)).toEqual({
-    type: "click",
+  registry.handleMessage(
+    request({
+      type: EVENT_PROXY_REQUEST_TYPE,
+      requestId: "solo",
+      eventId,
+      path: ["target", "value"],
+    }),
+  );
+
+  expect(replies).toHaveLength(1);
+  expect(replies[0]).toEqual({
+    type: EVENT_PROXY_RESPONSE_TYPE,
+    requestId: "solo",
+    ok: true,
+    error: null,
+    code: null,
     value: "typed",
-    again: null,
+  });
+  expect(replies[0].responses).toBeUndefined();
+});
+
+test("a batch of requests is answered by exactly one message", () => {
+  const { registry, replies } = make_registry();
+  const eventId = registry.register(make_event());
+  const otherId = registry.register({ target: { value: "other" } });
+
+  registry.handleMessage(
+    batch(
+      request({ requestId: "a", eventId, path: ["type"] }),
+      request({ requestId: "b", eventId, path: ["target", "value"] }),
+      request({ requestId: "c", eventId: otherId, path: ["target", "value"] }),
+    ),
+  );
+
+  expect(replies).toHaveLength(1);
+  const [message] = replies;
+  expect(message.type).toBe(EVENT_PROXY_RESPONSE_TYPE);
+  expect(message.requestId).toBeUndefined();
+  expect(message.responses).toHaveLength(3);
+
+  // one entry per request, each carrying its own identity and its own answer
+  const answered = message.responses as EventProxyResponse[];
+  expect(answered.map((entry) => entry.requestId)).toEqual(["a", "b", "c"]);
+  expect(answered.map((entry) => entry.value)).toEqual([
+    "click",
+    "typed",
+    "other",
+  ]);
+  for (const entry of answered) {
+    expect(entry.type).toBe(EVENT_PROXY_RESPONSE_TYPE);
+    expect(entry.ok).toBe(true);
+    expect(entry.error).toBeNull();
+    expect(entry.code).toBeNull();
+  }
+});
+
+test("a batch whose requests all want no answer sends nothing at all", () => {
+  const { registry, replies } = make_registry();
+  const event = make_event();
+  const eventId = registry.register(event);
+
+  registry.handleMessage(
+    batch(
+      request({
+        requestId: "quiet-1",
+        eventId,
+        path: ["preventDefault"],
+        call: true,
+        reply: false,
+      }),
+      request({
+        requestId: "quiet-2",
+        eventId,
+        path: ["target", "value"],
+        reply: false,
+      }),
+    ),
+  );
+
+  expect(replies).toEqual([]);
+  // they were still carried out - a request which does not want an answer is usually a
+  // call whose only point was to run a method in the page
+  expect(event.calls).toEqual(["preventDefault"]);
+});
+
+test("an empty batch sends nothing", () => {
+  const { registry, replies } = make_registry();
+  registry.register(make_event());
+  registry.handleMessage(batch());
+  expect(replies).toEqual([]);
+});
+
+test("only the requests which asked are answered, in the order they came", () => {
+  const { registry, replies } = make_registry();
+  const event = make_event();
+  const eventId = registry.register(event);
+
+  registry.handleMessage(
+    batch(
+      request({ requestId: "loud-1", eventId, path: ["type"] }),
+      request({
+        requestId: "quiet",
+        eventId,
+        path: ["preventDefault"],
+        call: true,
+        reply: false,
+      }),
+      request({ requestId: "loud-2", eventId, path: ["target", "tagName"] }),
+    ),
+  );
+
+  expect(replies).toHaveLength(1);
+  const answered = replies[0].responses as EventProxyResponse[];
+  expect(answered.map((entry) => entry.requestId)).toEqual([
+    "loud-1",
+    "loud-2",
+  ]);
+  expect(responses_of(replies[0])["loud-2"].value).toBe("INPUT");
+  expect(event.calls).toEqual(["preventDefault"]);
+});
+
+test("a batch answers each request on its own, failures included", () => {
+  // One request going wrong says nothing about the others: every entry carries its own
+  // ok/error/code, and the server decides which of them to raise on.
+  const { registry, replies } = make_registry();
+  const eventId = registry.register(make_event());
+
+  registry.handleMessage(
+    batch(
+      request({ requestId: "fine", eventId, path: ["type"] }),
+      request({ requestId: "blocked", eventId, path: ["ownerDocument"] }),
+      request({ requestId: "missing", eventId, path: ["target", "nope"] }),
+      request({
+        requestId: "gone",
+        eventId: "never-registered",
+        path: ["type"],
+      }),
+    ),
+  );
+
+  expect(replies).toHaveLength(1);
+  const answered = responses_of(replies[0]);
+  expect(Object.keys(answered).sort()).toEqual([
+    "blocked",
+    "fine",
+    "gone",
+    "missing",
+  ]);
+  expect(answered["fine"].ok).toBe(true);
+  expect(answered["fine"].value).toBe("click");
+  expect(answered["fine"].code).toBeNull();
+  expect(answered["blocked"].ok).toBe(false);
+  expect(answered["blocked"].code).toBe("access");
+  expect(answered["missing"].ok).toBe(false);
+  expect(answered["missing"].code).toBe("not-found");
+  expect(answered["gone"].ok).toBe(false);
+  expect(answered["gone"].code).toBe("not-found");
+  expect(answered["gone"].error).toContain("never-registered");
+});
+
+test("a batch which carries something which is not a request skips it", () => {
+  const { registry, replies } = make_registry();
+  const eventId = registry.register(make_event());
+
+  registry.handleMessage(
+    batch(
+      null as unknown as EventProxyRequest,
+      "nonsense" as unknown as EventProxyRequest,
+      request({ requestId: "ok", eventId, path: ["type"] }),
+    ),
+  );
+
+  expect(replies).toHaveLength(1);
+  const answered = replies[0].responses as EventProxyResponse[];
+  expect(answered.map((entry) => entry.requestId)).toEqual(["ok"]);
+});
+
+test("the blocklist refuses the names which could reach the page", () => {
+  // Nothing is sent up front any more, so these refusals are the only thing between a
+  // request and the rest of the browser - whether the read is asked for on its own,
+  // buried behind an ordinary property, or smuggled in as part of a batch.
+  const { registry, replies } = make_registry();
+  const eventId = registry.register(make_event());
+
+  for (const name of [
+    "ownerDocument",
+    "__proto__",
+    "eval",
+    "parentNode",
+    "window",
+  ]) {
+    const alone = registry.resolve(
+      request({ requestId: name, eventId, path: [name] }),
+    );
+    expect(alone.ok).toBe(false);
+    expect(alone.code).toBe("access");
+    expect(alone.value).toBeUndefined();
+
+    const buried = registry.resolve(
+      request({ requestId: name, eventId, path: ["target", name] }),
+    );
+    expect(buried.ok).toBe(false);
+    expect(buried.code).toBe("access");
+
+    registry.handleMessage(
+      batch(request({ requestId: name, eventId, path: ["target", name] })),
+    );
+    const [entry] = replies[replies.length - 1].responses;
+    expect(entry.requestId).toBe(name);
+    expect(entry.ok).toBe(false);
+    expect(entry.code).toBe("access");
+  }
+
+  // ordinary properties still come through, blocked names alongside them included
+  const plain = registry.resolve(
+    request({ requestId: "plain", eventId, path: ["target", "value"] }),
+  );
+  expect(plain.ok).toBe(true);
+  expect(plain.value).toBe("typed");
+});
+
+test("an object evicted by the cap is answered as not-found", () => {
+  // There is no snapshot left to fall back on, so an event which has been forgotten
+  // cannot be read at all: the handler is told so rather than handed a stale copy.
+  const { registry, replies } = make_registry();
+  const eventId = registry.register(make_event());
+
+  for (let index = 0; index <= MAX_LIVE_OBJECTS; index++) registry.register({});
+  expect(registry.has(eventId)).toBe(false);
+
+  registry.handleMessage(
+    batch(request({ requestId: "gone", eventId, path: ["type"] })),
+  );
+
+  expect(replies).toHaveLength(1);
+  const [entry] = replies[0].responses;
+  expect(entry).toEqual({
+    type: EVENT_PROXY_RESPONSE_TYPE,
+    requestId: "gone",
+    ok: false,
+    error: `nothing is registered for event ${JSON.stringify(eventId)}`,
+    code: "not-found",
   });
 });
 
-test("dropReferences empties references and leaves data alone", () => {
-  expect(
-    dropReferences({
-      a: 1,
-      b: [2, reference("e", ["x"])],
-      c: { d: null },
+test("an object which aged out is answered as not-found", () => {
+  const { registry, replies, now } = make_registry();
+  const eventId = registry.register(make_event());
+
+  now.value = LIVE_OBJECT_TTL_MS + 1;
+  registry.prune();
+
+  registry.handleMessage(
+    request({
+      type: EVENT_PROXY_REQUEST_TYPE,
+      requestId: "late",
+      eventId,
+      path: ["target", "value"],
     }),
-  ).toEqual({ a: 1, b: [2, null], c: { d: null } });
+  );
+
+  expect(replies).toHaveLength(1);
+  expect(replies[0].requestId).toBe("late");
+  expect(replies[0].ok).toBe(false);
+  expect(replies[0].code).toBe("not-found");
+});
+
+test("the cap leaves room for every event a busy page can have in flight", () => {
+  const { registry } = make_registry();
+  const ids: string[] = [];
+  for (let index = 0; index < 500; index++)
+    ids.push(registry.register(make_event()));
+
+  // A burst of keystrokes is still being read long after the last one fired, and an
+  // event evicted too early fails hard - so the cap is a correctness limit rather than
+  // a memory one, and has to be comfortably larger than what a page keeps outstanding.
+  expect(registry.size).toBe(500);
+  expect(ids.every((id) => registry.has(id))).toBe(true);
 });

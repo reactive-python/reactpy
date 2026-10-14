@@ -1899,7 +1899,7 @@ async def test_a_render_asked_for_during_teardown_is_dropped(monkeypatch):
         async def on_change(event):
             inside_handler.set()
             await let_handler_finish.wait()
-            set_value(event["target"]["value"])
+            set_value(await event.target.value)
 
         return html.input({"value": value, "onChange": on_change})
 

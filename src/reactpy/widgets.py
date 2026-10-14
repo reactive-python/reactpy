@@ -6,7 +6,7 @@ from typing import Any, Protocol, TypeVar
 
 import reactpy
 from reactpy._html import html
-from reactpy.types import VdomAttributes, VdomDict
+from reactpy.types import Event, VdomAttributes, VdomDict
 
 
 def image(
@@ -59,8 +59,8 @@ def use_linked_inputs(
     """
     value, set_value = reactpy.hooks.use_state(initial_value)
 
-    async def sync_inputs(event: dict[str, Any]) -> None:
-        new_value = event["target"]["value"]
+    async def sync_inputs(event: Event) -> None:
+        new_value = await event.target.value
         set_value(new_value)
         if not new_value and ignore_empty:
             return None

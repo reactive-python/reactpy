@@ -34,7 +34,6 @@ from reactpy._event_proxy import (
     EVENT_PROXY_RESPONSE_TYPE,
     EventArguments,
     EventProxyBackend,
-    event_marker_id,
 )
 from reactpy.config import (
     REACTPY_ASYNC_RENDERING,
@@ -223,28 +222,26 @@ class Layout(BaseLayout):
     def handle_event_proxy_response(self, message: Mapping[str, Any]) -> bool:
         """Deliver the answer to a live event access request
 
-        Returns :data:`False` if the message was not meant for this layout.
+        Returns :data:`False` if the message was not meant for this layout, which
+        includes the case where the layout is not running and so has no backend to
+        hand the answer to.
         """
-        return self._event_proxy_backend.handle_response(message)
+        backend = getattr(self, "_event_proxy_backend", None)
+        if backend is None:
+            return False
+        return backend.handle_response(message)
 
-    def _make_event_arguments(
-        self, handler: Any, data: Sequence[Any]
-    ) -> EventArguments:
-        """Wrap raw event data for the given handler
+    def _make_event_arguments(self, data: Sequence[Any]) -> EventArguments:
+        """Wrap raw event data for a handler
 
-        A handler which asks for live access is given it, and one which declines is
-        given the snapshot and nothing else. With no preference stated the data
-        decides: the client marks whatever it has agreed to keep hold of - which is
-        whatever it dispatched, since live access is on unless a handler has declined
-        it - and marked data comes back as a live object. A client which has gone away
+        Every handler is handed the same thing. Whatever the client marked as an object
+        it is still holding becomes a live proxy which reads from and calls into the
+        browser; everything else arrives exactly as it did. A client which has gone away
         cannot answer for that mark either way, because a backend without a sender
-        reports itself unavailable and the mark is dropped with the rest of the
-        overhead.
+        reports itself unavailable and awaiting anything through it raises
+        :class:`~reactpy._event_proxy.EventProxyUnavailable`.
         """
-        want_proxy = getattr(handler, "event_proxy", None)
-        if want_proxy is None:
-            want_proxy = any(event_marker_id(item) is not None for item in data)
-        return EventArguments(data, self._event_proxy_backend if want_proxy else None)
+        return EventArguments(data, self._event_proxy_backend)
 
     async def _process_event_queue(
         self, target: str, queue: Queue[LayoutEventMessage | dict[str, Any]]
@@ -266,7 +263,7 @@ class Layout(BaseLayout):
                 if handler is not None:
                     try:
                         await handler.function(
-                            self._make_event_arguments(handler, event["data"])
+                            self._make_event_arguments(event["data"])
                         )
                     except Exception:
                         logger.exception(f"Failed to execute event handler {handler}")
@@ -694,11 +691,6 @@ class Layout(BaseLayout):
             entry["debounce"] = handler.debounce
         if handler.throttle is not None:
             entry["throttle"] = handler.throttle
-
-        # Live access is on unless the handler has refused it, whether on the handler
-        # itself or from inside its own body - see ``BaseEventHandler.event_proxy``
-        if getattr(handler, "event_proxy", None) is not False:
-            entry["eventProxy"] = True
 
         return entry
 

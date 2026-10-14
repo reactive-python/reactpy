@@ -33,7 +33,7 @@ def test_event_handler_repr():
     assert repr(handler) == (
         f"EventHandler(function={handler.function}, prevent_default=False, "
         f"stop_propagation=False, stop_immediate_propagation=False, debounce=None, "
-        f"target={handler.target!r}, throttle=None, event_proxy=None)"
+        f"target={handler.target!r}, throttle=None)"
     )
 
 
@@ -217,30 +217,6 @@ async def test_merge_event_handler_funcs():
     merged_handler = merge_event_handler_funcs([some_func, some_other_func])
     await merged_handler([])
     assert calls == ["some_func", "some_other_func"]
-
-
-def test_merge_event_handlers_event_proxy():
-    """Merging never has to settle an argument about live access
-
-    Whether the browser object behind an event should be kept alive is not something
-    two handlers can contradict each other over - one of them simply wants it, and a
-    handler which says nothing wants it just as much. The merged handler therefore
-    refuses only when every original refused, and states nothing at all - which means
-    the same thing as asking - when none of them said either way.
-    """
-    plain = EventHandler(_noop_handler)
-    wants = EventHandler(_noop_handler, event_proxy=True)
-    declines = EventHandler(_noop_handler, event_proxy=False)
-    other_plain = EventHandler(_noop_handler)
-    other_declines = EventHandler(_noop_handler, event_proxy=False)
-
-    assert merge_event_handlers([plain, other_plain]).event_proxy is None
-    assert merge_event_handlers([plain, wants]).event_proxy is True
-    assert merge_event_handlers([plain, declines]).event_proxy is None, (
-        "a handler which never refused lost live access to one which did"
-    )
-    assert merge_event_handlers([declines, wants]).event_proxy is True
-    assert merge_event_handlers([declines, other_declines]).event_proxy is False
 
 
 async def test_can_prevent_event_default_operation(display: DisplayFixture):
@@ -588,46 +564,6 @@ def test_no_detect():
     assert eh.prevent_default is False
     assert eh.stop_propagation is False
     assert eh.debounce is None
-    assert eh.event_proxy is None
-
-
-def test_detect_event_proxy_being_refused():
-    async def handler(event: Event):
-        event.eventProxy = False
-
-    assert EventHandler(handler).event_proxy is False
-
-
-def test_detect_event_proxy_being_insisted_on():
-    async def handler(event: Event):
-        event.eventProxy = True
-
-    assert EventHandler(handler).event_proxy is True
-
-
-def test_detected_event_proxy_overrides_the_stated_preference():
-    """What the handler says about itself is taken over what was said about it"""
-
-    async def handler(event: Event):
-        event.eventProxy = False
-
-    assert EventHandler(handler, event_proxy=True).event_proxy is False
-
-
-def test_detect_event_proxy_when_handler_is_partial():
-    async def handler(event: Event, *, extra_param):
-        event.eventProxy = False
-
-    eh = EventHandler(partial(handler, extra_param="extra_value"))
-    assert eh.event_proxy is False
-
-
-def test_event_decorator_detects_event_proxy():
-    @event
-    async def handler(event: Event):
-        event.eventProxy = False
-
-    assert handler.event_proxy is False
 
 
 def test_event_decorator_accepts_throttle():
@@ -651,15 +587,6 @@ def test_event_decorator_accepts_debounce_and_throttle():
 def test_event_handler_throttle_default_is_none():
     eh = EventHandler(_noop_handler)
     assert eh.throttle is None
-
-
-def test_event_wrapper():
-    data = {"a": 1, "b": {"c": 2}}
-    event = Event(data)
-    assert event.a == 1
-    assert event.b.c == 2
-    assert event["a"] == 1
-    assert event["b"]["c"] == 2
 
 
 async def test_vdom_has_prevent_default():
@@ -734,7 +661,8 @@ async def test_event_queue_sequential_processing(display: DisplayFixture):
         async def handle_click(event):
             # Simulate slow processing
             await asyncio.sleep(0.1)
-            events_processed.append(event["target"])
+            (event_type,) = await event.read("type")
+            events_processed.append(event_type)
 
         return html.button({"id": "btn", "onClick": handle_click}, "Click me")
 
@@ -901,7 +829,7 @@ def _ControlledInputWithMirror():
     value, set_value = use_state("")
 
     async def on_change(event):
-        set_value(event["target"]["value"])
+        set_value(await event.target.value)
 
     async def append_marker(event):
         set_value(lambda old: old + MARKER)
@@ -1022,7 +950,7 @@ def _ControlledInputWhichClearsOnKeyDown():
     value, set_value = use_state("")
 
     async def on_change(event):
-        set_value(event["target"]["value"])
+        set_value(await event.target.value)
 
     async def on_key_down(event):
         set_value("")
@@ -1057,17 +985,34 @@ async def test_controlled_input_clear_from_second_handler_reaches_the_dom(
     inp = await display.page.wait_for_selector("#controlled-input")
     await inp.click()
     await inp.type("abc", delay=delay)
-    await inp.press("Enter")
 
-    async def current_value():
+    async def field_value():
         return await inp.evaluate("node => node.value")
 
-    await poll(current_value).until(
+    async def server_value():
+        return await display.page.locator("#server-value").text_content()
+
+    # Let every keystroke be handled and acknowledged before the clear is sent. A
+    # live read sees the field as it is when the handler gets round to it, not as it
+    # was when the keystroke fired, so a keystroke still in flight would write back
+    # whatever the field happens to hold at that moment - quite possibly after the
+    # clear. That is a property of reading live rather than of the acknowledgement,
+    # which is what this test is about; see
+    # :func:`test_a_late_live_read_may_write_the_field_as_it_now_stands`.
+    await poll(server_value).until(
+        lambda value: value == "abc",
+        timeout=10,
+        description="the keystrokes to reach the model",
+    )
+
+    await inp.press("Enter")
+
+    await poll(field_value).until(
         lambda value: value == "",
         timeout=10,
         description="the server's clear to reach the input",
     )
-    assert await display.page.locator("#server-value").text_content() == ""
+    assert await server_value() == ""
 
 
 async def test_controlled_input_respects_custom_debounce(display: DisplayFixture):
@@ -1077,7 +1022,7 @@ async def test_controlled_input_respects_custom_debounce(display: DisplayFixture
 
         async def on_change(event: Event):
             event.debounce = 0
-            set_value(event.target.value.upper())
+            set_value((await event.target.value).upper())
 
         return reactpy.html.input(
             {
@@ -1112,7 +1057,7 @@ async def test_controlled_input_default_debounce_reconciles_server_value(
 
         async def on_change(event: Event):
             event.debounce = 200
-            set_value(event.target.value.upper())
+            set_value((await event.target.value).upper())
 
         return reactpy.html.div(
             reactpy.html.input(
@@ -1297,13 +1242,18 @@ async def test_a_clear_is_not_written_back_over_by_what_came_before_it(
 ):
     """A render too old to describe the field cannot resurrect what it held
 
-    The keystrokes and the clear are racing. The field is emptied by an event which
-    reaches the server while the text typed into it is still on its way there, so
-    renders carrying that text are queued up behind the clear. A render is entitled
-    to write over what the user has in the field only once its acknowledgement
-    covers the events the field has already moved past; a render which cannot claim
-    that, and writes anyway, arrives after the clear and puts the text from before
-    it back on screen.
+    Renders carrying the text typed into the field are queued up behind the clear,
+    and a render is entitled to write over what the user has in the field only once
+    its acknowledgement covers the events the field has already moved past; a render
+    which cannot claim that, and writes anyway, arrives after the clear and puts the
+    text from before it back on screen.
+
+    The keystrokes are given leave to finish before the clear is sent. A live read
+    belongs to the handler rather than to the event, so a keystroke whose handler has
+    not run yet may legitimately write the field as it finds it later on - which is
+    the behaviour of reading live, covered by
+    :func:`test_a_late_live_read_may_write_the_field_as_it_now_stands`, and not a
+    render which the acknowledgement should have refused.
     """
     await display.show(_ControlledInputWhichClearsOnKeyDown)
 
@@ -1316,9 +1266,16 @@ async def test_a_clear_is_not_written_back_over_by_what_came_before_it(
     async def server_value():
         return await display.page.locator("#server-value").text_content()
 
-    # Fill the field and empty it without pausing between, so the clear overtakes
-    # the keystrokes instead of following them.
     await inp.type("hello", delay=0)
+
+    # Every keystroke handled, so what is left in flight is renders rather than
+    # handlers still to be run.
+    await poll(server_value).until(
+        lambda value: value == "hello",
+        timeout=20,
+        description="the keystrokes to reach the model",
+    )
+
     await inp.press("Enter")
 
     await poll(field_value).until(
@@ -1340,6 +1297,52 @@ async def test_a_clear_is_not_written_back_over_by_what_came_before_it(
         )
 
 
+async def test_a_late_live_read_may_write_the_field_as_it_now_stands(
+    display: DisplayFixture,
+):
+    """A handler which reads late writes the field as it finds it, not as it was
+
+    A live read belongs to the moment it is awaited rather than to the event which
+    woke the handler, so a keystroke whose handler is still queued behind the work of
+    another event sees whatever the field holds by then and writes that back. What
+    such a write carries is not a snapshot the acknowledgement ought to have refused:
+    it is the newest state the server holds, and the two sides are still expected to
+    agree on it. A handler which must act on the text as it stood when its own event
+    fired should take it from the event it was handed rather than read the element
+    later, or be ordered ahead of anything which goes on to change it.
+    """
+    await display.show(_ControlledInputWhichClearsOnKeyDown)
+
+    inp = await display.page.wait_for_selector("#controlled-input")
+    await inp.click()
+
+    async def field_value():
+        return await inp.evaluate("node => node.value")
+
+    async def server_value():
+        return await display.page.locator("#server-value").text_content()
+
+    async def both_values():
+        return await field_value(), await server_value()
+
+    # Fill the field and empty it without pausing, so the clear can overtake the
+    # keystrokes instead of following them.
+    await inp.type("hello", delay=0)
+    await inp.press("Enter")
+
+    # Whichever of the two wins the race, the field and the model have to end up
+    # agreeing: a live read may put the text back, but it may not leave the two
+    # halves of the application telling different stories about the field.
+    await poll(both_values).until(
+        lambda pair: pair[0] == pair[1],
+        timeout=20,
+        description="the field and the model to agree",
+    )
+    field, model = await both_values()
+    assert field in ("", "hello"), f"unexpected field value {field!r}"
+    assert model == field
+
+
 @reactpy.component
 def _HeavyPage():
     """A page which re-renders constantly while the user is typing at it"""
@@ -1347,7 +1350,7 @@ def _HeavyPage():
     ticks, set_ticks = use_state(0)
 
     async def on_change(event):
-        set_value(event["target"]["value"])
+        set_value(await event.target.value)
 
     def keep_rendering():
         """Re-render on a timer, so renders are always in flight behind the typing"""

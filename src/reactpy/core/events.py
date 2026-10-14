@@ -67,7 +67,6 @@ def event(
     prevent_default: bool = ...,
     debounce: int | None = ...,
     throttle: int | None = ...,
-    event_proxy: bool | None = ...,
 ) -> EventHandler: ...
 
 
@@ -80,7 +79,6 @@ def event(
     prevent_default: bool = ...,
     debounce: int | None = ...,
     throttle: int | None = ...,
-    event_proxy: bool | None = ...,
 ) -> Callable[[Callable[..., Awaitable[Any]]], EventHandler]: ...
 
 
@@ -92,7 +90,6 @@ def event(
     prevent_default: bool = False,
     debounce: int | None = None,
     throttle: int | None = None,
-    event_proxy: bool | None = None,
 ) -> EventHandler | Callable[[Callable[..., Awaitable[Any]]], EventHandler]:
     """A decorator for constructing an :class:`EventHandler`.
 
@@ -133,12 +130,6 @@ def event(
             :attr:`BaseEventHandler.throttle`.
         stop_immediate_propagation:
             Also block any other listener of the same event in the browser.
-        event_proxy:
-            Keep the browser object this event fired from alive so the handler can
-            read past the snapshot which arrived with the event. The handler can say
-            so itself as well by assigning ``event.eventProxy = True`` or
-            ``event.eventProxy = False`` in its own body, which takes precedence over
-            what is given here. See :attr:`BaseEventHandler.event_proxy`.
     """
 
     def setup(function: Callable[..., Awaitable[Any]]) -> EventHandler:
@@ -149,7 +140,6 @@ def event(
             debounce=debounce,
             throttle=throttle,
             stop_immediate_propagation=stop_immediate_propagation,
-            event_proxy=event_proxy,
         )
 
     return setup(function) if function is not None else setup
@@ -177,12 +167,6 @@ class EventHandler(BaseEventHandler):
             :attr:`BaseEventHandler.throttle`.
         stop_immediate_propagation:
             Also block any other listener of the same event in the browser.
-        event_proxy:
-            Keep the browser object this event fired from alive so the handler can
-            read past the snapshot which arrived with the event. Assigning
-            ``event.eventProxy = <bool>`` inside the handler is detected the same way,
-            and takes precedence over what is given here. See
-            :attr:`BaseEventHandler.event_proxy`.
     """
 
     def __init__(
@@ -194,7 +178,6 @@ class EventHandler(BaseEventHandler):
         debounce: int | None = None,
         throttle: int | None = None,
         stop_immediate_propagation: bool = False,
-        event_proxy: bool | None = None,
     ) -> None:
         check_is_async_handler(function)
         self.function = to_event_handler_function(function, positional_args=False)
@@ -204,7 +187,6 @@ class EventHandler(BaseEventHandler):
         self.debounce = debounce
         self.throttle = throttle
         self.target = target
-        self.event_proxy = event_proxy
 
         # Check what the handler says about the event it is handed by inspecting the
         # bytecode of the function the user actually wrote
@@ -212,7 +194,6 @@ class EventHandler(BaseEventHandler):
             found_prevent_default,
             found_stop_propagation,
             found_debounce,
-            found_event_proxy,
         ) = inspect_event_handler(_unwrap_handler(function))
 
         if found_prevent_default:
@@ -223,8 +204,6 @@ class EventHandler(BaseEventHandler):
                 self.stop_immediate_propagation = True
         if found_debounce is not None:
             self.debounce = found_debounce
-        if found_event_proxy is not None:
-            self.event_proxy = found_event_proxy
 
     __hash__ = None  # type: ignore
 
@@ -236,7 +215,6 @@ class EventHandler(BaseEventHandler):
         "debounce",
         "target",
         "throttle",
-        "event_proxy",
     )
 
     def __eq__(self, other: object) -> bool:
@@ -291,11 +269,6 @@ def merge_event_handlers(
     :attr:`~reactpy.core.proto.EventHandlerType.prevent_default`,
     :attr:`~reactpy.core.proto.EventHandlerType.debounce`,
     :attr:`~reactpy.core.proto.EventHandlerType.throttle` attributes.
-
-    Live access is not among the things they can conflict over. Every handler is
-    handed the same event, so the merged one asks the client to keep that event alive
-    unless every handler given to it refused - see
-    :attr:`~reactpy.types.BaseEventHandler.event_proxy`.
     """
     if not event_handlers:
         msg = "No event handlers to merge"
@@ -330,22 +303,6 @@ def merge_event_handlers(
             )
             raise ValueError(msg)
 
-    # Asking the client to keep the originating object alive is not something the
-    # handlers can disagree about. Stating nothing wants it just as much as saying so
-    # does, so the merged handler refuses only when every one of them refused - one
-    # handler declining cannot take live access away from another which never said it
-    # would not use it. Those which asked for less simply receive objects they never
-    # read past, since every handler here is handed the very same event.
-    preferences: list[bool | None] = [
-        getattr(handler, "event_proxy", None) for handler in event_handlers
-    ]
-    if all(preference is False for preference in preferences):
-        event_proxy: bool | None = False
-    elif True in preferences:
-        event_proxy = True
-    else:
-        event_proxy = None
-
     return EventHandler(
         merge_event_handler_funcs([h.function for h in event_handlers]),
         stop_propagation,
@@ -354,7 +311,6 @@ def merge_event_handlers(
         debounce,
         throttle,
         stop_immediate_propagation=stop_immediate_propagation,
-        event_proxy=event_proxy,
     )
 
 

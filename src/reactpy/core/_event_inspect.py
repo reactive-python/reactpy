@@ -1,6 +1,8 @@
 """
-In order to retain a JavaScript-like event handler API, ReactPy allows users to configure event handlers with `event.debounce = <milliseconds>` or `event.eventProxy = <bool>`.
-Implementing this syntax necessitates inspecting the bytecode of event handler functions.
+In order to retain a JavaScript-like event handler API, ReactPy allows users to
+configure event handlers with `event.debounce = <milliseconds>`, `event.preventDefault()`
+and friends. Implementing this syntax necessitates inspecting the bytecode of event
+handler functions.
 """
 
 from __future__ import annotations
@@ -22,11 +24,6 @@ _STORE_ATTR_VALUE_OFFSET = 2
 def _is_plain_int(value: Any) -> bool:
     """Whether ``value`` is an ``int`` which is not a ``bool``"""
     return isinstance(value, int) and not isinstance(value, bool)
-
-
-def _is_bool(value: Any) -> bool:
-    """Whether ``value`` is a ``bool`` rather than a number dressed up as one"""
-    return isinstance(value, bool)
 
 
 def _handler_code(func: Callable) -> CodeType | None:
@@ -59,8 +56,8 @@ def _event_arg_name(func: Callable, code: CodeType | None) -> str | None:
 
 def inspect_event_handler(
     func: Callable,
-) -> tuple[bool, bool | str, int | None, bool | None]:
-    """Detect ``preventDefault``/``stopPropagation``/``debounce``/``eventProxy`` usage.
+) -> tuple[bool, bool | str, int | None]:
+    """Detect ``preventDefault``/``stopPropagation``/``debounce`` usage.
 
     Walks the bytecode of ``func`` looking for the patterns:
 
@@ -68,10 +65,8 @@ def inspect_event_handler(
     - ``event.stopPropagation()`` -> ``stop_propagation = True``
     - ``event.stopImmediatePropagation()`` -> ``stop_propagation = "immediate"``
     - ``event.debounce = <int>``  -> ``debounce = <int>``
-    - ``event.eventProxy = <bool>`` -> ``event_proxy = <bool>``
 
-    The value behind ``debounce`` and ``eventProxy`` can come from any of the
-    following:
+    The value behind ``debounce`` can come from any of the following:
 
     - A literal (``LOAD_CONST`` / ``LOAD_SMALL_INT``)
     - A function argument with a matching default
@@ -80,49 +75,42 @@ def inspect_event_handler(
       certain compile-time-folded module-level names)
 
     Module-level globals looked up via ``LOAD_GLOBAL``/``LOAD_NAME`` cannot
-    be resolved from the function alone, so users must pass
-    ``debounce=...``/``event_proxy=...`` explicitly in that case.
+    be resolved from the function alone, so users must pass ``debounce=...``
+    explicitly in that case.
 
-    Returns ``(prevent_default, stop_propagation, debounce, event_proxy)``, where
+    Returns ``(prevent_default, stop_propagation, debounce)``, where
     ``stop_propagation`` is the string ``"immediate"`` if the handler asked to stop
-    *other listeners* as well, and ``event_proxy`` is :data:`None` for a handler
-    which never said anything about reading past the event it was handed.
+    *other listeners* as well.
     """
     prevent_default = False
     stop_propagation = False
     stop_immediate_propagation = False
     debounce: int | None = None
-    event_proxy: bool | None = None
 
     code = _handler_code(func)
     event_arg_name = _event_arg_name(func, code)
     if code is None or event_arg_name is None:
         # Nothing to walk, or nothing to walk from
-        return prevent_default, stop_propagation, debounce, event_proxy
+        return prevent_default, stop_propagation, debounce
 
     names = code.co_names
     check_prevent_default = "preventDefault" in names
     check_stop_propagation = "stopPropagation" in names
     check_stop_immediate_propagation = "stopImmediatePropagation" in names
     check_debounce = "debounce" in names
-    check_event_proxy = "eventProxy" in names
 
     if not (
         check_prevent_default
         or check_stop_propagation
         or check_stop_immediate_propagation
         or check_debounce
-        or check_event_proxy
     ):
-        return prevent_default, stop_propagation, debounce, event_proxy
+        return prevent_default, stop_propagation, debounce
 
     instructions = list(dis.get_instructions(code))
     arg_defaults = _function_arg_defaults(func)
     closure_by_name = _closure_lookup(func)
     constant_ints_by_name = _constant_ints_by_name(code)
-    # The same lookups again, keeping only the ``bool`` values ``eventProxy`` accepts
-    arg_flags = _function_arg_defaults(func, _is_bool)
-    closure_flags = _closure_lookup(func, _is_bool)
 
     last_was_event = False
     # When the function assigns ``event.debounce`` in multiple branches we
@@ -130,7 +118,6 @@ def inspect_event_handler(
     # unresolvable value (e.g. a local variable) we treat the whole detection
     # as ambiguous and return ``None`` rather than picking a fallback literal.
     debounce_tainted = False
-    event_proxy_tainted = False
 
     for index, instr in enumerate(instructions):
         if (
@@ -197,38 +184,12 @@ def inspect_event_handler(
                 debounce_tainted = True
                 debounce = None
                 check_debounce = False
-        elif (
-            check_event_proxy
-            and instr.opname == "STORE_ATTR"
-            and instr.argval == "eventProxy"
-        ):
-            candidate = _resolve_stored_value(
-                instructions,
-                index,
-                event_arg_name,
-                arg_flags,
-                closure_flags,
-                {},
-                is_value=_is_bool,
-            )
-            if isinstance(candidate, bool):
-                if not event_proxy_tainted:
-                    event_proxy = candidate
-                    check_event_proxy = False
-            elif candidate is None:
-                # Same as ``debounce`` above: a value we cannot settle from the
-                # bytecode alone leaves the handler without an opinion, rather
-                # than a guessed one.
-                event_proxy_tainted = True
-                event_proxy = None
-                check_event_proxy = False
 
         if not (
             check_prevent_default
             or check_stop_propagation
             or check_stop_immediate_propagation
             or check_debounce
-            or check_event_proxy
         ):
             break
 
@@ -238,7 +199,6 @@ def inspect_event_handler(
         prevent_default,
         "immediate" if stop_immediate_propagation else stop_propagation,
         debounce,
-        event_proxy,
     )
 
 

@@ -65,7 +65,6 @@ def make_events_and_expected_model():
                         "target": STATIC_EVENT_HANDLER.target,
                         "preventDefault": False,
                         "stopPropagation": False,
-                        "eventProxy": True,
                     }
                 },
             }
@@ -177,7 +176,7 @@ async def test_serve_round_trips_live_event_requests():
     def Reader():
         @read_handler.use
         async def read_late_value(event):
-            seen["value"] = await event.read("target.value")
+            (seen["value"],) = await event.read("target.value")
             did_read.set()
 
         return reactpy.html.div({"onInput": read_late_value})
