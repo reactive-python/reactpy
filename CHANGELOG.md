@@ -47,6 +47,8 @@ Don't forget to remove deprecated code on each major release!
     - Whatever a read found is remembered against the event, so reading one property twice costs one round trip - and a handler which wants what the browser holds by now asks again with `await event.read("target.value", refresh=True)`.
     - Whatever comes back out of a method call can be walked too: the page keeps what the call answered for as long as it keeps the event, so a reference into a result resolves against that answer rather than against the method.
     - Unanswered requests are bounded by `reactpy.config.REACTPY_EVENT_PROXY_TIMEOUT`, `reactpy.config.REACTPY_EVENT_PROXY_MAX_TIMEOUTS`, and `reactpy.config.REACTPY_EVENT_PROXY_MAX_DEPTH`.
+    - What that budget counts is unanswered messages rather than properties: a batch which asked for four things and got no answer at all costs one of it, not four. The same depth bounds an argument handed to a client side method as well as the data which comes back.
+    - A client which reconnects is a fresh chance at live access: binding a new sender brings it back if an earlier one was switched off for going quiet.
 
 ### Changed
 
