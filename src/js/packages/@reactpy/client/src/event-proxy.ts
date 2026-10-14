@@ -53,7 +53,7 @@ export const EVENT_REFERENCE_KEY = "__reactpy_ref__";
 export const MAX_LIVE_OBJECTS = 512;
 /** How long an object may sit unused before it is forgotten (ms) */
 export const LIVE_OBJECT_TTL_MS = 60_000;
-/** How many properties of a single object are handed over at most */
+/** How many members of one object, list, or iterable are handed over at most */
 export const MAX_PROPERTIES = 100;
 /** How deep a single resolution may nest before references are used */
 export const DEFAULT_MAX_DEPTH = 10;
@@ -252,6 +252,10 @@ export function collectProperties(
  * Anything which is too deep, too large, recursive, or simply not data (a function) is
  * replaced with a :data:`Reference` so the server can ask about it separately - which is
  * exactly what a handler which reaches further down does.
+ *
+ * A list, or anything which iterates, hands over as many members as one object's
+ * properties would and ends with a reference to itself when there were more than that,
+ * so a handler can tell "that is all of it" from "there is more over there".
  */
 export function serializeValue(
   value: unknown,
@@ -285,6 +289,11 @@ export function serializeValue(
   const next = (item: unknown, segment: string, at: number) =>
     serializeValue(item, eventId, [...path, segment], options, at, seen);
 
+  // One bound covers every kind of member collection - properties, list items, and the
+  // items of anything which iterates - so that "how much arrives at once" is one
+  // question with one answer.
+  const maxMembers = options.maxProperties ?? MAX_PROPERTIES;
+
   if (value instanceof Date) return value.toISOString();
   if (value instanceof RegExp) return String(value);
   if (value instanceof Error)
@@ -294,15 +303,27 @@ export function serializeValue(
       stack: value.stack ?? null,
     };
 
-  if (Array.isArray(value))
-    return value.map((item, index) => next(item, String(index), depth + 1));
+  if (Array.isArray(value)) {
+    // A list is a collection of members like any other, so it is bounded the same way.
+    // What did not fit is pointed at rather than dropped without a trace, which leaves
+    // the server free to walk the rest one index at a time.
+    const items: any[] = [];
+    for (let index = 0; index < value.length && index < maxMembers; index++) {
+      items.push(next(value[index], String(index), depth + 1));
+    }
+    if (items.length < value.length) items.push(reference(eventId, path));
+    return items;
+  }
 
   if (typeof value === "object" && Symbol.iterator in value) {
     // NodeList, FileList, Set, Map, ... all read better as a list
     const items: any[] = [];
     let index = 0;
     for (const item of value as Iterable<unknown>) {
-      if (index >= MAX_PROPERTIES) break;
+      if (index >= maxMembers) {
+        items.push(reference(eventId, path));
+        break;
+      }
       items.push(next(item, String(index), depth + 1));
       index++;
     }

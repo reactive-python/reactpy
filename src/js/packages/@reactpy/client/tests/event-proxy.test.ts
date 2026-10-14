@@ -184,6 +184,37 @@ test("serializeValue reads iterables as lists", () => {
   expect(serializeValue([1, [2, 3]], "e")).toEqual([1, [2, 3]]);
 });
 
+test("serializeValue bounds a list by the same member count as an object", () => {
+  // A list used to be the one collection with no bound at all, so an event which
+  // carried a long one handed the whole of it over in a single message - while an
+  // object with a hundred and one properties did not.
+  const long = Array.from({ length: 250 }, (_, index) => index);
+  const serialized = serializeValue(long, "e", [], { maxProperties: 5 });
+
+  expect(serialized).toHaveLength(6);
+  expect(serialized.slice(0, 5)).toEqual([0, 1, 2, 3, 4]);
+  expect(readReference(serialized[5])).toEqual({
+    eventId: "e",
+    path: [],
+    callable: false,
+  });
+});
+
+test("serializeValue says when an iterable had more members than it sent", () => {
+  const things = new Set(
+    Array.from({ length: 9 }, (_, index) => `item-${index}`),
+  );
+  const serialized = serializeValue(things, "e", ["things"], {
+    maxProperties: 3,
+  });
+
+  expect(serialized.slice(0, 3)).toEqual(["item-0", "item-1", "item-2"]);
+  expect(readReference(serialized[3])?.path).toEqual(["things"]);
+
+  // What fits is just the list, with nothing tacked on the end of it
+  expect(serializeValue(new Set(["a", "b"]), "e", ["few"])).toEqual(["a", "b"]);
+});
+
 test("serializeValue uses references for cycles and excess depth", () => {
   const loop: Record<string, unknown> = { name: "loop" };
   loop["loopInto"] = loop;
