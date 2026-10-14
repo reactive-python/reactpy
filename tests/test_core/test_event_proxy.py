@@ -593,7 +593,7 @@ async def test_a_proxy_is_not_a_container():
     with pytest.raises(TypeError):
         event_object["target"]
     with pytest.raises(TypeError):
-        "type" in event_object
+        assert "type" in event_object
     with pytest.raises(TypeError):
         len(event_object)
     with pytest.raises(TypeError):
@@ -1406,7 +1406,7 @@ async def test_requests_may_not_pile_up_on_a_client_which_is_not_answering(monke
     which kept reading while the browser had gone, accumulated them without end.
     """
     monkeypatch.setattr("reactpy._event_proxy.PENDING_LIMIT", 2)
-    backend, client = make_client(make_objects(), respond=False)
+    backend, _client = make_client(make_objects(), respond=False)
     event_object = make_event(backend, "evt")
 
     waiting = [
