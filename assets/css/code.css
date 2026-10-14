@@ -75,6 +75,9 @@
 .md-typeset .tabbed-set .highlighttable {
     border-radius: 0;
 }
+.md-typeset .tabbed-labels--linked>label>a {
+    padding: 0em 1.25em;
+}
 
 /* Code hightlighting colors */
 
