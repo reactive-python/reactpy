@@ -864,9 +864,16 @@ class EventProxy(Generic[_T]):
     def defaultPrevented(self) -> bool:
         """Whether :meth:`preventDefault` has been asked for on this proxy
 
-        This reports what Python has asked the browser to do, not what the browser
-        settled on - read the live value with ``await event.defaultPrevented`` if the
-        distinction matters.
+        This answers synchronously, and with what Python has asked the browser to do -
+        not with what the browser settled on. What the browser holds is a property of
+        the live event, so it is read the way any other browser property is::
+
+            async def on_submit(event: Event):
+                prevented, = await event.read("defaultPrevented")
+
+        That round trip is worth paying for when other scripts on the page may have
+        prevented the action as well, or when this handler never called
+        :meth:`preventDefault` at all.
         """
         return bool(self._reactpy_flags.get("preventDefault"))
 

@@ -826,6 +826,33 @@ async def test_stop_immediate_propagation_is_forwarded_to_the_client():
     assert event_object.defaultPrevented is False
 
 
+async def test_what_the_browser_prevented_is_read_rather_than_awaited():
+    """Two different questions, answered two different ways
+
+    ``event.defaultPrevented`` answers synchronously with what this side asked the
+    browser to do, so awaiting it was always going to be a ``TypeError``. What the
+    browser itself settled on - which other scripts on the page may have had a say in -
+    is a property of the live event, and is read like any other.
+    """
+    objects = make_objects()
+    objects["evt"]["defaultPrevented"] = True
+    backend, client = make_client(objects)
+    event_object = make_event(backend, "evt")
+
+    assert event_object.defaultPrevented is False
+    with pytest.raises(TypeError):
+        await event_object.defaultPrevented
+
+    prevented, = await event_object.read("defaultPrevented")
+    assert prevented is True
+    assert requested_paths(client) == [["defaultPrevented"]]
+
+    event_object.preventDefault()
+    assert event_object.defaultPrevented is True
+    prevented_method = objects["evt"]["preventDefault"]
+    await poll(lambda: len(prevented_method.calls) == 1)
+
+
 # -- what may cross the connection in either direction -----------------------
 
 
