@@ -161,6 +161,11 @@ class EventProxyBackend:
         self._send_tasks: set[Any] = set()
         self._timeouts = 0
         self._disabled = False
+        # Requests are counted against the round trip which carried them - one send of
+        # a batch, or one answer which came back - rather than against each other.
+        self._round_trip = 0
+        self._batch_of_request: dict[str, int] = {}
+        self._struck: set[int] = set()
         self._cache: dict[tuple[str, tuple[str, ...]], Any] = {}
         self._inflight: dict[
             tuple[str, tuple[str, ...]], tuple[str, Future | None]
@@ -206,6 +211,7 @@ class EventProxyBackend:
             if not future.done():
                 future.set_exception(EventProxyUnavailable(reason))
         self._pending.clear()
+        self._batch_of_request.clear()
         self._inflight.clear()
         self._outgoing.clear()
         self._flush_scheduled = False
@@ -221,6 +227,9 @@ class EventProxyBackend:
         if message.get("type") != EVENT_PROXY_RESPONSE_TYPE:
             return False
 
+        # Everything which came back in this message travelled as one round trip
+        self._begin_round_trip()
+
         responses = message.get("responses")
         if isinstance(responses, list):
             for entry in responses:
@@ -234,9 +243,7 @@ class EventProxyBackend:
     def _route(self, message: Mapping[str, Any]) -> None:
         """Deliver one answer to the request which asked for it"""
         request_id = message.get("requestId")
-        future = (
-            self._pending.pop(request_id, None) if isinstance(request_id, str) else None
-        )
+        future = self._take(request_id)
         if future is None:
             # Either the request timed out or the layout was closed while it was in
             # flight. Either way there is nobody left to deliver the answer to.
@@ -344,7 +351,7 @@ class EventProxyBackend:
         failure: BaseException | None = None
         for (index, key, _), payload in zip(outstanding, payloads, strict=True):
             if isinstance(payload, asyncio.CancelledError):
-                raise payload
+                raise payload  # nocov - nothing cancels a request which is in flight
             if isinstance(payload, BaseException):
                 failure = _prefer_failure(failure, payload)
                 continue
@@ -439,9 +446,14 @@ class EventProxyBackend:
         batch, self._outgoing = self._outgoing, []
         if not batch:
             return
+        self._begin_round_trip()
         if self._loop is None or self._send is None:
             self._abandon(batch)
             return
+        for entry in batch:
+            request_id = entry.get("requestId")
+            if isinstance(request_id, str) and request_id in self._pending:
+                self._batch_of_request[request_id] = self._round_trip
         message = (
             batch[0]
             if len(batch) == 1
@@ -453,12 +465,7 @@ class EventProxyBackend:
 
     def _abandon(self, batch: Sequence[dict[str, Any]]) -> None:
         for message in batch:
-            request_id = message.get("requestId")
-            future = (
-                self._pending.pop(request_id, None)
-                if isinstance(request_id, str)
-                else None
-            )
+            future = self._take(message.get("requestId"))
             if future is not None and not future.done():
                 future.set_exception(
                     EventProxyUnavailable("no sender is bound to this connection")
@@ -505,24 +512,55 @@ class EventProxyBackend:
         except Exception as error:  # any send failure kills live access for this client
             self.disable(f"failed to send a live event request ({error})")
 
-    def _discard(self, request_id: str) -> None:
-        self._pending.pop(request_id, None)
+    def _take(self, request_id: Any) -> Future | None:
+        """Stop waiting on one request, forgetting which round trip carried it too"""
+        if not isinstance(request_id, str):
+            return None
+        self._batch_of_request.pop(request_id, None)
+        return self._pending.pop(request_id, None)
+
+    def _begin_round_trip(self) -> None:
+        """Count one message, in either direction, as a round trip of its own"""
+        self._round_trip += 1
+        self._struck.clear()
 
     def _handle_timeout(
         self, request_id: str, event_id: str, path: Sequence[str | int]
     ) -> NoReturn:
-        self._discard(request_id)
-        self._timeouts += 1
-        max_timeouts = REACTPY_EVENT_PROXY_MAX_TIMEOUTS.current
-        if max_timeouts > 0 and self._timeouts >= max_timeouts:
-            self.disable(
-                f"{self._timeouts} consecutive live event requests went unanswered"
-            )
+        self._strike(request_id)
         msg = (
             f"the client did not answer the request for {list(path)!r} of event "
             f"{event_id!r} within {REACTPY_EVENT_PROXY_TIMEOUT.current}s"
         )
         raise EventProxyTimeout(msg)
+
+    def _strike(self, request_id: str) -> None:
+        """Record one round trip which the client did not answer
+
+        A batch which went silent used to be counted once per property it was asking
+        for, so a handler which read four properties of one event exhausted a budget of
+        three all by itself, and live access was switched off for a client which had
+        merely been asked several things at once. What is being measured is whether the
+        client answers at all, which is why one unanswered message costs one strike no
+        matter how many properties it was after.
+
+        Only the messages which are still outstanding can be struck, since starting a
+        round trip in either direction clears this - so it cannot accumulate.
+        """
+        batch = self._batch_of_request.pop(request_id, None)
+        self._take(request_id)
+        if batch is None:
+            # A timeout the client reported itself belongs to the answer being handled
+            batch = self._round_trip
+        if batch in self._struck:
+            return
+        self._struck.add(batch)
+        self._timeouts += 1
+        max_timeouts = REACTPY_EVENT_PROXY_MAX_TIMEOUTS.current
+        if max_timeouts > 0 and self._timeouts >= max_timeouts:
+            self.disable(
+                f"{self._timeouts} consecutive live event round trips went unanswered"
+            )
 
     def _to_value(
         self,

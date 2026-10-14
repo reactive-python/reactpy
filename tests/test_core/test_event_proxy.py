@@ -914,6 +914,37 @@ def test_a_response_before_the_layout_runs_has_nobody_to_wake():
     )
 
 
+def test_a_response_named_by_something_other_than_a_string_is_ignored():
+    """A requestId is only ever something this side handed out
+
+    A client which is confused, or worse, can answer a request which was never sent
+    with an id which is not even a string. Nothing may be looked up for it then, and
+    nothing may be remembered about it either - a list cannot so much as be a key.
+    """
+    backend = EventProxyBackend()
+
+    for request_id in (42, None, ["a"], {"a": 1}, b"bytes"):
+        assert (
+            backend.handle_response(
+                {
+                    "type": EVENT_PROXY_RESPONSE_TYPE,
+                    "requestId": request_id,
+                    "ok": True,
+                },
+            )
+            is True
+        )
+        assert (
+            backend.handle_response(
+                {
+                    "type": EVENT_PROXY_RESPONSE_TYPE,
+                    "responses": [{"requestId": request_id, "ok": True}],
+                },
+            )
+            is True
+        )
+
+
 async def test_unanswered_requests_eventually_disable_live_access(monkeypatch):
     monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
     monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 2)
@@ -944,6 +975,32 @@ async def test_client_reported_timeouts_count_against_the_same_budget(monkeypatc
         await event_object.read("target")
 
     assert backend.disabled, "a timeout the client reports is still a timeout"
+
+
+async def test_one_silent_batch_costs_one_timeout(monkeypatch):
+    """A batch which went silent is one dead round trip, not one per property
+
+    Each property of a silent batch used to raise its own timeout, and every one of
+    those was counted. A handler which read four properties of an event at once
+    therefore exhausted a budget of three all by itself, and switched live access off
+    for a client which had merely been asked several things in one message.
+    """
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 3)
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+    properties = ("target.tagName", "target.value", "type", "deep.a")
+
+    for attempt in (1, 2):
+        with pytest.raises(EventProxyTimeout):
+            await event_object.read(*properties)
+        assert len(client.messages) == attempt, "the batch left as a single message"
+        assert not backend.disabled, f"round trip {attempt} of three is not the last"
+
+    with pytest.raises(EventProxyTimeout):
+        await event_object.read(*properties)
+
+    assert backend.disabled, "three dead round trips is a dead connection"
 
 
 async def test_failures_the_client_cannot_explain_are_still_reported():

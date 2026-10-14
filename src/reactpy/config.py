@@ -161,9 +161,11 @@ REACTPY_EVENT_PROXY_MAX_TIMEOUTS = Option(
     mutable=True,
     validator=int,
 )
-"""How many consecutive live event timeouts are tolerated before access is disabled
+"""How many consecutive unanswered round trips are tolerated before access is disabled
 
 Live event access requires a round trip to the client. If a client stops answering
 (for example because it navigated away) ReactPy stops attempting live access after
-this many consecutive timeouts so that event handlers do not stall.
+this many consecutive round trips went unanswered so that event handlers do not stall.
+What counts is the message, not the properties inside it: a batch which asked for four
+properties and got no answer at all costs one of this budget, not four.
 """
