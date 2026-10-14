@@ -212,6 +212,10 @@ class Layout(BaseLayout):
         This must be called from the event loop running the layout, and is what makes
         it possible for event handlers to read properties from, and call methods on,
         the browser objects which triggered them.
+
+        Binding a sender which is not the one already in place - which is what a
+        reconnect does - also brings live access back if an earlier client was switched
+        off for going quiet. A client which has just connected has not failed yet.
         """
         self._event_proxy_sender = send
         backend = getattr(self, "_event_proxy_backend", None)

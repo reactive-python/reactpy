@@ -1003,6 +1003,51 @@ async def test_one_silent_batch_costs_one_timeout(monkeypatch):
     assert backend.disabled, "three dead round trips is a dead connection"
 
 
+async def test_a_client_which_connected_again_can_be_read_again(monkeypatch):
+    """A reconnect is a new client, not the one which stopped answering
+
+    Being switched off used to last for the life of the layout, so one unanswered
+    message - a page which was reloaded, a socket which was quietly replaced - left
+    every handler which came after it reading nothing but ``EventProxyUnavailable``,
+    while a perfectly willing browser sat on the other end of the connection.
+    """
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 1)
+
+    async def silence(message: dict[str, Any]) -> None:
+        return None
+
+    backend = EventProxyBackend()
+    backend.set_sender(silence)
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyTimeout):
+        await event_object.read("target")
+
+    assert backend.disabled
+    backend.set_sender(silence)
+    assert backend.disabled, "the very same silent sender is not a second chance"
+
+    alive = CannedClient(backend, ok=True, value="typed")
+    backend.set_sender(alive.send)
+    assert backend.available, "a client which has just connected has not failed yet"
+    assert await event_object.read("target.value") == ("typed",)
+
+
+async def test_a_closed_layout_does_not_come_back_when_a_sender_appears():
+    """Closing is the layout going away, which no sender can undo"""
+    backend = EventProxyBackend()
+    backend.disable("the client went away")
+    backend.close()
+
+    async def send(message: dict[str, Any]) -> None:
+        return None
+
+    backend.set_sender(send)
+    assert backend.disabled
+    assert not backend.available
+
+
 async def test_failures_the_client_cannot_explain_are_still_reported():
     backend, client = make_canned_client(ok=False)
     event_object = make_event(backend, "evt")

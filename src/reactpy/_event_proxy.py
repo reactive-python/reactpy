@@ -161,6 +161,7 @@ class EventProxyBackend:
         self._send_tasks: set[Any] = set()
         self._timeouts = 0
         self._disabled = False
+        self._closed = False
         # Requests are counted against the round trip which carried them - one send of
         # a batch, or one answer which came back - rather than against each other.
         self._round_trip = 0
@@ -189,10 +190,34 @@ class EventProxyBackend:
         This must be called from the event loop which runs the associated layout since
         live access needs to know both *how* and *from which thread* to talk to the
         browser.
+
+        Binding a *different* sender also brings live access back if an earlier one was
+        switched off. Being switched off is a statement about the connection which was
+        bound at the time - that the client behind it stopped answering - and it says
+        nothing about the client which has just connected. That one has yet to be given
+        the chance to answer for itself.
         """
+        if self._send is not send:
+            self._reactivate()
         self._send = send
         self._loop = asyncio.get_running_loop()
         self._loop_thread_id = threading.get_ident()
+
+    def _reactivate(self) -> None:
+        """Give a newly bound sender the chance to answer for itself
+
+        Without this, being switched off is permanent for the life of the layout, and a
+        single unanswered message - a page which was reloaded, a socket which was
+        replaced - leaves every later handler reading nothing but
+        :class:`EventProxyUnavailable` while a perfectly willing browser sits on the
+        other end of the connection.
+        """
+        if self._closed or not (self._disabled or self._timeouts):
+            return
+        self._disabled = False
+        self._timeouts = 0
+        self._struck.clear()
+        logger.debug("Live event access re-enabled for a newly bound sender")
 
     def disable(self, reason: str) -> None:
         """Stop attempting live access, for example because the client went away"""
@@ -202,8 +227,13 @@ class EventProxyBackend:
         self._abandon_pending(reason)
 
     def close(self) -> None:
-        """Abandon all in-flight requests (called when the layout shuts down)"""
+        """Abandon all in-flight requests (called when the layout shuts down)
+
+        This one is final. Binding a sender afterwards does not bring live access back,
+        because there is no layout left for the answers to belong to.
+        """
         self._disabled = True
+        self._closed = True
         self._abandon_pending("the layout was closed")
 
     def _abandon_pending(self, reason: str) -> None:
