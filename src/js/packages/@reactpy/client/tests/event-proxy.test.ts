@@ -906,6 +906,31 @@ test("an object which aged out is answered as not-found", () => {
   expect(replies[0].code).toBe("not-found");
 });
 
+test("answering a request takes the idle objects out with it", () => {
+  // Objects are registered for the server's benefit and nothing else is coming to take
+  // them away, so a page which stops dispatching events used to hold every one of them
+  // for their whole idle time - a detached node is no less detached for nobody having
+  // asked about it in the last minute.
+  const { registry, replies, now } = make_registry();
+  const idle = registry.register(make_event());
+
+  now.value = LIVE_OBJECT_TTL_MS - 1;
+  const busy = registry.register(make_event());
+
+  now.value = LIVE_OBJECT_TTL_MS + 5;
+  registry.handleMessage(
+    request({ requestId: "ask", eventId: busy, path: [] }),
+  );
+
+  expect(replies).toHaveLength(1);
+  expect(replies[0].ok).toBe(true);
+  expect(registry.has(idle)).toBe(
+    false,
+    "the idle one went while nobody watched",
+  );
+  expect(registry.has(busy)).toBe(true, "the one being read is not idle");
+});
+
 test("the cap leaves room for every event a busy page can have in flight", () => {
   const { registry } = make_registry();
   const ids: string[] = [];

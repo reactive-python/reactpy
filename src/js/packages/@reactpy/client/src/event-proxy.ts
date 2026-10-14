@@ -436,6 +436,11 @@ export class EventProxyRegistry {
    *
    * Whatever is dropped here is gone for good as far as the server is concerned: the id
    * it holds keeps working, and keeps answering "not-found".
+   *
+   * This runs whenever the registry is used, not only when something is added to it.
+   * Objects are kept for the server's benefit, so a page which stops dispatching events
+   * still lets go of the ones which have gone idle rather than holding them for their
+   * whole idle time.
    */
   prune(): void {
     const now = this.clock();
@@ -461,6 +466,12 @@ export class EventProxyRegistry {
    */
   handleMessage(message: EventProxyRequest | EventProxyRequestBatch): void {
     if (!message || message.type !== EVENT_PROXY_REQUEST_TYPE) return;
+
+    // Whatever is registered here is being kept alive for the server's benefit, and
+    // nobody else is coming to take it away - so the moment the server asks about them
+    // is the moment to notice which of them have gone stale. Waiting for the next event
+    // to be dispatched would leave detached objects held for their whole idle time.
+    this.prune();
 
     const requests = (message as EventProxyRequestBatch).requests;
     if (!Array.isArray(requests)) {
