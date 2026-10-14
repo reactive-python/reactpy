@@ -883,7 +883,7 @@ class EventProxy(Generic[_T]):
         the live event, so it is read the way any other browser property is::
 
             async def on_submit(event: Event):
-                prevented, = await event.read("defaultPrevented")
+                (prevented,) = await event.read("defaultPrevented")
 
         That round trip is worth paying for when other scripts on the page may have
         prevented the action as well, or when this handler never called
