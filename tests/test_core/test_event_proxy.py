@@ -1311,6 +1311,92 @@ async def test_a_reader_which_went_away_releases_its_request():
         await again
 
 
+async def test_a_reader_which_only_borrowed_an_answer_releases_nothing():
+    """Two readers of one property share the request, and only one of them owns it
+
+    The second handler to want a property borrows the answer of the first rather than
+    asking the client twice. When that second reader goes away it is not its request to
+    release: the handler which asked is still there, still waiting, and still expects the
+    answer to find it.
+    """
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    first = asyncio.create_task(event_object.read("target"))
+    await poll(lambda: len(client.requests) == 1)
+    request_id = next(iter(backend._pending))
+
+    # The borrower wants one property which is being asked for and one which is not, so
+    # the request it sends itself is proof that it joined rather than asked again.
+    borrower = asyncio.create_task(event_object.read("target", "type"))
+    await poll(lambda: len(client.requests) == 2)
+    assert requested_paths(client)[1] == ["type"], "only what it lacks goes out"
+
+    borrower.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await borrower
+
+    assert request_id in backend._pending, "the one still waiting keeps its request"
+
+    backend.handle_response(
+        {
+            "type": EVENT_PROXY_RESPONSE_TYPE,
+            "requestId": request_id,
+            "ok": True,
+            "value": "typed",
+            "error": None,
+            "code": None,
+        },
+    )
+    assert await first == ("typed",)
+    assert backend._pending == {}
+
+
+async def test_a_reader_which_borrowed_an_answer_gives_up_on_its_own_clock(
+    monkeypatch,
+):
+    """A borrower runs out of patience on its own, without costing anyone else
+
+    Waiting on somebody else's request is held to the same deadline as waiting on one's
+    own, so a client which has stopped answering cannot strand a handler which merely
+    borrowed an answer. Giving up is the borrower's own affair though: the request stays
+    where the reader which asked left it, and it is that reader whose round trip is
+    counted as having gone unanswered.
+    """
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    # Each reader is held to the clock which was in force when its own wait began, so
+    # the borrower gives up while the reader which asked is still waiting.
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 30)
+    owner = asyncio.create_task(event_object.read("target"))
+    await poll(lambda: len(client.requests) == 1)
+    request_id = next(iter(backend._pending))
+
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    borrower = asyncio.create_task(event_object.read("target", "type"))
+    await poll(lambda: len(client.requests) == 2)
+
+    with pytest.raises(EventProxyTimeout):
+        await borrower
+
+    assert not owner.done(), "the reader which asked is still waiting for its answer"
+    assert request_id in backend._pending, "its request stays where it was left"
+    assert backend._timeouts == 1, "only the round trip which was the borrower's own"
+
+    backend.handle_response(
+        {
+            "type": EVENT_PROXY_RESPONSE_TYPE,
+            "requestId": request_id,
+            "ok": True,
+            "value": "typed",
+            "error": None,
+            "code": None,
+        },
+    )
+    assert await owner == ("typed",)
+
+
 async def test_requests_may_not_pile_up_on_a_client_which_is_not_answering(monkeypatch):
     """There is a limit to how much a client can be asked at once
 

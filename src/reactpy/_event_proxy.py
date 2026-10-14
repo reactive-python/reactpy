@@ -322,8 +322,10 @@ class EventProxyBackend:
             shared = self._inflight.get(key)
             if shared is not None:
                 # Somebody else has already asked for this, so there is no sense in
-                # asking twice - whether or not the answer is wanted fresh
-                payload = await self._await(*shared, event_id, path)
+                # asking twice - whether or not the answer is wanted fresh. The one who
+                # asked owns the request and releases it; this reader only borrows the
+                # answer, and walking away early must not take the request with it.
+                payload = await self._await(*shared, event_id, path, owner=False)
                 return self._to_value(payload, event_id, path)
 
         request_id, future = self._enqueue(event_id, path, call, args, reply=True)
@@ -363,7 +365,7 @@ class EventProxyBackend:
         """
         values: list[Any] = [None] * len(paths)
         outstanding: list[
-            tuple[int, tuple[str, tuple[str, ...]], tuple[str, Future | None]]
+            tuple[int, tuple[str, tuple[str, ...]], tuple[str, Future | None], bool]
         ] = []
         ours: list[tuple[str, tuple[str, ...]]] = []
         for index, path in enumerate(paths):
@@ -373,18 +375,21 @@ class EventProxyBackend:
                 continue
             shared = self._inflight.get(key)
             if shared is not None:
-                outstanding.append((index, key, shared))
+                # Somebody else asked for this one and is waiting on it too; it is
+                # theirs to release, and this reader walking away must not take it
+                # away from under them.
+                outstanding.append((index, key, shared, False))
                 continue
             entry = self._enqueue(event_id, path, False, (), True)
             self._inflight[key] = entry
             ours.append(key)
-            outstanding.append((index, key, entry))
+            outstanding.append((index, key, entry, True))
 
         try:
             payloads = await asyncio.gather(
                 *(
-                    self._await(request_id, future, event_id, paths[index])
-                    for index, _, (request_id, future) in outstanding
+                    self._await(request_id, future, event_id, paths[index], owner)
+                    for index, _, (request_id, future), owner in outstanding
                 ),
                 # One path going wrong must not throw away the answers the client
                 # already gave to its neighbours in the same batch.
@@ -395,7 +400,7 @@ class EventProxyBackend:
                 self._inflight.pop(key, None)
 
         failure: BaseException | None = None
-        for (index, key, _), payload in zip(outstanding, payloads, strict=True):
+        for (index, key, _, _), payload in zip(outstanding, payloads, strict=True):
             if isinstance(payload, asyncio.CancelledError):
                 raise payload  # nocov - nothing cancels a request which is in flight
             if isinstance(payload, BaseException):
@@ -450,22 +455,41 @@ class EventProxyBackend:
         future: Future | None,
         event_id: str,
         path: Sequence[str | int],
+        owner: bool = True,
     ) -> dict[str, Any]:
         if future is None:  # nocov - only reply=False requests have no future
             return {"ok": True, "value": None, "error": None, "code": None}
+        timeout = REACTPY_EVENT_PROXY_TIMEOUT.current
+        if not owner:
+            # This is somebody else's request, so nothing here is ours to give up. The
+            # wait is shielded: walking away must not cancel the answer the reader which
+            # asked is still waiting to collect, and a wait of our own which ran out
+            # says so rather than striking a round trip which that reader is still due
+            # an answer to.
+            try:
+                return await asyncio.wait_for(
+                    asyncio.shield(asyncio.wrap_future(future)), timeout
+                )
+            except (TimeoutError, FuturesTimeoutError):
+                msg = self._timeout_message(event_id, path)
+                raise EventProxyTimeout(msg) from None
         try:
-            return await asyncio.wait_for(
-                asyncio.wrap_future(future), REACTPY_EVENT_PROXY_TIMEOUT.current
-            )
+            return await asyncio.wait_for(asyncio.wrap_future(future), timeout)
         except (TimeoutError, FuturesTimeoutError):
             self._handle_timeout(request_id, event_id, path)
         finally:
             # Whatever is still recorded for this request at this point belongs to
             # nobody. Either the answer came in and was routed, or it went unanswered
-            # and was counted as such - or the reader itself went away, which is the
-            # one case which would otherwise leave a request waiting forever for a
-            # handler which is no longer there to be woken by it.
+            # and was counted as such - or the reader itself went away, which is the one
+            # case which would otherwise leave a request waiting forever for a handler
+            # which is no longer there to be woken by it.
             self._take(request_id)
+
+    def _timeout_message(self, event_id: str, path: Sequence[str | int]) -> str:
+        return (
+            f"the client did not answer the request for {list(path)!r} of event "
+            f"{event_id!r} within {REACTPY_EVENT_PROXY_TIMEOUT.current}s"
+        )
 
     def _enqueue(
         self,
@@ -588,10 +612,7 @@ class EventProxyBackend:
         self, request_id: str, event_id: str, path: Sequence[str | int]
     ) -> NoReturn:
         self._strike(request_id)
-        msg = (
-            f"the client did not answer the request for {list(path)!r} of event "
-            f"{event_id!r} within {REACTPY_EVENT_PROXY_TIMEOUT.current}s"
-        )
+        msg = self._timeout_message(event_id, path)
         raise EventProxyTimeout(msg)
 
     def _strike(self, request_id: str) -> None:
