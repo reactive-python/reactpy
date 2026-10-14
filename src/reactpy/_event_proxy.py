@@ -104,6 +104,14 @@ CACHE_LIMIT = 2048
 """How many resolved property values a single connection remembers before starting over
 """
 
+PENDING_LIMIT = 256
+"""How many live event requests one connection may have waiting on the client at once
+
+Nobody can read a hundred properties at a time and get anything useful out of it, and a
+reader which goes away - a cancelled handler, a component which unmounted - would
+otherwise leave its request behind to be answered by nobody forever.
+"""
+
 SendCoroutine = Callable[[dict[str, Any]], Awaitable[None]]
 """Sends a single message to the client which owns a given event"""
 
@@ -443,6 +451,13 @@ class EventProxyBackend:
             )
         except (TimeoutError, FuturesTimeoutError):
             self._handle_timeout(request_id, event_id, path)
+        finally:
+            # Whatever is still recorded for this request at this point belongs to
+            # nobody. Either the answer came in and was routed, or it went unanswered
+            # and was counted as such - or the reader itself went away, which is the
+            # one case which would otherwise leave a request waiting forever for a
+            # handler which is no longer there to be woken by it.
+            self._take(request_id)
 
     def _enqueue(
         self,
@@ -515,6 +530,13 @@ class EventProxyBackend:
         if call and not path:
             msg = "the event object itself cannot be called"
             raise EventProxyAccessError(msg)
+        if reply and len(self._pending) >= PENDING_LIMIT:
+            msg = (
+                f"too many live event requests ({PENDING_LIMIT}) are already waiting "
+                f"for the client to answer, so {list(path)!r} of event {event_id!r} "
+                f"was not asked for"
+            )
+            raise EventProxyUnavailable(msg)
 
         request_id = uuid4().hex
         message: dict[str, Any] = {

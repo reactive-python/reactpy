@@ -1235,6 +1235,64 @@ async def test_a_call_made_from_another_thread_is_sent_by_the_loop():
     assert request["reply"] is False
 
 
+async def test_a_reader_which_went_away_releases_its_request():
+    """A cancelled read must not leave a request waiting for nobody
+
+    A handler which is stopped while it is reading - a re-render which replaced it, a
+    component which unmounted - abandons whatever it was waiting on. The request stayed
+    recorded as though somebody still cared, and the answer to it had nowhere to go.
+    Nothing reclaimed that either, so a page which re-renders quickly kept one alive for
+    every read it ever cancelled.
+    """
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    task = asyncio.create_task(event_object.read("target"))
+    await poll(lambda: len(client.requests) == 1)
+    assert len(backend._pending) == 1, "the request is waiting on the client"
+
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert backend._pending == {}, "nothing waits on behalf of an absent reader"
+    assert backend._inflight == {}, "and the path is free to be asked about again"
+
+    # The very same property may be read again, and it is asked for afresh
+    again = asyncio.create_task(event_object.read("target"))
+    await poll(lambda: len(client.requests) == 2)
+    again.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await again
+
+
+async def test_requests_may_not_pile_up_on_a_client_which_is_not_answering(monkeypatch):
+    """There is a limit to how much a client can be asked at once
+
+    A client which is not answering does not stop being asked. Whatever is still waiting
+    on it stays recorded in case the answer turns up late, and nothing bounded how many
+    of those could be waiting - so a handler which read a great many properties, or one
+    which kept reading while the browser had gone, accumulated them without end.
+    """
+    monkeypatch.setattr("reactpy._event_proxy.PENDING_LIMIT", 2)
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    waiting = [
+        asyncio.create_task(event_object.read("target.tagName")),
+        asyncio.create_task(event_object.read("target.value")),
+    ]
+    await poll(lambda: len(backend._pending) == 2)
+
+    with pytest.raises(EventProxyUnavailable, match="too many live event requests"):
+        await event_object.read("type")
+
+    for task in waiting:
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+
 async def test_closing_the_backend_fails_everything_still_in_flight():
     backend, client = make_client(make_objects(), respond=False)
     event_object = make_event(backend, "evt")
