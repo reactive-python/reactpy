@@ -57,6 +57,46 @@ export const LIVE_OBJECT_TTL_MS = 60_000;
 export const MAX_PROPERTIES = 100;
 /** How deep a single resolution may nest before references are used */
 export const DEFAULT_MAX_DEPTH = 10;
+/**
+ * The deepest a request may ask the client to go, however it asks.
+ *
+ * ``maxDepth`` arrives from the server. A value which is negative, not a number at all,
+ * or simply enormous would otherwise turn the bound which is there to protect the page
+ * into the way past it, so it is read as a suggestion with a ceiling of its own.
+ */
+export const MAX_ALLOWED_DEPTH = 128;
+/**
+ * How many requests one batched message may carry out.
+ *
+ * The server queues whatever it wants to know during a pass round its loop, which is a
+ * bounded number of things. A message carrying more than that did not come from a server
+ * which means it, and carrying it out would be the page's one turn spent on nothing else.
+ */
+export const MAX_REQUESTS_PER_MESSAGE = 256;
+
+/** Read the depth a request asked for as a sane one, whatever it actually said */
+function allowedDepth(requested: unknown): number {
+  if (typeof requested !== "number" || !Number.isFinite(requested))
+    return DEFAULT_MAX_DEPTH;
+  return Math.min(Math.max(Math.floor(requested), 0), MAX_ALLOWED_DEPTH);
+}
+
+/**
+ * Answer a request which is not going to be carried out
+ *
+ * Whatever wanted an answer gets one, because leaving it unanswered would have the
+ * server sit there until its own timeout and count a client which is perfectly awake
+ * against it.
+ */
+function refuse(request: EventProxyRequest, error: string): EventProxyResponse {
+  return {
+    type: EVENT_PROXY_RESPONSE_TYPE,
+    requestId: typeof request.requestId === "string" ? request.requestId : "",
+    ok: false,
+    error,
+    code: "access",
+  };
+}
 
 export type EventProxyRequest = {
   type: typeof EVENT_PROXY_REQUEST_TYPE;
@@ -484,11 +524,20 @@ export class EventProxyRegistry {
     }
 
     const responses: EventProxyResponse[] = [];
-    for (const request of requests) {
+    for (let index = 0; index < requests.length; index++) {
+      const request = requests[index];
       // Anything which is not a request at all cannot be answered meaningfully, so it
       // is passed over. Everything else is carried out; only the answering is optional.
       if (!request || typeof request !== "object") continue;
-      const response = this.resolve(request);
+      // Past the bound the page stops taking requests apart and says so, rather than
+      // spending its one turn on an arbitrarily large list of them.
+      const response =
+        index >= MAX_REQUESTS_PER_MESSAGE
+          ? refuse(
+              request,
+              `a single message may not ask for more than ${MAX_REQUESTS_PER_MESSAGE} things at once`,
+            )
+          : this.resolve(request);
       if (request.reply !== false) responses.push(response);
     }
     if (responses.length > 0) {
@@ -528,11 +577,18 @@ export class EventProxyRegistry {
     entry.added = this.clock();
 
     const path = Array.isArray(message.path) ? message.path.map(String) : [];
-    const options: SerializeOptions = { maxDepth: message.maxDepth };
+    const maxDepth = allowedDepth(message.maxDepth);
+    const options: SerializeOptions = { maxDepth };
 
     try {
       if (message.call) {
-        const value = this.call(eventId, entry.value, path, message.args || []);
+        const value = this.call(
+          eventId,
+          entry.value,
+          path,
+          message.args || [],
+          maxDepth,
+        );
         return reply(true, {
           value: serializeValue(value, eventId, path, options),
         });
@@ -558,7 +614,13 @@ export class EventProxyRegistry {
     }
   }
 
-  private call(eventId: string, root: any, path: string[], args: any[]): any {
+  private call(
+    eventId: string,
+    root: any,
+    path: string[],
+    args: any[],
+    maxDepth: number,
+  ): any {
     if (path.length === 0)
       throw new ProxyAccessError("the event object itself cannot be called");
     const { parent, key } = parentAndKey(root, path);
@@ -567,11 +629,26 @@ export class EventProxyRegistry {
       throw new ProxyAccessError(`${JSON.stringify(key)} is not a function`);
     return method.apply(
       parent,
-      args.map((argument) => this.readArgument(argument)),
+      args.map((argument) => this.readArgument(argument, maxDepth, 0)),
     );
   }
 
-  private readArgument(argument: unknown): unknown {
+  /**
+   * Turn one argument of a call into the value it stands for.
+   *
+   * The shape of an argument is the server's business, not the page's, so it is held to
+   * the same bound as a read is: whatever nests deeper than the request itself asked for
+   * is refused instead of walked into.
+   */
+  private readArgument(
+    argument: unknown,
+    maxDepth: number,
+    depth: number,
+  ): unknown {
+    if (depth > maxDepth)
+      throw new ProxyAccessError(
+        `an argument was nested more deeply than ${maxDepth} levels`,
+      );
     const ref = readReference(argument);
     if (ref) {
       const entry = this.live.get(ref.eventId);
@@ -583,11 +660,13 @@ export class EventProxyRegistry {
       return readPath(entry.value, ref.path);
     }
     if (Array.isArray(argument))
-      return argument.map((item) => this.readArgument(item));
+      return argument.map((item) =>
+        this.readArgument(item, maxDepth, depth + 1),
+      );
     if (argument && typeof argument === "object") {
       const value: Record<string, unknown> = {};
       for (const [key, item] of Object.entries(argument))
-        value[key] = this.readArgument(item);
+        value[key] = this.readArgument(item, maxDepth, depth + 1);
       return value;
     }
     return argument;

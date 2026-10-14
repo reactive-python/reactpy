@@ -14,7 +14,9 @@ import {
   type EventProxyRequestBatch,
   type EventProxyResponse,
   LIVE_OBJECT_TTL_MS,
+  MAX_ALLOWED_DEPTH,
   MAX_LIVE_OBJECTS,
+  MAX_REQUESTS_PER_MESSAGE,
   ProxyAccessError,
   ProxyNotFoundError,
   collectProperties,
@@ -586,6 +588,94 @@ test("an argument reference to a forgotten object is an error", () => {
   expect(response.ok).toBe(false);
   expect(response.code).toBe("not-found");
 });
+
+test("an argument nested past the depth the request asked for is refused", () => {
+  // An argument is the server's shape rather than the page's. Reading is bounded; an
+  // argument used to be walked however deep it happened to go.
+  const { registry } = make_registry();
+  const eventId = registry.register({
+    remember(...args: unknown[]) {
+      return args.length;
+    },
+  });
+
+  const response = registry.resolve(
+    request({
+      eventId,
+      path: ["remember"],
+      call: true,
+      args: [[[[["far"]]]]],
+      maxDepth: 2,
+    }),
+  );
+
+  expect(response.ok).toBe(false);
+  expect(response.code).toBe("access");
+  expect(response.error).toContain("nested more deeply than 2 levels");
+});
+
+test("a request cannot ask the page to recurse further than it is willing to", () => {
+  // ``maxDepth`` comes from the server, so it is a suggestion rather than an order: a
+  // number which is negative, not a number, or simply enormous has to leave the page
+  // standing rather than burying it in a stack it cannot come back out of.
+  const { registry } = make_registry();
+  const eventId = registry.register({ deep: nest(MAX_ALLOWED_DEPTH + 20) });
+
+  for (const asked of [Number.NaN, -1, 100000, "deep"]) {
+    const response = registry.resolve(
+      request({
+        eventId,
+        path: ["deep"],
+        maxDepth: asked as unknown as number,
+      }),
+    );
+    expect(response.ok).toBe(true);
+
+    let node: any = response.value;
+    let depth = 0;
+    while (node && node[EVENT_REFERENCE_KEY] === undefined && node["next"]) {
+      node = node["next"];
+      depth++;
+    }
+    expect(depth).toBeLessThanOrEqual(MAX_ALLOWED_DEPTH);
+    expect(readReference(node)).not.toBe(null);
+  }
+});
+
+test("a message which asks for far too much at once is refused the excess", () => {
+  // The server asks for what it wants to know during one pass round its loop, which is
+  // a bounded number of things. Carrying out an arbitrarily long list would spend the
+  // page's one turn on nothing else, and whatever was refused still gets an answer
+  // rather than leaving the server to time out on a client which is wide awake.
+  const { registry, replies } = make_registry();
+  const eventId = registry.register(make_event());
+  const requests = Array.from(
+    { length: MAX_REQUESTS_PER_MESSAGE + 3 },
+    (_, i) => request({ requestId: `r${i}`, eventId, path: ["type"] }),
+  );
+
+  registry.handleMessage(batch(...requests));
+
+  const answered = replies[0].responses as EventProxyResponse[];
+  expect(answered).toHaveLength(MAX_REQUESTS_PER_MESSAGE + 3);
+  expect(answered[MAX_REQUESTS_PER_MESSAGE - 1].ok).toBe(true);
+  expect(answered[MAX_REQUESTS_PER_MESSAGE].ok).toBe(false);
+  expect(answered[MAX_REQUESTS_PER_MESSAGE].code).toBe("access");
+  expect(answered[MAX_REQUESTS_PER_MESSAGE].error).toContain("more than");
+  expect(answered[MAX_REQUESTS_PER_MESSAGE].requestId).toBe(
+    `r${MAX_REQUESTS_PER_MESSAGE}`,
+  );
+});
+
+function nest(levels: number): Record<string, unknown> {
+  const root: Record<string, unknown> = {};
+  let node = root;
+  for (let index = 0; index < levels; index++) {
+    node["next"] = {};
+    node = node["next"] as Record<string, unknown>;
+  }
+  return root;
+}
 
 test("handleMessage only answers proxy requests, and only when asked", () => {
   const { registry, replies } = make_registry();
