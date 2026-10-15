@@ -45,18 +45,27 @@ export const EVENT_REFERENCE_KEY = "__reactpy_ref__";
  *
  * This is a correctness limit rather than a memory one. There is no snapshot left to
  * fall back on, so an object which has been evicted cannot be read again: every later
- * request for it is answered with a hard "not-found" error. The cap therefore has to
+ * request for it is answered with a hard "evicted" error. The cap therefore has to
  * leave room for every event a single page can have in flight - a handler awaiting
  * several events, or a burst of keystrokes still being read - rather than merely being
  * small enough to be harmless.
+ *
+ * What goes when the cap is reached is the object the server has gone longest without
+ * reading, not the one which happened to be dispatched first - see
+ * {@link EventProxyRegistry.prune}.
  */
 export const MAX_LIVE_OBJECTS = 512;
-/** How long an object may sit unused before it is forgotten (ms) */
+/**
+ * How long an object the server never asked about may sit unused before it is forgotten.
+ *
+ * This is the rule for things nobody wanted: dispatched, never read once, and therefore
+ * only taking up room. An object the server *has* read is exempt from it, because the
+ * handler which read it may just be slow - {@link EventProxyRegistry.prune} says why, and
+ * {@link MAX_LIVE_OBJECTS} is what actually bounds what the page holds.
+ */
 export const LIVE_OBJECT_TTL_MS = 60_000;
 /** How many members of one object, list, or iterable are handed over at most */
 export const MAX_PROPERTIES = 100;
-/** How deep a single resolution may nest before references are used */
-export const DEFAULT_MAX_DEPTH = 10;
 /**
  * The deepest a request may ask the client to go, however it asks.
  *
@@ -74,10 +83,20 @@ export const MAX_ALLOWED_DEPTH = 128;
  */
 export const MAX_REQUESTS_PER_MESSAGE = 256;
 
-/** Read the depth a request asked for as a sane one, whatever it actually said */
+/**
+ * Read the depth a request asked for as a sane one, whatever it actually said
+ *
+ * ``maxDepth`` arrives from the server. A value which is negative, not a number at all,
+ * or simply enormous would otherwise turn the bound which is there to protect the page
+ * into the way past it, so it is read as a suggestion with a ceiling of its own.
+ *
+ * A request which did not say at all is answered with the shallowest thing there is: the
+ * object as a single reference. Guessing a depth here would mean a malformed message
+ * being handed more of the page than it asked for, whereas a reference costs the server
+ * one more round trip and nothing else. The server in this repo always says.
+ */
 function allowedDepth(requested: unknown): number {
-  if (typeof requested !== "number" || !Number.isFinite(requested))
-    return DEFAULT_MAX_DEPTH;
+  if (typeof requested !== "number" || !Number.isFinite(requested)) return 0;
   return Math.min(Math.max(Math.floor(requested), 0), MAX_ALLOWED_DEPTH);
 }
 
@@ -115,7 +134,7 @@ export type EventProxyResponse = {
   ok: boolean;
   value?: any;
   error?: string | null;
-  code?: "not-found" | "access" | null;
+  code?: "not-found" | "evicted" | "access" | null;
 };
 
 /**
@@ -145,6 +164,14 @@ export type EventMarker = {
 export class ProxyNotFoundError extends Error {}
 /** Thrown when the requested property or method cannot be used */
 export class ProxyAccessError extends Error {}
+/**
+ * Thrown when the object a request refers to was dropped to make room for another one
+ *
+ * Answers the same way {@link ProxyNotFoundError} does, but says something different about
+ * why: the server had been handed this object and was still working with it when the page
+ * ran out of room, rather than the object having gone stale on its own.
+ */
+export class ProxyEvictedError extends ProxyNotFoundError {}
 
 /**
  * Properties which must never leave the page. Anything which could be used to reach
@@ -224,7 +251,15 @@ export type Reference = {
 };
 
 export type SerializeOptions = {
-  maxDepth?: number;
+  /**
+   * How deep to nest before handing back a reference instead of the value itself.
+   *
+   * Every caller states this. The registry takes it from the request which asked, via
+   * :func:`allowedDepth`, and a caller with no request in front of it has to say for
+   * itself - there is deliberately no depth to fall back on, since a bound nobody
+   * chose is the same as a bound nobody meant.
+   */
+  maxDepth: number;
   maxProperties?: number;
 };
 
@@ -301,7 +336,7 @@ export function serializeValue(
   value: unknown,
   eventId: string,
   path: string[] = [],
-  options: SerializeOptions = {},
+  options: SerializeOptions,
   depth = 0,
   seen: Set<unknown> = new Set(),
 ): any {
@@ -318,8 +353,7 @@ export function serializeValue(
   if (kind === "function") return reference(eventId, path, true);
 
   if (seen.has(value)) return reference(eventId, path);
-  if (depth >= (options.maxDepth ?? DEFAULT_MAX_DEPTH))
-    return reference(eventId, path);
+  if (depth >= options.maxDepth) return reference(eventId, path);
 
   // A single "seen" set covers the whole answer rather than being copied per node. One
   // read reaches at most a bounded subtree of an object the server is already holding,
@@ -439,7 +473,18 @@ function parentAndKey(
 
 type LiveObject = {
   value: any;
+  /** When this object last mattered - dispatched, or answered a request about */
   added: number;
+  /**
+   * Whether the server has ever been answered about this object
+   *
+   * It decides which of the two ways an entry can end applies to it. An object which was
+   * dispatched and never once read has nothing waiting on it, and goes the moment it goes
+   * idle. An object the server has read belongs to a handler which may be part way through
+   * awaiting something slow, and is only let go when it is genuinely in the way - see
+   * {@link EventProxyRegistry.prune}.
+   */
+  asked: boolean;
   /**
    * What each path called on this object answered with, most recent last.
    *
@@ -501,16 +546,41 @@ function stepDown(
  *
  * This is the only place those objects exist as far as the server is concerned: nothing
  * about them is sent when the event is dispatched, so forgetting one is not a slowdown
- * but a dead end - every later request for it is answered with "not-found". Entries are
- * still bounded in count and in age, since a page cannot hold on to events forever.
+ * but a dead end - every later request for it is answered with "not-found", or with
+ * "evicted" when the server had been reading it and the page ran out of room. Entries are
+ * bounded in count by {@link MAX_LIVE_OBJECTS}, dropping whatever the server has gone
+ * longest without reading, and in age by {@link LIVE_OBJECT_TTL_MS} for the objects it
+ * never asked about at all.
  * Whatever a method on one of them answered is kept alongside it, for as long as the
  * entry lasts and up to a small number of calls, because a reference which came out of
  * such an answer names a place inside it and has nowhere else to be resolved against.
  * Every value which leaves this registry goes through ``serializeValue``, so functions
  * and anything which could be used to escape the page never do.
  */
+/** Why an entry which is no longer here stopped answering */
+type DroppedReason = "expired" | "evicted";
+
 export class EventProxyRegistry {
   private readonly live = new Map<string, LiveObject>();
+  /**
+   * Why an id which is no longer here stopped answering, for as many as there is room to
+   * remember
+   *
+   * Both reasons mean the same thing to a handler - the object is not coming back - but
+   * they say different things about why, and a log which cannot tell them apart cannot
+   * tell "stale anyway" from "the page ran out of room under us".
+   */
+  private readonly dropped = new Map<string, DroppedReason>();
+  /**
+   * Which id each object being kept is addressed by
+   *
+   * Dispatching the same object twice is one thing happening twice, so the second dispatch
+   * is answered with the id the server already holds rather than a second copy of the same
+   * object - which is also what keeps the count bound spent on objects which actually
+   * differ from each other. A WeakMap so that an object nobody else can reach is not held
+   * alive by this registry alone.
+   */
+  private identities = new WeakMap<object, string>();
   private readonly send: (message: any) => void;
   private readonly clock: () => number;
   private nextId = 0;
@@ -523,12 +593,42 @@ export class EventProxyRegistry {
     this.clock = clock;
   }
 
-  /** Remember ``value`` and return the id the server will address it by */
+  /**
+   * Remember ``value`` and return the id the server will address it by
+   *
+   * An object which is already being kept is not registered a second time - it is brought
+   * back to the live end of the queue and given back under the id the server knows.
+   */
   register(value: any): string {
+    if (this.keyable(value)) {
+      const known = this.identities.get(value);
+      const entry = known === undefined ? undefined : this.live.get(known);
+      if (known !== undefined && entry !== undefined) {
+        this.touch(known, entry);
+        return known;
+      }
+    }
     const eventId = `${this.clock().toString(36)}-${(this.nextId++).toString(36)}`;
-    this.live.set(eventId, { value, added: this.clock(), calls: new Map() });
+    this.live.set(eventId, {
+      value,
+      added: this.clock(),
+      asked: false,
+      calls: new Map(),
+    });
+    if (this.keyable(value)) this.identities.set(value, eventId);
+    // This registry's ids only ever count up, so a fresh one cannot be in there - but a
+    // hand-built one should not inherit somebody else's history either.
+    this.dropped.delete(eventId);
     this.prune();
     return eventId;
+  }
+
+  /** Whether ``value`` has an identity worth dedupe on (primitives do not) */
+  private keyable(value: any): value is object {
+    return (
+      value !== null &&
+      (typeof value === "object" || typeof value === "function")
+    );
   }
 
   /** Whether anything is still known about the given id */
@@ -544,13 +644,45 @@ export class EventProxyRegistry {
   /** Forget every registered object */
   clear(): void {
     this.live.clear();
+    this.dropped.clear();
+    // A WeakMap can only be replaced, not emptied - and an id left in it would point at
+    // nothing, which is exactly the difference between a reused object and a stale entry.
+    this.identities = new WeakMap();
   }
 
   /**
-   * Drop objects which went unused for too long, or which no longer fit
+   * Mark an object as used right now
    *
-   * Whatever is dropped here is gone for good as far as the server is concerned: the id
-   * it holds keeps working, and keeps answering "not-found".
+   * Deleting and re-inserting is what makes the cap a least-recently-used bound rather
+   * than a queue: a Map hands back its keys in the order they went in, so whatever has
+   * just been read goes to the back of the line and something the server has gone longest
+   * without reading is what disappears when the registry is full. Without this an object
+   * could be dropped while a handler was part way through reading it, purely because it
+   * happened to have been dispatched early.
+   */
+  private touch(eventId: string, entry: LiveObject): void {
+    entry.added = this.clock();
+    this.live.delete(eventId);
+    this.live.set(eventId, entry);
+  }
+
+  /**
+   * Drop objects which went idle without ever being read, or which no longer fit
+   *
+   * Whatever is dropped here is gone for good as far as the server is concerned: the id it
+   * holds keeps working, and keeps answering *why* - "not-found" for one which went stale
+   * unread, "evicted" for one the server was still using. ``dropped`` is what remembers
+   * which of the two it was.
+   *
+   * Two rules, each with a single job. Age takes what nobody asked about: dispatched, never
+   * once read, and only taking up room. It deliberately leaves alone an object the server
+   * *has* read, because the handler which read it may simply be part way through awaiting
+   * something slow - sweeping that one at sixty seconds would have the request it makes
+   * when it gets back answered "not-found", with the page looking like it went away on its
+   * own when it was the sweep which did it.
+   *
+   * Count is what actually bounds the page, and takes whatever has gone longest unread - so
+   * a handler which keeps reading one object keeps it, however many events arrive behind it.
    *
    * This runs whenever the registry is used, not only when something is added to it.
    * Objects are kept for the server's benefit, so a page which stops dispatching events
@@ -560,13 +692,52 @@ export class EventProxyRegistry {
   prune(): void {
     const now = this.clock();
     for (const [eventId, entry] of this.live) {
-      if (now - entry.added > LIVE_OBJECT_TTL_MS) this.live.delete(eventId);
+      if (!entry.asked && now - entry.added > LIVE_OBJECT_TTL_MS) {
+        this.live.delete(eventId);
+        this.note(eventId, "expired");
+      }
     }
     while (this.live.size > MAX_LIVE_OBJECTS) {
       const oldest = this.live.keys().next();
       if (oldest.done === true) break;
       this.live.delete(oldest.value);
+      this.note(oldest.value, "evicted");
     }
+  }
+
+  /** Remember why an id stopped answering, for as long as there is room to */
+  private note(eventId: string, reason: DroppedReason): void {
+    this.dropped.delete(eventId);
+    this.dropped.set(eventId, reason);
+    while (this.dropped.size > MAX_LIVE_OBJECTS) {
+      const oldest = this.dropped.keys().next();
+      if (oldest.done === true) break;
+      this.dropped.delete(oldest.value);
+    }
+  }
+
+  /**
+   * Say why an id is not being answered, in a way the server can tell apart
+   *
+   * "evicted" is the one worth a look at the page rather than at the handler: the registry
+   * ran out of room under a server which was still reading the object. Everything else -
+   * never registered, or idle and never once read - is the ordinary "not-found".
+   */
+  private missing(eventId: string): {
+    error: string;
+    code: "not-found" | "evicted";
+  } {
+    if (this.dropped.get(eventId) === "evicted")
+      return {
+        error:
+          `event ${JSON.stringify(eventId)} no longer fits - the page keeps at most ` +
+          `${MAX_LIVE_OBJECTS} live event objects, and this one was dropped to make room`,
+        code: "evicted",
+      };
+    return {
+      error: `nothing is registered for event ${JSON.stringify(eventId)}`,
+      code: "not-found",
+    };
   }
 
   /**
@@ -582,12 +753,26 @@ export class EventProxyRegistry {
   handleMessage(message: EventProxyRequest | EventProxyRequestBatch): void {
     if (!message || message.type !== EVENT_PROXY_REQUEST_TYPE) return;
 
-    // Whatever is registered here is being kept alive for the server's benefit, and
-    // nobody else is coming to take it away - so the moment the server asks about them
-    // is the moment to notice which of them have gone stale. Waiting for the next event
-    // to be dispatched would leave detached objects held for their whole idle time.
-    this.prune();
+    // The requests are carried out first, and only then is the registry swept. Carrying
+    // one out is the proof that its object is wanted - it is what refreshes the entry the
+    // request names - so sweeping beforehand used to delete the very object a message had
+    // arrived to be asked about, and answer a handler which was still working that the
+    // page had gone away on its own.
+    //
+    // Sweeping here at all is what keeps a quiet page honest: whatever is registered is
+    // kept for the server's benefit and nobody else is coming to take it away, so the
+    // moment the server talks to us again is the moment to notice which of them have gone
+    // stale. Waiting for the next event to be dispatched would hold detached objects for
+    // their whole idle time.
+    try {
+      this.answer(message);
+    } finally {
+      this.prune();
+    }
+  }
 
+  /** Carry out the single request, or the batch of them, which arrived in ``message`` */
+  private answer(message: EventProxyRequest | EventProxyRequestBatch): void {
     const requests = (message as EventProxyRequestBatch).requests;
     if (!Array.isArray(requests)) {
       const request = message as EventProxyRequest;
@@ -642,14 +827,13 @@ export class EventProxyRegistry {
 
     const eventId = typeof message.eventId === "string" ? message.eventId : "";
     const entry = this.live.get(eventId);
-    if (!entry)
-      return reply(false, {
-        error: `nothing is registered for event ${JSON.stringify(eventId)}`,
-        code: "not-found",
-      });
+    if (!entry) return reply(false, this.missing(eventId));
 
-    // keep actively used objects around
-    entry.added = this.clock();
+    // Carrying this out is what keeps the object around: it is now the most recently used
+    // thing the page holds, and the server has demonstrably asked about it - which is also
+    // what takes it out of the reach of the idle sweep.
+    entry.asked = true;
+    this.touch(eventId, entry);
 
     const path = Array.isArray(message.path) ? message.path.map(String) : [];
     const maxDepth = allowedDepth(message.maxDepth);
@@ -687,7 +871,12 @@ export class EventProxyRegistry {
     } catch (error) {
       return reply(false, {
         error: error instanceof Error ? error.message : String(error),
-        code: error instanceof ProxyNotFoundError ? "not-found" : "access",
+        code:
+          error instanceof ProxyEvictedError
+            ? "evicted"
+            : error instanceof ProxyNotFoundError
+              ? "not-found"
+              : "access",
       });
     }
   }
@@ -731,11 +920,14 @@ export class EventProxyRegistry {
     const ref = readReference(argument);
     if (ref) {
       const entry = this.live.get(ref.eventId);
-      if (!entry)
-        throw new ProxyNotFoundError(
-          `nothing is registered for event ${JSON.stringify(ref.eventId)}`,
-        );
-      entry.added = this.clock();
+      if (!entry) {
+        const { error, code } = this.missing(ref.eventId);
+        throw code === "evicted"
+          ? new ProxyEvictedError(error)
+          : new ProxyNotFoundError(error);
+      }
+      entry.asked = true;
+      this.touch(ref.eventId, entry);
       return readPath(entry.value, ref.path, entry.calls);
     }
     if (Array.isArray(argument))

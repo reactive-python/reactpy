@@ -25,6 +25,7 @@ from reactpy._event_proxy import (
     EventProxyAccessError,
     EventProxyBackend,
     EventProxyError,
+    EventProxyEvicted,
     EventProxyNotFound,
     EventProxyTimeout,
     EventProxyUnavailable,
@@ -790,6 +791,53 @@ async def test_missing_objects_and_paths_are_reported():
     event_object = make_event(backend, "evt")
     with pytest.raises(EventProxyNotFound):
         await event_object.nope.resolve()
+
+
+async def test_an_object_the_page_ran_out_of_room_for_says_so():
+    """What went stale and what was dropped are reported differently
+
+    Both mean the object is not coming back, but only one of them says it was lost while
+    still being used: the page keeps a bounded number of dispatched objects, and an
+    object it pushes out to make room for the events behind it arrives as "evicted". A
+    handler, or the log a traceback ends up in, can tell "stale anyway" from "you ran
+    out of room" - and still catches the ordinary :class:`EventProxyNotFound`.
+    """
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    dropped = asyncio.create_task(event_object.read("target"))
+    stale = asyncio.create_task(event_object.read("type"))
+    await poll(lambda: len(client.requests) == 2)
+    dropped_id, stale_id = (request["requestId"] for request in client.requests)
+
+    def refuse(request_id: str, code: str, error: str) -> None:
+        backend.handle_response(
+            {
+                "type": EVENT_PROXY_RESPONSE_TYPE,
+                "requestId": request_id,
+                "ok": False,
+                "value": None,
+                "error": error,
+                "code": code,
+            },
+        )
+
+    refuse(
+        dropped_id,
+        "evicted",
+        "event 'evt' no longer fits - the page keeps at most 512 live event objects, "
+        "and this one was dropped to make room",
+    )
+    refuse(stale_id, "not-found", "nothing is registered for event 'evt'")
+
+    with pytest.raises(EventProxyEvicted, match="no longer fits") as lost:
+        await dropped
+    assert isinstance(lost.value, EventProxyNotFound), "the ordinary catch still works"
+
+    with pytest.raises(EventProxyNotFound) as forgotten:
+        await stale
+    assert not isinstance(forgotten.value, EventProxyEvicted), "stale is not eviction"
+    assert backend._pending == {}
 
 
 async def test_the_event_object_itself_cannot_be_called():

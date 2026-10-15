@@ -57,6 +57,11 @@ Resolution travels over the existing connection with two extra message types:
     {"type": "event-proxy-response", "requestId": "...", "ok": true,
      "value": "hello", "error": null, "code": null}
 
+A failed answer says which kind of failure it was in ``code``: ``"not-found"`` for an
+object the page has forgotten, ``"evicted"`` for one it dropped to make room for the
+events behind it while this side was still reading it, and ``"access"`` for whatever the
+page refused outright.
+
 Several requests travel as one ``{"type": "event-proxy-request", "requests": [...]}``
 and are answered by one ``{"type": "event-proxy-response", "responses": [...]}``.
 
@@ -130,6 +135,17 @@ class EventProxyTimeout(EventProxyError):
 
 class EventProxyNotFound(EventProxyError):
     """The browser object this proxy refers to is no longer available"""
+
+
+class EventProxyEvicted(EventProxyNotFound):
+    """The browser ran out of room for this object while it was still being read
+
+    The plain :class:`EventProxyNotFound` says the object went away on its own - nobody
+    read it, and it went stale. This says something different: the page had handed over
+    this object, was expecting to keep reading it, and dropped it to make room for the
+    events which arrived behind it. Worth telling apart in a log, because the thing to
+    look at is the client's own limit rather than the handler.
+    """
 
 
 class EventProxyAccessError(EventProxyError):
@@ -653,6 +669,8 @@ class EventProxyBackend:
             code = payload.get("code") or "access"
             error = payload.get("error") or "the client did not provide a reason"
             message = f"could not resolve {list(path)!r} of event {event_id!r}: {error}"
+            if code == "evicted":
+                raise EventProxyEvicted(message)
             if code == "not-found":
                 raise EventProxyNotFound(message)
             if code == "timeout":
