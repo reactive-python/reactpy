@@ -25,8 +25,10 @@ Writing `#!python counter()` does not run the function. And `#!python use_state`
 
 ```python linenums="0"
 >>> type(counter())
-<class 'reactpy.core.component.Component'>
+<class 'reactpy.types.Component'>
 ```
+
+`Component` is defined in `reactpy/types.py`; `core/component.py` only imports it to build these objects, so `reactpy.core.component.Component` is an alias, not the class's own module.
 
 The layout is what invokes your function body, at times it decides:
 
@@ -121,15 +123,17 @@ A hook is a plain function that reads the *current* life cycle hook off a task-l
 | Module level, directly | `RuntimeError: No life cycle hook is active. Are you rendering in a layout?` |
 | `await component().render()` | The same `RuntimeError` |
 | An event handler | The same `RuntimeError`, logged on the server as `Failed to execute event handler ...` |
-| An `use_effect` callback body | The same `RuntimeError`, logged on the server only |
+| An `use_effect` callback body | The same `RuntimeError`, logged on the server as `Error in effect` — a different log line, from a different place |
 
-The last two are the trap. Calling `#!python use_state` from inside an event handler does not crash the app; it kills that handler, and the traceback goes to the server log:
+The last two are the trap, and they look alike from the browser and nothing like each other in the log. Calling `#!python use_state` from inside an event handler does not crash the app; it kills that handler, and the traceback goes to the server log:
 
 ```text linenums="0"
 Failed to execute event handler EventHandler(...)
 ...
 RuntimeError: No life cycle hook is active. Are you rendering in a layout?
 ```
+
+That line comes only from `core/layout.py`, `_process_event_queue` — delivered browser events. An effect body is a task, not a delivered event, so it fails through `core/_life_cycle_hook.py`, `affect_component_will_unmount`, and you see `Error in effect` instead. Search the log for both strings, not one.
 
 Nothing changes in the browser, so the symptom is "the button does nothing". Move the hook call to the component body and close over the value instead.
 

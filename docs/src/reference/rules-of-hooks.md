@@ -25,6 +25,8 @@ ReactPy identifies a hook's state by **where it was called**, not by what it is 
 -   **Always call the same hooks in the same order** — which hooks run may not depend on props, state, or anything else that can change between renders.
 -   **No early `#!python return` before a hook** — an early exit skips the hooks after it.
 
+The one exception is `#!python use_context`: it takes no slot at all (`core/hooks.py` reads the provider off the current hook and never touches the state list), so calling it conditionally shifts nothing — verified, a component whose `#!python use_context` call runs on only some renders keeps `#!python _state` at the same length throughout. It is still a hook and still needs an active render to call.
+
 ---
 
 ## Why: hooks are slots, not names
@@ -88,7 +90,7 @@ def shifting():
     return html.div(f"show={show} n={n}")
 ```
 
-Measured, clicking `#!python toggle` once:
+Measured, flipping `#!python show` from `#!python True` to `#!python False` once (through its setter — this snippet has no button; the runnable `broken_toggle` below wires the same shape to a real **Toggle** button):
 
 ```text linenums="0"
 mount:          show=True  n=N
@@ -117,7 +119,7 @@ That traceback names the event handler, not the hook — so the hunt starts in t
     # TODO
     ```
 
-In `broken_toggle`, **Add 1** works, then **Toggle** makes the heading read `#!python NOT-A-NUMBER`, and the next **Add 1** does nothing at all — the handler raised `TypeError` on the server. `fixed_toggle` is the same component with the hooks moved out of the condition: all three buttons keep working.
+In `broken_toggle`, **Add 1** works, then **Toggle** makes the heading read `#!python NOT-A-NUMBER`, and the next **Add 1** does nothing at all — the handler raised `TypeError` on the server. `fixed_toggle` is the same component with the hooks moved out of the condition: both of its buttons keep working through every toggle.
 
 ### A hook in a loop: frozen values, then a crash
 
@@ -187,7 +189,7 @@ def use_auth(token):
     return user, set_user
 ```
 
-Call it with a falsy `#!python token` and the caller silently loses two slots. Return early only after every hook has run, or split into two hooks and choose between them at the call site, where the choice is visible in the component body:
+Call it with a falsy `#!python token` and the caller silently loses a slot — measured, the happy path consumes one hook slot and the falsy path consumes none. Return early only after every hook has run, or split into two hooks and choose between them at the call site, where the choice is visible in the component body:
 
 ```python linenums="0"
 @component
@@ -201,10 +203,33 @@ Because a hook's name is all a reviewer has, name custom hooks `#!python use_*` 
 
 ## Catching violations
 
-There is no ReactPy equivalent of `eslint-plugin-react-hooks`, and no runtime check. Two habits cover most real cases:
+There is a linter: **`reactpy-flake8`**, the plugin this repository pins (`reactpy-flake8 >=0.7` in `pyproject.toml`, `select = ["RPY"]`). Its `RulesOfHooksVisitor` is the working equivalent of `eslint-plugin-react-hooks` for the call-site rule, and it reports:
+
+| Code | Catches |
+| --- | --- |
+| `REACTPY100` | a hook *defined* as a closure inside another function |
+| `REACTPY101` | a hook used outside any component or hook |
+| `REACTPY102` | a hook used inside an `#!python if` / `#!python if` expression / `#!python try` / `#!python match` / `#!python for` / `#!python while` |
+| `REACTPY103` | a hook used after an early `#!python return` |
+
+Run it as part of `flake8` (the repo config selects only its `RPY` codes), or drive it directly:
+
+```python linenums="0"
+import ast
+from reactpy_flake8.run import run_checks
+
+for line, col, msg in run_checks(ast.parse(source), exhaustive_hook_deps=False):
+    print(line, col, msg)
+```
+
+Verified against a component with a hook after an early return and a hook inside an `#!python if`: it reports exactly `REACTPY103 hook 'use_state' used after an early return on line 7` and `REACTPY102 hook 'use_state' used inside if statement`. Pass `#!python exhaustive_hook_deps=True` to add the dependency-shape checks (`REACTPY200`–`REACTPY202`), which cover far less than people expect — see [Lifecycle of Reactive Effects](../learn/lifecycle-of-reactive-effects.md#reactpy-will-not-verify-your-dependencies).
+
+What the linter cannot do is check the *order* rule, because order is a runtime property. There is still no runtime check, so the two habits remain:
 
 -   Run with `#!bash REACTPY_DEBUG=1` during development, so a hook-count *increase* becomes a visible error instead of an empty region.
--   Treat any `#!python use_` call that appears below the first non-hook statement of a component body, or inside an `#!python if` / `#!python for` / `#!python try` / nested `#!python def`, as a review defect.
+-   Treat any `#!python use_` call that appears below the first non-hook statement of a component body, or inside an `#!python if` / `#!python for` / `#!python try` / nested `#!python def`, as a review defect — and wire `reactpy-flake8` into CI so you are not the only one who spots it.
+
+The linter also matches on *names*: it flags anything whose name fits `^_*use_\w+` and treats a function as a component only if decorated with something matching `^(component|[\w.]+\.component)$`. Rename the decorator or the hook and the checks silently stop applying; the patterns are configurable via `--component-decorator-pattern` and `--hook-function-pattern`.
 
 ---
 

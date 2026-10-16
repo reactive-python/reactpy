@@ -207,19 +207,31 @@ Verified: **Stop** runs `#!python unsubscribe news`; while stopped, switching to
 
 ## ReactPy will not verify your dependencies
 
-React ships a compiler that checks each Effect against its dependency list. ReactPy has `reactpy-flake8`, and it is far narrower than people expect. Verified against the installed `reactpy_flake8.run.run_checks`:
+React's side of this is `eslint-plugin-react-hooks`, which reads the Effect and its dependency list and warns when they disagree. ReactPy's equivalent is `reactpy-flake8` — a real plugin, pinned in this repo's `pyproject.toml` — but it is far narrower than people expect. Every row below was produced by running the installed `reactpy_flake8.run.run_checks` over the snippet in question.
+
+The rules-of-hooks half, always on:
 
 | What you wrote | Reported? |
 | --- | --- |
-| a hook called inside an `#!python if` or `#!python for` | **yes** — `#!python REACTPY102` |
-| an **inline lambda** Effect missing a variable from `#!python dependencies` | **yes** — `#!python REACTPY202`, and only with `#!python exhaustive_hook_deps=True` |
-| a **named `def`** Effect missing a variable from `#!python dependencies` | **no** |
+| a hook called inside an `#!python if`, `#!python for`, `#!python while`, `#!python try`, `#!python match`, or a conditional expression | **yes** — `#!python REACTPY102` |
+| a hook used after an early `#!python return` | **yes** — `#!python REACTPY103` |
+| a hook used outside any component or hook | **yes** — `#!python REACTPY101` |
+| a hook *defined* as a closure inside another function | **yes** — `#!python REACTPY100` |
+
+The dependency half, which needs `#!python exhaustive_hook_deps=True` and is otherwise silent:
+
+| What you wrote | Reported? |
+| --- | --- |
+| an **inline lambda** Effect, `#!python use_memo`, or `#!python use_callback` missing a variable that is **assigned at the top of the component body** | **yes** — `#!python REACTPY202` |
+| the same, but the missing variable is a **component parameter** | **no** — parameters are not in the set of names it compares against |
+| a **named `def`** Effect missing a variable | **no** |
 | a `#!python @use_effect`-decorated function missing a variable | **no** |
-| `#!python use_memo` / `#!python use_callback` missing a dependency | **no** |
+| a dependency written as `#!python obj.attr` rather than a bare name | **yes** — `#!python REACTPY200` |
+| a dependency list that is a variable or call rather than a literal list, tuple, or `#!python None` | **yes** — `#!python REACTPY201` |
 
-So the linter will catch a hook in a branch, and will catch a missing dependency only in the one form nobody writes. The stale-value class of bug is entirely on you.
+So the linter catches every call-site violation, and catches a missing dependency only for an inline lambda over a body-assigned variable — one shape among the several people actually write. The stale-value class of bug is largely on you.
 
-Two habits replace the missing compiler:
+Two habits replace the missing dependency check:
 
 1.  **Read the Effect and list the names.** Every free variable in the body should appear in `#!python dependencies`, or be provably module-level. This is mechanical — do it once per Effect at write time.
 2.  **Test the re-synchronization, not just the mount.** Render, change the input, assert the outside world changed:

@@ -41,9 +41,11 @@ For a **component** body:
 For a **hook** call site:
 
 -   called from a component body or another hook — never an event handler, effect body, or plain function
--   at the top level: not under `#!python if`, `#!python for`, `#!python try`, or a nested `#!python def`
+-   at the top level of that body: not under `#!python if`, `#!python for`, `#!python try`, and not inside a nested `#!python def` that runs *outside* the render (an event handler, an effect callback). A nested `#!python def` whose name starts with `use_` and which the body calls during the render is a custom hook, and calling hooks in it is the point.
 -   the same hooks, in the same order, on every render
 -   no early `#!python return` before a hook
+
+`#!python use_context` is the one hook that takes no slot, so it alone may be called on only some renders without shifting the others. See [Rules of Hooks](rules-of-hooks.md#the-rules).
 
 For a **custom hook** (`#!python use_*`): everything above, plus it must not skip its own hooks on some calls.
 
@@ -51,7 +53,7 @@ For a **custom hook** (`#!python use_*`): everything above, plus it must not ski
 
 ## What ReactPy cannot check for you
 
-There is no equivalent of `eslint-plugin-react-hooks` here, and no runtime assertion. Two settings get you most of the way:
+`reactpy-flake8` covers the call-site rule at build time (see [Rules of Hooks](rules-of-hooks.md#catching-violations)), but there is no runtime assertion for hook *order*, and that is the one that bites silently. Two settings get you most of the way:
 
 -   `#!bash REACTPY_DEBUG=1` turns a render failure into a visible error in the model instead of a blank region, and enables the VDOM checks described in [Common Props](common-props.md#invalid-dictionaries).
 -   Tests are cheap precisely *because* of the rules: a pure component is an ordinary function — call it inside `#!python reactpy.core.layout.Layout`, render it twice, assert the models are equal. No browser involved.

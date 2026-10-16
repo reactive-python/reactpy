@@ -122,12 +122,12 @@ This means only the search text and the value of the checkbox are state! Nicely 
 
 !!! info "Deep Dive"
 
-    <font size="4">**Props vs State**</font>
+    **Props vs State**
 
-    There are two types of "model" data in React: props and state. The two are very different:
+    There are two types of "model" data in ReactPy: props and state. The two are very different:
 
-    -   [**Props** are like arguments you pass](../learn/passing-props-to-a-component.md) to a function. They let a parent component pass data to a child component and customize its appearance. For example, a `#!python html.form` can pass a `#!python color` prop to a `#!python html.button`.
-    -   [**State** is like a component’s memory.](../learn/state-a-components-memory.md) It lets a component keep track of some information and change it in response to interactions. For example, a `#!python html.button` might keep track of `#!python is_hovered` state.
+    -   [**Props** are like arguments you pass](../learn/passing-props-to-a-component.md) to a function. They let a parent component pass data to a child component and customize its appearance. For example, a `search_bar()` component can pass a `color` prop to a `badge()` component you wrote. This is about *your* components: `#!python html.form` and `#!python html.button` are tag constructors, and what you hand them is an attribute dictionary, not props a component reads.
+    -   [**State** is like a component’s memory.](../learn/state-a-components-memory.md) It lets a component keep track of some information and change it in response to interactions. For example, a `badge()` component you wrote might keep track of `#!python is_hovered` state. Tags cannot hold state — `#!python html.button` is a function that returns a dictionary, and a dictionary has no memory between renders.
 
     Props and state are different, but they work together. A parent component will often keep some information in state (so that it can change it), and _pass it down_ to child components as their props. It's okay if the difference still feels fuzzy on the first read. It takes a bit of practice for it to really stick!
 

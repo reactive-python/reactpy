@@ -171,13 +171,13 @@ Verified with the same script: `#!python bio=bio!!` before and after the toggle.
 
 ### What the linter can see
 
-`#!python REACTPY102` does fire on the broken file above — `#!python hook 'use_state' used inside if statement` — provided the function is named as a Hook. That coverage is real and worth wiring into CI. It does not extend to:
+`#!python REACTPY102` does fire on the broken file above — `#!python hook 'use_state' used inside if statement` — provided the function is named as a Hook. That coverage is real and worth wiring into CI. So does `#!python REACTPY103`, which catches the early-return case: a hook after a `#!python return` reports `hook 'use_state' used after an early return on line N`. `#!python REACTPY101` catches hooks used outside any component or hook, and `#!python REACTPY100` hooks defined as closures. All four are in `reactpy-flake8`'s `RulesOfHooksVisitor`. What it does not extend to:
 
 -   calling a Hook-conditionally *through* a wrapper that the linter does not recognise (see the name table above),
--   an early `#!python return` that skips Hooks declared after it — the pattern people reach for when "toggling off" a feature,
--   a Hook list in one branch matching the caller's expectation in another.
+-   a Hook list in one branch matching the caller's expectation in another,
+-   the *order* the hooks actually run in — that is a runtime property, and nothing checks it.
 
-And it never checks dependency lists, which is the other rule people break. Treat the linter as a partial net and the fix — Hooks at the top level, always — as the actual rule.
+And it checks dependency lists only under `#!python exhaustive_hook_deps=True`, and even then only for a narrow set of shapes. See [Lifecycle of Reactive Effects](./lifecycle-of-reactive-effects.md#reactpy-will-not-verify-your-dependencies) for exactly which. Treat the linter as a partial net and the fix — Hooks at the top level, always — as the actual rule.
 
 !!! danger "Do not branch to disable a Hook"
     ```python linenums="0"
