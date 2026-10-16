@@ -1,5 +1,5 @@
-import eventToObject from "event-to-object";
 import { Fragment } from "preact";
+import { EVENT_MARKER_KEY } from "./event-proxy";
 import {
   HANDLER_DEBOUNCE,
   HANDLER_MARKER,
@@ -218,6 +218,7 @@ function createEventHandler(
     target,
     preventDefault,
     stopPropagation,
+    stopImmediatePropagation,
     debounce,
     throttle,
   }: ReactPyVdomEventHandler,
@@ -239,19 +240,38 @@ function createEventHandler(
       if (stopPropagation) {
         event.stopPropagation();
       }
+      if (stopImmediatePropagation) {
+        event.stopImmediatePropagation();
+      }
 
-      // Convert JavaScript objects to plain JSON, if needed
-      if (typeof event === "object") {
-        return eventToObject(event);
-      } else {
+      // Whatever came out of the page is kept alive by the registry so the server can
+      // read any property of it, and call methods such as "focus()" on it, one round
+      // trip at a time. Nothing is serialized up front: the marker carrying the id is
+      // all the server gets, plus the event "type" - the one plain value too cheap, and
+      // too useful for telling the handler what kind of event it is holding, to withhold.
+      if (typeof event !== "object" || event === null) {
         return event;
       }
+      const id = client.eventProxy.register(event);
+      const payload: Record<string, unknown> = { [EVENT_MARKER_KEY]: { id } };
+      // Real events always carry a string "type". Odd objects handed to a handler by
+      // something other than the DOM need not, and a made-up one would only send the
+      // server looking for an event kind which was never dispatched.
+      if (typeof event.type === "string") payload["type"] = event.type;
+      return payload;
     });
     const seq = outgoingSeq++;
+    // Tell the element which sequence number really reached the wire. The
+    // element compares this against the server's ack to decide whether it is
+    // safe to write the server's value over what the user has typed, so it must
+    // be the number actually sent - not the number of times a handler fired,
+    // which is higher whenever a debounce coalesces keystrokes away.
+    eventHandler._reactpy_mark_sent?.(seq);
     client.sendMessage({ type: "layout-event", data, target, seq });
   } as TaggedEventHandler & {
     _reactpy_peek_seq?: () => number;
     _reactpy_set_seq?: (n: number) => void;
+    _reactpy_mark_sent?: (seq: number) => void;
   };
   eventHandler[HANDLER_MARKER] = true;
   eventHandler._reactpy_peek_seq = (): number => outgoingSeq;

@@ -13,9 +13,8 @@ def id_equals(id: str) -> Selector:
 
 
 def class_equals(class_name: str) -> Selector:
-    return (
-        lambda element, _: class_name
-        in element.get("attributes", {}).get("class", "").split()
+    return lambda element, _: (
+        class_name in element.get("attributes", {}).get("class", "").split()
     )
 
 

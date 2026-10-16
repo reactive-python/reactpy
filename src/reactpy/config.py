@@ -138,3 +138,34 @@ REACTPY_MAX_QUEUE_SIZE = Option(
     validator=int,
 )
 """The maximum size for internal queues used by ReactPy"""
+
+REACTPY_EVENT_PROXY_TIMEOUT = Option(
+    "REACTPY_EVENT_PROXY_TIMEOUT",
+    default=5.0,
+    mutable=True,
+    validator=float,
+)
+"""How long (in seconds) to wait for the client to answer a live event access"""
+
+REACTPY_EVENT_PROXY_MAX_DEPTH = Option(
+    "REACTPY_EVENT_PROXY_MAX_DEPTH",
+    default=10,
+    mutable=True,
+    validator=int,
+)
+"""How many nested object references a single live event resolution may contain"""
+
+REACTPY_EVENT_PROXY_MAX_TIMEOUTS = Option(
+    "REACTPY_EVENT_PROXY_MAX_TIMEOUTS",
+    default=3,
+    mutable=True,
+    validator=int,
+)
+"""How many consecutive unanswered round trips are tolerated before access is disabled
+
+Live event access requires a round trip to the client. If a client stops answering
+(for example because it navigated away) ReactPy stops attempting live access after
+this many consecutive round trips went unanswered so that event handlers do not stall.
+What counts is the message, not the properties inside it: a batch which asked for four
+properties and got no answer at all costs one of this budget, not four.
+"""

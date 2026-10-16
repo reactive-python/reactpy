@@ -1,0 +1,1732 @@
+"""Tests for the live, client backed event objects in :mod:`reactpy._event_proxy`.
+
+Nothing about the object behind an event is sent to the server when it is dispatched.
+The client keeps it alive and sends only an id, so every property a handler reads is a
+round trip, and most of what follows counts those round trips.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from collections.abc import Sequence
+from time import monotonic
+from typing import Any
+
+import pytest
+
+import reactpy
+from reactpy._event_proxy import (
+    EVENT_MARKER_KEY,
+    EVENT_PROXY_REQUEST_TYPE,
+    EVENT_PROXY_RESPONSE_TYPE,
+    EVENT_REFERENCE_KEY,
+    Event,
+    EventProxy,
+    EventProxyAccessError,
+    EventProxyBackend,
+    EventProxyError,
+    EventProxyEvicted,
+    EventProxyNotFound,
+    EventProxyTimeout,
+    EventProxyUnavailable,
+    build_event_args,
+    deserialize_value,
+    serialize_argument,
+)
+from reactpy.config import (
+    REACTPY_EVENT_PROXY_MAX_DEPTH,
+    REACTPY_EVENT_PROXY_MAX_TIMEOUTS,
+    REACTPY_EVENT_PROXY_TIMEOUT,
+)
+from reactpy.core.component import component
+from reactpy.core.events import EventHandler, merge_event_handlers
+from reactpy.core.layout import Layout
+from tests.tooling.common import event_message
+
+
+def make_event(
+    backend: EventProxyBackend,
+    event_id: str,
+    known: dict[str, Any] | None = None,
+    path: Sequence[str | int] = (),
+) -> Event:
+    """Build an event the way the layout hands one to a handler"""
+    return Event(backend=backend, event_id=event_id, path=path, known=known)
+
+
+def make_proxy(
+    backend: EventProxyBackend,
+    event_id: str,
+    path: Sequence[str | int] = (),
+    known: dict[str, Any] | None = None,
+) -> EventProxy:
+    """Build a member proxy of the kind an event hands out"""
+    return EventProxy(backend=backend, event_id=event_id, path=path, known=known)
+
+
+class Method:
+    """A callable which records how it was called"""
+
+    def __init__(self, result: Any = None) -> None:
+        self.result = result
+        self.calls: list[tuple[Any, ...]] = []
+
+    def __call__(self, *args: Any) -> Any:
+        self.calls.append(args)
+        return self.result
+
+
+class Reference:
+    """Data the fake client hands over as a reference rather than inline"""
+
+    def __init__(self, value: Any) -> None:
+        self.value = value
+
+
+class FakeClient:
+    """Answers live event requests out of a plain Python object tree"""
+
+    def __init__(
+        self,
+        backend: EventProxyBackend,
+        objects: dict[str, Any],
+        *,
+        respond: bool = True,
+        delay: float = 0.0,
+    ) -> None:
+        self.backend = backend
+        self.objects = objects
+        self.respond = respond
+        self.delay = delay
+        self.sent: list[dict[str, Any]] = []
+
+    @property
+    def requests(self) -> list[dict[str, Any]]:
+        """Every individual request which went out, batched together or not"""
+        found: list[dict[str, Any]] = []
+        for message in self.messages:
+            batch = message.get("requests")
+            if isinstance(batch, list):
+                found.extend(batch)
+            else:
+                found.append(message)
+        return found
+
+    @property
+    def messages(self) -> list[dict[str, Any]]:
+        """The request messages exactly as they left the process"""
+        return [m for m in self.sent if m["type"] == EVENT_PROXY_REQUEST_TYPE]
+
+    async def send(self, message: dict[str, Any]) -> None:
+        self.sent.append(message)
+        if message["type"] != EVENT_PROXY_REQUEST_TYPE or not self.respond:
+            return
+        loop = asyncio.get_running_loop()
+        batch = message.get("requests")
+        work = (
+            [dict(entry) for entry in batch]
+            if isinstance(batch, list)
+            else [dict(message)]
+        )
+        if self.delay > 0:
+            loop.call_later(self.delay, self._answer, work)
+        else:
+            # Carried out within this same turn of the loop. A zero-delay timer is
+            # due "now" but is only picked up on a later turn, and a loop with a
+            # coarse clock (Windows) can let a test read ahead of that turn.
+            loop.call_soon(self._answer, work)
+
+    def _answer(self, messages: list[dict[str, Any]]) -> None:
+        """Reply to a whole batch at once, the way the browser answers one request
+
+        Requests which did not ask for a reply go unanswered, so a batch of nothing but
+        fire-and-forget calls sends no message back at all.
+        """
+        replies = [
+            reply
+            for reply in (self._reply_for(message) for message in messages)
+            if reply is not None
+        ]
+        if not replies:
+            return
+        if len(replies) == 1:
+            self.backend.handle_response(replies[0])
+            return
+        self.backend.handle_response(
+            {"type": EVENT_PROXY_RESPONSE_TYPE, "responses": replies},
+        )
+
+    def _reply_for(self, message: dict[str, Any]) -> dict[str, Any] | None:
+        # A real client carries out the request either way - it only answers when the
+        # server asked for a reply.
+        should_reply = bool(message.get("reply"))
+        path = list(message["path"])
+        response: dict[str, Any] = {
+            "type": EVENT_PROXY_RESPONSE_TYPE,
+            "requestId": message["requestId"],
+            "ok": True,
+            "value": None,
+            "error": None,
+            "code": None,
+        }
+        root = self.objects.get(message["eventId"])
+        if root is None:
+            response.update(ok=False, error="not registered", code="not-found")
+            return response if should_reply else None
+
+        try:
+            if message["call"]:
+                name = path[-1] if path else ""
+                parent = self._walk(root, path[:-1])
+                method = parent.get(name) if isinstance(parent, dict) else None
+                if not isinstance(method, Method):
+                    msg = f"{name!r} is not a function"
+                    raise LookupError(msg)
+                value = method(*[self._read_argument(a) for a in message["args"]])
+            else:
+                value = self._walk(root, path)
+        except LookupError as error:
+            response.update(ok=False, error=str(error), code="not-found")
+        else:
+            response["value"] = self._serialize(value, path)
+        return response if should_reply else None
+
+    def _walk(self, node: Any, path: list[str]) -> Any:
+        for segment in path:
+            if isinstance(node, Reference):
+                node = node.value
+            if isinstance(node, dict):
+                if segment not in node:
+                    msg = f"{segment!r} does not exist"
+                    raise LookupError(msg)
+                node = node[segment]
+            elif isinstance(node, list):
+                try:
+                    node = node[int(segment)]
+                except (ValueError, IndexError) as error:
+                    msg = f"{segment!r} does not exist"
+                    raise LookupError(msg) from error
+            else:
+                msg = f"cannot read {segment!r} of a {type(node).__name__}"
+                raise LookupError(msg)
+        return node
+
+    def _read_argument(self, argument: Any) -> Any:
+        if isinstance(argument, dict) and EVENT_REFERENCE_KEY in argument:
+            reference = argument[EVENT_REFERENCE_KEY]
+            return self._walk(
+                self.objects[reference["eventId"]], list(reference["path"])
+            )
+        if isinstance(argument, list):
+            return [self._read_argument(item) for item in argument]
+        if isinstance(argument, dict):
+            return {key: self._read_argument(item) for key, item in argument.items()}
+        return argument
+
+    def _serialize(self, value: Any, path: list[str]) -> Any:
+        if isinstance(value, Method):
+            return {EVENT_REFERENCE_KEY: {"path": path, "callable": True}}
+        if isinstance(value, Reference):
+            return {EVENT_REFERENCE_KEY: {"path": path}}
+        if isinstance(value, dict):
+            return {
+                key: self._serialize(item, [*path, key]) for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [
+                self._serialize(item, [*path, str(index)])
+                for index, item in enumerate(value)
+            ]
+        return value
+
+
+def make_client(
+    objects: dict[str, Any], *, respond: bool = True, delay: float = 0.0
+) -> tuple[EventProxyBackend, FakeClient]:
+    """Build a backend wired up to a fake client serving the given objects"""
+    backend = EventProxyBackend()
+    client = FakeClient(backend, objects, respond=respond, delay=delay)
+    backend.set_sender(client.send)
+    return backend, client
+
+
+def requested_paths(client: FakeClient) -> list[list[str]]:
+    return [request["path"] for request in client.requests]
+
+
+async def poll(predicate, timeout: float = 5.0) -> None:
+    """Wait until ``predicate()`` becomes truthy"""
+    deadline = monotonic() + timeout
+    while not predicate():
+        if monotonic() > deadline:
+            msg = "Timed out waiting for condition to become true"
+            raise TimeoutError(msg)
+        await asyncio.sleep(0.005)
+
+
+def connect(layout: Layout, client: FakeClient) -> None:
+    """Pipe a layout's live event requests through ``client`` and back again"""
+    client.backend = layout.set_event_proxy_sender(client.send)
+
+
+def make_objects() -> dict[str, Any]:
+    """A stand-in for the object tree a browser would hand back"""
+    return {
+        "evt": {
+            "type": "click",
+            "target": {
+                "tagName": "INPUT",
+                "value": "typed",
+                "focus": Method("focused"),
+            },
+            "deep": Reference({"a": {"b": {"c": 42}}}),
+            "composedPath": Method(["window", "input"]),
+            "preventDefault": Method(),
+            "stopPropagation": Method(),
+            "log": Method(None),
+            "touches": [{"pageX": 1}, {"pageX": 2}],
+        }
+    }
+
+
+class CannedClient:
+    """Answers every live request with one fixed response payload"""
+
+    def __init__(
+        self,
+        backend: EventProxyBackend,
+        *,
+        ok: bool,
+        value: Any = None,
+        error: str | None = None,
+        code: str | None = None,
+    ) -> None:
+        self.backend = backend
+        self.ok = ok
+        self.value = value
+        self.error = error
+        self.code = code
+        self.sent: list[dict[str, Any]] = []
+
+    @property
+    def requests(self) -> list[dict[str, Any]]:
+        found: list[dict[str, Any]] = []
+        for message in self.sent:
+            if message["type"] != EVENT_PROXY_REQUEST_TYPE:
+                continue
+            batch = message.get("requests")
+            found.extend(batch if isinstance(batch, list) else [message])
+        return found
+
+    async def send(self, message: dict[str, Any]) -> None:
+        self.sent.append(message)
+        if message["type"] != EVENT_PROXY_REQUEST_TYPE:
+            return
+        batch = message.get("requests")
+        asking = [
+            entry
+            for entry in (batch if isinstance(batch, list) else [message])
+            if entry.get("reply")
+        ]
+        if not asking:
+            return
+        answers = [
+            {
+                "requestId": entry["requestId"],
+                "ok": self.ok,
+                "value": self.value,
+                "error": self.error,
+                "code": self.code,
+            }
+            for entry in asking
+        ]
+        if len(answers) == 1:
+            self.backend.handle_response(
+                {"type": EVENT_PROXY_RESPONSE_TYPE, **answers[0]},
+            )
+            return
+        self.backend.handle_response(
+            {"type": EVENT_PROXY_RESPONSE_TYPE, "responses": answers},
+        )
+
+
+def make_canned_client(**response: Any) -> tuple[EventProxyBackend, CannedClient]:
+    """Build a backend whose client always answers with the same payload"""
+    backend = EventProxyBackend()
+    client = CannedClient(backend, **response)
+    backend.set_sender(client.send)
+    return backend, client
+
+
+# -- every proxy is awaitable, whether or not its value is already known -----
+
+
+async def read_it_the_way_a_handler_does(event_object: Event) -> tuple[Any, Any]:
+    """The very expressions a handler writes, run against either kind of event
+
+    Under the snapshot model this could only be written for one of them: awaiting
+    ``event.type`` raised ``TypeError: object str can't be used in 'await'
+    expression`` whenever the client had happened to include the type with the event,
+    because the snapshot handed back the bare string. Both events below are read with
+    the same awaits and answer the same; only what they cost differs.
+    """
+    return await event_object.type, await event_object.target.value
+
+
+async def test_every_proxy_is_awaitable_whether_the_value_is_known_or_not():
+    backend, client = make_client(make_objects())
+    nothing_is_known = make_event(backend, "evt")
+
+    assert type(nothing_is_known) is Event
+    assert await read_it_the_way_a_handler_does(nothing_is_known) == ("click", "typed")
+    assert requested_paths(client) == [["type"], ["target", "value"]]
+
+    backend, client = make_client(make_objects())
+    the_type_is_known = make_event(backend, "evt", known={"type": "click"})
+
+    assert type(the_type_is_known) is Event
+    assert await the_type_is_known.type == "click"
+    assert client.messages == [], "a value the client volunteered is never asked for"
+    assert await read_it_the_way_a_handler_does(the_type_is_known) == (
+        "click",
+        "typed",
+    )
+    assert requested_paths(client) == [
+        ["target", "value"]
+    ], "one round trip for the one property which was not known"
+
+    # a known value is still a proxy rather than the bare value, so awaiting it is
+    # neither optional nor forbidden - it simply costs nothing
+    assert isinstance(the_type_is_known.type, EventProxy)
+    assert the_type_is_known.type.is_known is True
+    assert nothing_is_known.target.is_known is False
+
+
+async def test_a_known_member_costs_no_round_trip():
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt", known={"type": "click"})
+
+    assert await event_object.type == "click"
+    assert (await event_object.read("type")) == ("click",)
+    assert requested_paths(client) == []
+    assert "type" in dir(event_object), "a known member should still be discoverable"
+
+    # a value handed over up front is awaitable at the path it belongs to as well
+    handed_over = EventProxy(
+        backend=backend, event_id="evt", path=("target", "value"), value="typed"
+    )
+    assert await handed_over == "typed"
+    assert requested_paths(client) == []
+
+
+async def test_a_property_is_read_from_the_browser_only_once():
+    """A resolved property is cached against its event, however it is spelled"""
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    assert await event_object.target.value == "typed"
+    assert (await event_object.read("target.value")) == ("typed",)
+    assert await event_object.target.value == "typed"
+
+    assert requested_paths(client) == [
+        ["target", "value"]
+    ], "the browser was asked about one property exactly once"
+    assert len(client.messages) == 1
+
+
+async def test_a_property_can_be_asked_of_the_browser_again():
+    """What is remembered is the default; asking again is the caller's call
+
+    A resolved property is remembered against its event, which is what makes a handler
+    which reads one twice cost nothing - and it also means the second read hands back the
+    first answer however much the page has moved on since. Refreshing reads the way the
+    browser holds it by now, and pays for that round trip again.
+    """
+    objects = make_objects()
+    backend, client = make_client(objects)
+    event_object = make_event(backend, "evt", known={"type": "click"})
+
+    assert await event_object.target.value == "typed"
+    assert await event_object.target.value == "typed"
+    assert requested_paths(client) == [
+        ["target", "value"]
+    ], "two reads of one property cost one round trip"
+
+    objects["evt"]["target"]["value"] = "retyped while the handler thought"
+
+    assert await event_object.target.value == "typed"
+    assert await event_object.read("target.value") == ("typed",)
+    assert requested_paths(client) == [
+        ["target", "value"]
+    ], "what is remembered costs nothing at all"
+
+    assert await event_object.target.value.resolve(refresh=True) == (
+        "retyped while the handler thought"
+    )
+    refreshed, = await event_object.read("target.value", refresh=True)
+    assert refreshed == "retyped while the handler thought"
+    assert requested_paths(client) == [
+        ["target", "value"],
+        ["target", "value"],
+        ["target", "value"],
+    ], "each refresh paid for itself"
+
+    # What the client volunteered with the event is remembered too, and refreshing goes
+    # to the browser for it like anything else
+    assert await event_object.read("type") == ("click",)
+    assert requested_paths(client)[-1] == ["target", "value"]
+    assert await event_object.read("type", refresh=True) == ("click",)
+    assert requested_paths(client)[-1] == ["type"], "even what came free is asked again"
+
+
+async def test_reads_which_are_in_flight_together_travel_as_one_message():
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    value, tag_name = await event_object.read("target.value", "target.tagName")
+
+    assert (value, tag_name) == ("typed", "INPUT"), "answers arrive in the asked order"
+    assert len(client.messages) == 1, "both reads left the process together"
+    message = client.messages[0]
+    assert [entry["path"] for entry in message["requests"]] == [
+        ["target", "value"],
+        ["target", "tagName"],
+    ]
+    assert requested_paths(client) == [["target", "value"], ["target", "tagName"]]
+
+
+async def test_gathered_reads_are_batched():
+    """``asyncio.gather`` of several reads costs one round trip, not several"""
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    value, tag_name = await asyncio.gather(
+        event_object.target.value, event_object.target.tagName
+    )
+
+    assert (value, tag_name) == ("typed", "INPUT")
+    assert len(client.messages) == 1
+    assert len(client.requests) == 2
+
+
+async def test_sequential_reads_are_not_batched():
+    """The honest limitation, so nobody optimises it into a lie
+
+    Two ``await`` expressions written one after the other cannot travel together: the
+    second is not even thought of until the first has landed.
+    """
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    assert await event_object.target.value == "typed"
+    assert await event_object.target.tagName == "INPUT"
+
+    assert len(client.messages) == 2
+    assert requested_paths(client) == [["target", "value"], ["target", "tagName"]]
+
+
+async def test_a_read_already_in_flight_is_shared_rather_than_duplicated():
+    """Two readers of one property send one request
+
+    The second does not ask the browser again and does not collect an answer of its
+    own; it waits on the request which is already on its way. Sharing has to outlast
+    the queueing of a request, so the read is remembered as in flight until the answer
+    has been delivered - which is also what stops a timed out request from being
+    joined by anyone later.
+    """
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    value, again = await asyncio.gather(
+        event_object.target.value, event_object.target.value
+    )
+
+    assert value == again == "typed"
+    assert requested_paths(client) == [
+        ["target", "value"]
+    ], "the browser was asked once for what two readers wanted"
+    assert len(client.messages) == 1
+
+
+async def test_a_batch_adopts_a_read_which_is_already_in_flight():
+    """A batch does not re-ask for what a lone read is already waiting on"""
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    lone = asyncio.ensure_future(event_object.target.value)
+    await asyncio.sleep(0)  # let it set off, and register itself as in flight
+
+    value, tag_name = await event_object.read("target.value", "target.tagName")
+
+    assert await lone == value == "typed", "both readers got the one answer"
+    assert tag_name == "INPUT"
+    assert requested_paths(client) == [
+        ["target", "value"],
+        ["target", "tagName"],
+    ], "the batch asked only for the property nobody had asked about yet"
+
+
+async def test_read_of_no_paths_returns_an_empty_tuple():
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    assert await event_object.read() == ()
+    assert requested_paths(client) == []
+
+
+async def test_a_proxy_is_not_a_container():
+    """A proxy is not a mapping, and must never be made to look like one
+
+    ``EventProxy`` deliberately has no ``__getitem__``, ``__len__``, ``__iter__`` or
+    ``__contains__``. The trap which hung the test suite is defining ``__getitem__``
+    without ``__iter__``: ``x in proxy`` then falls back to trying ``proxy[0]``,
+    ``proxy[1]``, ... until an index raises ``IndexError``, and for a proxy no index is
+    ever missing - every one of them hands back another proxy - so the membership test
+    spun forever. There is nothing to enumerate about an object which is still sitting
+    in the browser anyway.
+    """
+    backend, _client = make_client(make_objects())
+    event_object = make_event(backend, "evt", known={"type": "click"})
+
+    for name in ("__getitem__", "__len__", "__iter__", "__contains__"):
+        assert not hasattr(EventProxy, name), f"{name} would make a proxy enumerable"
+
+    with pytest.raises(TypeError):
+        event_object["target"]
+    with pytest.raises(TypeError):
+        assert "type" in event_object
+    with pytest.raises(TypeError):
+        len(event_object)
+    with pytest.raises(TypeError):
+        list(event_object)
+
+
+async def test_a_proxy_is_always_truthy():
+    """A proxy stands for its browser object even before that object is known
+
+    ``bool`` answers True without leaving the process, so ``if event.target:`` cannot
+    quietly drop an element whose value turns out to be an empty string, a zero or
+    :data:`None`. What is unknown is not the same as absent.
+    """
+    backend, _client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    assert bool(event_object) is True
+    assert bool(event_object.target) is True
+
+
+async def test_the_debounce_a_handler_sets_can_be_read_back():
+    """``debounce`` is a setting on the handler rather than a trip to the browser"""
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    assert event_object.debounce is None
+
+    event_object.debounce = 150
+
+    assert event_object.debounce == 150
+    assert client.messages == [], "a setting the server keeps costs nothing"
+
+
+# -- what a proxy says about itself -----------------------------------------
+
+
+async def test_proxies_describe_themselves():
+    backend, _client = make_client(make_objects())
+    event_object = make_event(backend, "evt", known={"type": "click"})
+    target = event_object.target
+
+    assert event_object.backend is backend
+    assert event_object.event_id == "evt"
+    assert event_object.path == ()
+    assert repr(event_object) == "Event(event_id='evt', path=[])"
+    # what the client volunteered shows up as a member, and nothing else does
+    assert "type" in dir(event_object)
+    assert "target" not in dir(event_object)
+
+    assert target.backend is backend
+    assert target.path == ("target",)
+    assert repr(target) == "EventProxy(event_id='evt', path=['target'])"
+
+    # there is no positional snapshot argument to hand over any more
+    with pytest.raises(TypeError):
+        EventProxy(backend, "evt")
+
+
+async def test_internal_attributes_are_never_resolved_against_the_browser():
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    for name in ("_reactpy_nothing", "__wrapped__", "__deepcopy__"):
+        with pytest.raises(AttributeError, match=f"^{name}$"):
+            getattr(event_object, name)
+
+    assert client.requests == [], "internals are not looked up in the browser"
+
+
+async def test_a_proxy_with_nothing_behind_it_cannot_resolve():
+    base = make_proxy(EventProxyBackend(), "evt", ["target"])
+
+    assert repr(base) == "EventProxy(event_id='evt', path=['target'])"
+    assert base.is_known is False
+    with pytest.raises(EventProxyUnavailable, match="live access"):
+        await base
+
+
+# -- reading and calling through a proxy -------------------------------------
+
+
+async def test_read_walks_the_whole_dotted_path_at_once():
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    assert (await event_object.read("target.value")) == ("typed",)
+    assert (await event_object.read("target.tagName")) == ("INPUT",)
+    # a chain is asked for as one path, however deep it goes ...
+    assert (await event_object.read("deep.a.b.c")) == (42,)
+    # ... and may be handed over as a sequence of segments too, indices included
+    assert (await event_object.read(["touches", 0, "pageX"])) == (1,)
+    assert (await event_object.read("touches.1.pageX")) == (2,)
+
+    assert requested_paths(client) == [
+        ["target", "value"],
+        ["target", "tagName"],
+        ["deep", "a", "b", "c"],
+        ["touches", "0", "pageX"],
+        ["touches", "1", "pageX"],
+    ]
+
+
+async def test_reads_use_what_is_known_and_ask_for_everything_else():
+    objects = make_objects()
+    objects["evt"]["detail"] = 7
+    backend, client = make_client(objects)
+    event_object = make_event(backend, "evt", known={"type": "click"})
+
+    cached = await event_object.read("type")
+    typed = await event_object.read("target.value")
+    detail = await event_object.read("detail")
+    resolved = await make_proxy(backend, "evt", ["target"]).resolve()
+
+    assert cached == ("click",)
+    assert typed == ("typed",)
+    assert detail == (7,)
+    assert type(resolved) is dict, "a plain object comes back as a plain object"
+    assert resolved["value"] == "typed"
+    assert requested_paths(client) == [
+        ["target", "value"],
+        ["detail"],
+        ["target"],
+    ]
+
+    # a path the browser does not have is raised, never quietly answered with None
+    with pytest.raises(EventProxyNotFound):
+        await event_object.read("nope")
+    assert requested_paths(client)[-1] == ["nope"]
+
+
+async def test_chained_attributes_are_asked_for_in_one_round_trip():
+    def chain(answer: int) -> Reference:
+        return Reference({"next": Reference({"next": Reference({"answer": answer})})})
+
+    objects = {"evt": {"chain": chain(5), "trail": chain(7)}}
+    backend, client = make_client(objects)
+    event_object = make_event(backend, "evt")
+
+    # read() asks for the whole path in a single round trip ...
+    assert (await event_object.read("chain.next.next.answer")) == (5,)
+    assert requested_paths(client) == [["chain", "next", "next", "answer"]]
+
+    # ... and so does walking attributes, since nothing is asked of the browser until
+    # the value behind the last name in the chain is actually awaited. A chain four
+    # names deep costs one request here, not one request per name.
+    assert await event_object.trail.next.next.answer == 7
+    assert requested_paths(client) == [
+        ["chain", "next", "next", "answer"],
+        ["trail", "next", "next", "answer"],
+    ]
+
+    # either of them again sends nothing at all, spelled whichever way
+    assert await event_object.trail.next.next.answer == 7
+    assert (await event_object.read("chain.next.next.answer")) == (5,)
+    assert len(client.messages) == 2
+
+
+async def test_async_event_walks_references():
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    deep = await event_object.deep.resolve()
+    assert isinstance(deep, EventProxy)
+    assert deep.path == ("deep",)
+    assert await event_object.deep.a.b.c == 42
+    # the same path spelled the other way is answered out of the cache the backend
+    # keeps against (event id, path), so it costs the browser nothing at all
+    assert (await event_object.read("deep.a.b.c")) == (42,)
+    assert requested_paths(client) == [["deep"], ["deep", "a", "b", "c"]]
+
+
+async def test_async_event_calls_client_side_methods():
+    objects = make_objects()
+    backend, _client = make_client(objects)
+    event_object = make_event(backend, "evt")
+
+    assert await event_object.target.focus() == "focused"
+    assert await event_object.composedPath() == ["window", "input"]
+    assert objects["evt"]["target"]["focus"].calls == [()]
+
+    await event_object.log(event_object.target, {"a": [1, 2]})
+    logged_node, payload = objects["evt"]["log"].calls[-1]
+    assert logged_node["tagName"] == "INPUT"
+    assert logged_node["value"] == "typed"
+    assert payload == {"a": [1, 2]}
+
+
+async def test_missing_objects_and_paths_are_reported():
+    backend, _client = make_client(make_objects())
+    missing = make_event(backend, "not-registered")
+    with pytest.raises(EventProxyNotFound):
+        await missing.resolve()
+
+    event_object = make_event(backend, "evt")
+    with pytest.raises(EventProxyNotFound):
+        await event_object.nope.resolve()
+
+
+async def test_an_object_the_page_ran_out_of_room_for_says_so():
+    """What went stale and what was dropped are reported differently
+
+    Both mean the object is not coming back, but only one of them says it was lost while
+    still being used: the page keeps a bounded number of dispatched objects, and an
+    object it pushes out to make room for the events behind it arrives as "evicted". A
+    handler, or the log a traceback ends up in, can tell "stale anyway" from "you ran
+    out of room" - and still catches the ordinary :class:`EventProxyNotFound`.
+    """
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    dropped = asyncio.create_task(event_object.read("target"))
+    stale = asyncio.create_task(event_object.read("type"))
+    await poll(lambda: len(client.requests) == 2)
+    dropped_id, stale_id = (request["requestId"] for request in client.requests)
+
+    def refuse(request_id: str, code: str, error: str) -> None:
+        backend.handle_response(
+            {
+                "type": EVENT_PROXY_RESPONSE_TYPE,
+                "requestId": request_id,
+                "ok": False,
+                "value": None,
+                "error": error,
+                "code": code,
+            },
+        )
+
+    refuse(
+        dropped_id,
+        "evicted",
+        "event 'evt' no longer fits - the page keeps at most 512 live event objects, "
+        "and this one was dropped to make room",
+    )
+    refuse(stale_id, "not-found", "nothing is registered for event 'evt'")
+
+    with pytest.raises(EventProxyEvicted, match="no longer fits") as lost:
+        await dropped
+    assert isinstance(lost.value, EventProxyNotFound), "the ordinary catch still works"
+
+    with pytest.raises(EventProxyNotFound) as forgotten:
+        await stale
+    assert not isinstance(forgotten.value, EventProxyEvicted), "stale is not eviction"
+    assert backend._pending == {}
+
+
+async def test_the_event_object_itself_cannot_be_called():
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyAccessError, match="cannot be called"):
+        await event_object()
+    with pytest.raises(EventProxyAccessError, match="cannot be called"):
+        await make_proxy(backend, "evt")()
+
+    assert client.requests == []
+
+
+async def test_client_side_calls_can_be_waited_for():
+    objects = make_objects()
+    backend, client = make_client(objects)
+    target = make_proxy(backend, "evt", ["target"])
+
+    # ``preventDefault()`` and friends do not wait; asking to wait hands back
+    # whatever the browser's method returned once it has actually run
+    assert await target._reactpy_invoke("focus", (), wait=True) == "focused"
+
+    assert objects["evt"]["target"]["focus"].calls == [()]
+    assert requested_paths(client) == [["target", "focus"]]
+    assert client.requests[0]["reply"] is True
+
+
+async def test_fires_and_forget_calls_never_raise_at_the_handler():
+    # nothing is bound to this backend, so there is nobody to tell
+    event_object = make_event(EventProxyBackend(), "evt")
+
+    assert event_object.preventDefault() is None
+    assert event_object.stopPropagation() is None
+    assert event_object.stopImmediatePropagation() is None
+
+    # what we asked for is still recorded, only the browser side call is dropped
+    assert event_object.defaultPrevented is True
+    assert event_object.propagationStopped is True
+
+
+async def test_prevent_default_is_scheduled_but_not_awaited():
+    objects = make_objects()
+    backend, client = make_client(objects)
+    event_object = make_event(backend, "evt")
+
+    event_object.preventDefault()
+    event_object.stopPropagation()
+    assert event_object.defaultPrevented
+    assert event_object.propagationStopped
+
+    # Wait on the calls themselves rather than on how many requests went out: the
+    # fake client carries a request out a turn after it records sending it, and a
+    # loop with a coarser clock (Windows) lets this test read ahead of that turn.
+    prevented, stopped = (
+        objects["evt"]["preventDefault"],
+        objects["evt"]["stopPropagation"],
+    )
+    await poll(lambda: len(prevented.calls) == 1 and len(stopped.calls) == 1)
+    assert requested_paths(client) == [["preventDefault"], ["stopPropagation"]]
+    assert all(not request["reply"] for request in client.requests)
+    assert prevented.calls == [()]
+    assert stopped.calls == [()]
+
+
+async def test_stop_immediate_propagation_is_forwarded_to_the_client():
+    objects = make_objects()
+    objects["evt"]["stopImmediatePropagation"] = Method()
+    backend, client = make_client(objects)
+    event_object = make_event(backend, "evt")
+
+    event_object.stopImmediatePropagation()
+
+    stop_immediately = objects["evt"]["stopImmediatePropagation"]
+    await poll(lambda: len(stop_immediately.calls) == 1)
+    assert requested_paths(client) == [["stopImmediatePropagation"]]
+    assert client.requests[0]["reply"] is False
+    assert stop_immediately.calls == [()]
+    assert event_object.propagationStopped is True
+    assert event_object.defaultPrevented is False
+
+
+async def test_what_the_browser_prevented_is_read_rather_than_awaited():
+    """Two different questions, answered two different ways
+
+    ``event.defaultPrevented`` answers synchronously with what this side asked the
+    browser to do, so awaiting it was always going to be a ``TypeError``. What the
+    browser itself settled on - which other scripts on the page may have had a say in -
+    is a property of the live event, and is read like any other.
+    """
+    objects = make_objects()
+    objects["evt"]["defaultPrevented"] = True
+    backend, client = make_client(objects)
+    event_object = make_event(backend, "evt")
+
+    assert event_object.defaultPrevented is False
+    with pytest.raises(TypeError):
+        await event_object.defaultPrevented
+
+    prevented, = await event_object.read("defaultPrevented")
+    assert prevented is True
+    assert requested_paths(client) == [["defaultPrevented"]]
+
+    event_object.preventDefault()
+    assert event_object.defaultPrevented is True
+    prevented_method = objects["evt"]["preventDefault"]
+    await poll(lambda: len(prevented_method.calls) == 1)
+
+
+# -- what may cross the connection in either direction -----------------------
+
+
+def test_arguments_are_serialized_or_refused():
+    backend = EventProxyBackend()
+    proxy = make_proxy(backend, "evt", ["target"])
+    assert serialize_argument(proxy) == {
+        EVENT_REFERENCE_KEY: {"eventId": "evt", "path": ["target"]},
+    }
+    assert serialize_argument({"a": [1, "two", None]}) == {"a": [1, "two", None]}
+    with pytest.raises(EventProxyAccessError):
+        serialize_argument(object())
+
+
+def test_arguments_the_client_could_never_use_are_refused():
+    assert serialize_argument(("a", "b")) == ["a", "b"]
+    for value in (b"bytes", bytearray(b"raw"), {1, 2}, object()):
+        with pytest.raises(EventProxyAccessError, match="cannot pass"):
+            serialize_argument(value)
+
+
+def test_excessively_nested_references_are_refused():
+    backend = EventProxyBackend()
+    value: Any = {EVENT_REFERENCE_KEY: {"path": ["a"]}}
+    for _ in range(20):
+        value = {"nested": value}
+
+    with pytest.raises(EventProxyAccessError):
+        deserialize_value(value, "evt", backend)
+
+
+def test_arguments_nested_too_deeply_are_refused_without_overflowing():
+    """A deep argument is refused rather than overflowing the stack
+
+    Arguments were handed to the client by recursing through them with no bound at all,
+    so a value which went deep enough raised ``RecursionError`` from inside the call -
+    which is not a failure a handler has much hope of reading, and not one it can
+    recover from by asking for something shallower.
+    """
+    value: Any = "leaf"
+    for _ in range(2000):
+        value = {"nested": value}
+
+    with pytest.raises(EventProxyAccessError, match="nested more deeply than"):
+        serialize_argument(value)
+
+
+def test_arguments_as_deep_as_the_client_accepts_still_travel(monkeypatch):
+    """The bound is the one reading already uses, and it is not off by one"""
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_DEPTH, "current", 3)
+
+    assert serialize_argument([[["leaf"]]]) == [[["leaf"]]]
+
+    with pytest.raises(EventProxyAccessError, match="nested more deeply than"):
+        serialize_argument([[[[["leaf"]]]]])
+
+
+# -- when there is nobody on the other end to answer -------------------------
+
+
+def test_backend_without_a_sender_is_unavailable():
+    backend = EventProxyBackend()
+    assert not backend.available
+
+    data = [{EVENT_MARKER_KEY: {"id": "evt"}, "type": "click"}, 5]
+    args = build_event_args(data, backend)
+    assert isinstance(args[0], Event)
+    assert args[1] == 5
+
+
+async def test_a_request_whose_sender_went_away_is_abandoned():
+    """Losing the connection between queueing and sending strands nobody
+
+    Requests leave together at the end of a pass round the loop, so there is a moment
+    when a request is committed but the browser has not been asked. If the way to the
+    client disappears in that moment the waiter is told plainly, rather than being
+    left to sit on a request which will never be sent.
+    """
+    backend, _client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    pending = asyncio.ensure_future(event_object.target.value)
+    await asyncio.sleep(0)  # the request is queued, waiting for the flush to carry it
+
+    backend._send = None  # the connection went away before the queue was drained
+    backend._flush()
+
+    with pytest.raises(EventProxyUnavailable):
+        await pending
+
+
+def test_a_response_before_the_layout_runs_has_nobody_to_wake():
+    """An answer arriving outside the layout's life has no request to satisfy
+
+    The backend belongs to the running layout, so before it has started - or after it
+    has stopped - there is nothing to hand the answer to. It is refused rather than
+    raising, because the connection has no way to know the difference and should not
+    be blamed for the timing.
+    """
+
+    @component
+    def MyComponent():
+        return reactpy.html.div()
+
+    layout = Layout(MyComponent())
+
+    assert (
+        layout.handle_event_proxy_response(
+            {"type": EVENT_PROXY_RESPONSE_TYPE, "requestId": "gone", "ok": True}
+        )
+        is False
+    )
+
+
+def test_a_response_named_by_something_other_than_a_string_is_ignored():
+    """A requestId is only ever something this side handed out
+
+    A client which is confused, or worse, can answer a request which was never sent
+    with an id which is not even a string. Nothing may be looked up for it then, and
+    nothing may be remembered about it either - a list cannot so much as be a key.
+    """
+    backend = EventProxyBackend()
+
+    for request_id in (42, None, ["a"], {"a": 1}, b"bytes"):
+        assert (
+            backend.handle_response(
+                {
+                    "type": EVENT_PROXY_RESPONSE_TYPE,
+                    "requestId": request_id,
+                    "ok": True,
+                },
+            )
+            is True
+        )
+        assert (
+            backend.handle_response(
+                {
+                    "type": EVENT_PROXY_RESPONSE_TYPE,
+                    "responses": [{"requestId": request_id, "ok": True}],
+                },
+            )
+            is True
+        )
+
+
+async def test_unanswered_requests_eventually_disable_live_access(monkeypatch):
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 2)
+    backend, _client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    # Each attempt asks for a different property. A path which has just timed out is
+    # still remembered as being in flight, so asking for it again would join the dead
+    # request rather than make a new one - see the note in the test report.
+    for path in ("target", "type"):
+        with pytest.raises(EventProxyTimeout):
+            await event_object.read(path)
+
+    assert backend.disabled
+    assert not backend.available
+    with pytest.raises(EventProxyUnavailable):
+        await event_object.read("key")
+
+
+async def test_client_reported_timeouts_count_against_the_same_budget(monkeypatch):
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 1)
+    backend, _client = make_canned_client(
+        ok=False, code="timeout", error="browser hung"
+    )
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyTimeout, match="did not answer"):
+        await event_object.read("target")
+
+    assert backend.disabled, "a timeout the client reports is still a timeout"
+
+
+async def test_one_silent_batch_costs_one_timeout(monkeypatch):
+    """A batch which went silent is one dead round trip, not one per property
+
+    Each property of a silent batch used to raise its own timeout, and every one of
+    those was counted. A handler which read four properties of an event at once
+    therefore exhausted a budget of three all by itself, and switched live access off
+    for a client which had merely been asked several things in one message.
+    """
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 3)
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+    properties = ("target.tagName", "target.value", "type", "deep.a")
+
+    for attempt in (1, 2):
+        with pytest.raises(EventProxyTimeout):
+            await event_object.read(*properties)
+        assert len(client.messages) == attempt, "the batch left as a single message"
+        assert not backend.disabled, f"round trip {attempt} of three is not the last"
+
+    with pytest.raises(EventProxyTimeout):
+        await event_object.read(*properties)
+
+    assert backend.disabled, "three dead round trips is a dead connection"
+
+
+async def test_a_client_which_connected_again_can_be_read_again(monkeypatch):
+    """A reconnect is a new client, not the one which stopped answering
+
+    Being switched off used to last for the life of the layout, so one unanswered
+    message - a page which was reloaded, a socket which was quietly replaced - left
+    every handler which came after it reading nothing but ``EventProxyUnavailable``,
+    while a perfectly willing browser sat on the other end of the connection.
+    """
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 1)
+
+    async def silence(message: dict[str, Any]) -> None:
+        return None
+
+    backend = EventProxyBackend()
+    backend.set_sender(silence)
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyTimeout):
+        await event_object.read("target")
+
+    assert backend.disabled
+    backend.set_sender(silence)
+    assert backend.disabled, "the very same silent sender is not a second chance"
+
+    alive = CannedClient(backend, ok=True, value="typed")
+    backend.set_sender(alive.send)
+    assert backend.available, "a client which has just connected has not failed yet"
+    assert await event_object.read("target.value") == ("typed",)
+
+
+async def test_a_closed_layout_does_not_come_back_when_a_sender_appears():
+    """Closing is the layout going away, which no sender can undo"""
+    backend = EventProxyBackend()
+    backend.disable("the client went away")
+    backend.close()
+
+    async def send(message: dict[str, Any]) -> None:
+        return None
+
+    backend.set_sender(send)
+    assert backend.disabled
+    assert not backend.available
+
+
+async def test_failures_the_client_cannot_explain_are_still_reported():
+    backend, client = make_canned_client(ok=False)
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyAccessError) as info:
+        await event_object.read("target")
+
+    assert "could not resolve ['target'] of event 'evt'" in str(info.value)
+    assert "the client did not provide a reason" in str(info.value)
+    assert not backend.disabled, "one refusal is not a broken connection"
+    assert len(client.requests) == 1
+
+
+class ScriptedClient(FakeClient):
+    """Answers like a real client, except on the paths it has been told to misbehave on"""
+
+    def __init__(
+        self,
+        backend: EventProxyBackend,
+        objects: dict[str, Any],
+        hung: set[tuple[str, ...]] | None = None,
+        silent: set[tuple[str, ...]] | None = None,
+    ) -> None:
+        super().__init__(backend, objects)
+        self.hung = set() if hung is None else hung
+        self.silent = set() if silent is None else silent
+
+    def _reply_for(self, message: dict[str, Any]) -> dict[str, Any] | None:
+        if tuple(message["path"]) in self.silent:
+            # The browser never gets round to this one
+            return None
+        reply = super()._reply_for(message)
+        if reply is not None and tuple(message["path"]) in self.hung:
+            # The browser hung while working this one out, and said as much
+            reply.update(ok=False, error="browser hung", code="timeout")
+        return reply
+
+
+def make_scripted_client(
+    objects: dict[str, Any],
+    *,
+    hung: set[tuple[str, ...]] | None = None,
+    silent: set[tuple[str, ...]] | None = None,
+) -> tuple[EventProxyBackend, ScriptedClient]:
+    """Build a backend whose client hangs on, or stays quiet about, named paths"""
+    backend = EventProxyBackend()
+    client = ScriptedClient(backend, objects, hung, silent)
+    backend.set_sender(client.send)
+    return backend, client
+
+
+async def test_a_batch_keeps_the_answers_it_already_paid_for(monkeypatch):
+    """One path going wrong must not throw away the answers beside it
+
+    A batch used to give up as soon as one of its paths raised: the client had already
+    answered the rest, and all of it was discarded anyway. Reading those properties
+    again then paid for a round trip the browser had already carried out.
+    """
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    backend, client = make_scripted_client(make_objects(), silent={("gone",)})
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyTimeout):
+        await event_object.read("gone", "target.value")
+
+    assert len(client.messages) == 1, "both paths travelled as one message"
+
+    asked_for_before = len(client.requests)
+    assert await event_object.read("target.value") == ("typed",)
+    assert len(client.requests) == asked_for_before, "the answer is not asked for twice"
+
+
+async def test_a_batch_reports_the_failure_which_explains_something():
+    """A timeout must not bury the reason another property was refused
+
+    Both failures below come back in the same message, and the timeout is the one which
+    is listed first. Raising the first failure to exist reported a client which never
+    answered, when in fact it had answered - and had explained that the other property
+    simply does not exist.
+    """
+    backend, _client = make_scripted_client(make_objects(), hung={("target", "value")})
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyNotFound, match="does not exist") as info:
+        await event_object.read("target.value", "does_not_exist")
+
+    assert "does_not_exist" in str(info.value)
+    assert not backend.disabled, "one hung request is not yet a dead connection"
+
+
+async def test_a_failed_send_switches_live_access_off():
+    backend = EventProxyBackend()
+    sent: list[dict[str, Any]] = []
+
+    async def send(message: dict[str, Any]) -> None:
+        sent.append(message)
+        msg = "socket is closed"
+        raise ConnectionResetError(msg)
+
+    backend.set_sender(send)
+    event_object = make_event(backend, "evt")
+
+    with pytest.raises(EventProxyUnavailable, match="failed to send"):
+        await event_object.read("target")
+
+    assert len(sent) == 1, "the request was handed to the client once"
+    assert backend.disabled
+    assert not backend.available
+
+
+async def test_a_call_made_from_another_thread_is_sent_by_the_loop():
+    """A handler is free to think on a worker thread; the loop still does the sending
+
+    Nothing about live access is thread safe - the connection to the browser belongs
+    to the loop which accepted it - so a request conceived elsewhere is handed over
+    rather than sent from the thread which thought of it.
+    """
+    backend, client = make_canned_client(ok=True)
+
+    def call_from_a_worker() -> None:
+        backend.notify("evt", ("log",), ["written"])
+
+    await asyncio.to_thread(call_from_a_worker)
+    await poll(lambda: client.sent)
+
+    request = client.sent[0]
+    assert request["type"] == EVENT_PROXY_REQUEST_TYPE
+    assert request["path"] == ["log"]
+    assert request["call"] is True
+    assert request["args"] == ["written"]
+    assert request["reply"] is False
+
+
+async def test_a_reader_which_went_away_releases_its_request():
+    """A cancelled read must not leave a request waiting for nobody
+
+    A handler which is stopped while it is reading - a re-render which replaced it, a
+    component which unmounted - abandons whatever it was waiting on. The request stayed
+    recorded as though somebody still cared, and the answer to it had nowhere to go.
+    Nothing reclaimed that either, so a page which re-renders quickly kept one alive for
+    every read it ever cancelled.
+    """
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    task = asyncio.create_task(event_object.read("target"))
+    await poll(lambda: len(client.requests) == 1)
+    assert len(backend._pending) == 1, "the request is waiting on the client"
+
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert backend._pending == {}, "nothing waits on behalf of an absent reader"
+    assert backend._inflight == {}, "and the path is free to be asked about again"
+
+    # The very same property may be read again, and it is asked for afresh
+    again = asyncio.create_task(event_object.read("target"))
+    await poll(lambda: len(client.requests) == 2)
+    again.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await again
+
+
+async def test_a_reader_which_only_borrowed_an_answer_releases_nothing():
+    """Two readers of one property share the request, and only one of them owns it
+
+    The second handler to want a property borrows the answer of the first rather than
+    asking the client twice. When that second reader goes away it is not its request to
+    release: the handler which asked is still there, still waiting, and still expects the
+    answer to find it.
+    """
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    first = asyncio.create_task(event_object.read("target"))
+    await poll(lambda: len(client.requests) == 1)
+    request_id = next(iter(backend._pending))
+
+    # The borrower wants one property which is being asked for and one which is not, so
+    # the request it sends itself is proof that it joined rather than asked again.
+    borrower = asyncio.create_task(event_object.read("target", "type"))
+    await poll(lambda: len(client.requests) == 2)
+    assert requested_paths(client)[1] == ["type"], "only what it lacks goes out"
+
+    borrower.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await borrower
+
+    assert request_id in backend._pending, "the one still waiting keeps its request"
+
+    backend.handle_response(
+        {
+            "type": EVENT_PROXY_RESPONSE_TYPE,
+            "requestId": request_id,
+            "ok": True,
+            "value": "typed",
+            "error": None,
+            "code": None,
+        },
+    )
+    assert await first == ("typed",)
+    assert backend._pending == {}
+
+
+async def test_a_reader_which_borrowed_an_answer_gives_up_on_its_own_clock(
+    monkeypatch,
+):
+    """A borrower runs out of patience on its own, without costing anyone else
+
+    Waiting on somebody else's request is held to the same deadline as waiting on one's
+    own, so a client which has stopped answering cannot strand a handler which merely
+    borrowed an answer. Giving up is the borrower's own affair though: the request stays
+    where the reader which asked left it, and it is that reader whose round trip is
+    counted as having gone unanswered.
+    """
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    # Each reader is held to the clock which was in force when its own wait began, so
+    # the borrower gives up while the reader which asked is still waiting.
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 30)
+    owner = asyncio.create_task(event_object.read("target"))
+    await poll(lambda: len(client.requests) == 1)
+    request_id = next(iter(backend._pending))
+
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    borrower = asyncio.create_task(event_object.read("target", "type"))
+    await poll(lambda: len(client.requests) == 2)
+
+    with pytest.raises(EventProxyTimeout):
+        await borrower
+
+    assert not owner.done(), "the reader which asked is still waiting for its answer"
+    assert request_id in backend._pending, "its request stays where it was left"
+    assert backend._timeouts == 1, "only the round trip which was the borrower's own"
+
+    backend.handle_response(
+        {
+            "type": EVENT_PROXY_RESPONSE_TYPE,
+            "requestId": request_id,
+            "ok": True,
+            "value": "typed",
+            "error": None,
+            "code": None,
+        },
+    )
+    assert await owner == ("typed",)
+
+
+async def test_requests_may_not_pile_up_on_a_client_which_is_not_answering(monkeypatch):
+    """There is a limit to how much a client can be asked at once
+
+    A client which is not answering does not stop being asked. Whatever is still waiting
+    on it stays recorded in case the answer turns up late, and nothing bounded how many
+    of those could be waiting - so a handler which read a great many properties, or one
+    which kept reading while the browser had gone, accumulated them without end.
+    """
+    monkeypatch.setattr("reactpy._event_proxy.PENDING_LIMIT", 2)
+    backend, _client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    waiting = [
+        asyncio.create_task(event_object.read("target.tagName")),
+        asyncio.create_task(event_object.read("target.value")),
+    ]
+    await poll(lambda: len(backend._pending) == 2)
+
+    with pytest.raises(EventProxyUnavailable, match="too many live event requests"):
+        await event_object.read("type")
+
+    for task in waiting:
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+
+async def test_closing_the_backend_fails_everything_still_in_flight():
+    backend, client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+    pending = [
+        asyncio.create_task(event_object.read("target")),
+        asyncio.create_task(event_object.read("type")),
+    ]
+    await poll(lambda: len(client.requests) == 2)
+
+    backend.close()
+
+    for task in pending:
+        with pytest.raises(EventProxyUnavailable, match="layout was closed"):
+            await task
+    # the answers of a client which turns up late are simply dropped
+    assert client.backend.handle_response(
+        {
+            "type": EVENT_PROXY_RESPONSE_TYPE,
+            "requestId": client.requests[0]["requestId"],
+            "ok": True,
+            "value": "too late",
+        }
+    )
+
+
+async def test_requests_made_just_after_the_loop_is_gone_fail_fast(monkeypatch):
+    """A request which loses its loop on the way out is failed, not left waiting
+
+    The connection to the browser belongs to the loop which accepted it. Once that
+    loop has gone there is nothing left to send with, so whoever is waiting is failed
+    rather than left holding a future nobody is ever going to answer.
+    """
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+
+    pending = asyncio.create_task(event_object.read("target"))
+    # exactly one turn of the loop: the request is now queued, and the flush which
+    # would carry it out has been scheduled behind this test rather than before it
+    await asyncio.sleep(0)
+    assert len(backend._outgoing) == 1
+    monkeypatch.setattr(backend, "_loop", None)
+
+    with pytest.raises(EventProxyUnavailable, match="no sender is bound"):
+        await pending
+
+    assert client.sent == [], "nothing was handed over a loop which no longer runs"
+
+
+async def test_a_request_queued_while_the_loop_is_already_gone_is_never_sent(
+    monkeypatch,
+):
+    """Nothing crosses the wire when there is no loop left to send it with
+
+    The request is not handed to a loop which is gone, and the handler is not left
+    waiting on a future forever either: the wait is bounded and ends as an
+    ``EventProxyError``, whichever way the failure is reported.
+    """
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    backend, client = make_client(make_objects())
+    event_object = make_event(backend, "evt")
+    monkeypatch.setattr(backend, "_loop", None)
+
+    with pytest.raises(EventProxyError):
+        await event_object.read("target")
+
+    assert client.sent == []
+
+
+# -- how event data is recognised and handed out -----------------------------
+
+
+async def test_a_plain_string_marker_names_a_live_event_too():
+    backend, client = make_client(make_objects())
+
+    args = build_event_args(
+        [{EVENT_MARKER_KEY: "evt", "type": "click"}, {"type": "click"}, "extra"],
+        backend,
+    )
+
+    assert isinstance(args[0], Event)
+    assert args[0].event_id == "evt"
+    assert await args[0].type == "click"
+    # data the client never marked was never a browser object, so it is handed over
+    # exactly as it arrived rather than dressed up as a proxy nobody can resolve
+    assert type(args[1]) is dict
+    assert args[1] == {"type": "click"}
+    assert args[2] == "extra"
+    assert requested_paths(client) == [], "the type came free with the event"
+
+    marked = build_event_args([{EVENT_MARKER_KEY: {"id": "evt"}}], backend)
+    assert isinstance(marked[0], Event)
+    assert marked[0].event_id == "evt"
+
+
+async def test_only_what_the_client_volunteered_comes_free():
+    """Only plain scalars travel with the event; everything else is read on demand"""
+    backend, client = make_client(make_objects())
+    (event_object,) = build_event_args(
+        [
+            {
+                EVENT_MARKER_KEY: {"id": "evt"},
+                "type": "click",
+                "count": 3,
+                "repeat": True,
+                "target": {"value": "typed"},
+                "nothing": None,
+                "list": [1],
+            }
+        ],
+        backend,
+    )
+
+    assert (await event_object.read("type", "count", "repeat")) == ("click", 3, True)
+    assert requested_paths(client) == []
+    for name in ("type", "count", "repeat"):
+        assert name in dir(event_object)
+    # an object which arrived alongside the id is not a value we may answer with
+    assert "target" not in dir(event_object)
+    assert await event_object.target.value == "typed"
+    assert requested_paths(client) == [["target", "value"]]
+
+
+def event_handlers_of(model: dict[str, Any]) -> dict[str, Any]:
+    """Find the event handlers of the (single) element a test component renders"""
+    if "eventHandlers" in model:
+        return model["eventHandlers"]
+    for child in model.get("children", []):
+        if isinstance(child, dict):
+            try:
+                return event_handlers_of(child)
+            except KeyError:
+                continue
+    msg = "no event handlers in model"
+    raise KeyError(msg)
+
+
+async def test_layout_hands_data_which_is_not_a_browser_object_as_is():
+    received: dict[str, Any] = {}
+
+    async def on_click(event):
+        received["event"] = event
+
+    @component
+    def MyComponent():
+        return reactpy.html.div({"onClick": on_click})
+
+    _backend, client = make_client(make_objects())
+
+    async with Layout(MyComponent()) as layout:
+        connect(layout, client)
+        model = (await layout.render())["model"]
+        handlers = event_handlers_of(model)
+
+        target = handlers["onClick"]["target"]
+        data = {"type": "click", "detail": 3}
+        await layout.deliver(event_message(target, data))
+        await poll(lambda: "event" in received)
+
+    # nothing marked this data as a live browser object, so it is passed straight on
+    assert type(received["event"]) is dict
+    assert received["event"] == {"type": "click", "detail": 3}
+    assert EVENT_MARKER_KEY not in received["event"]
+    assert client.requests == [], "nothing to reach into, so nothing was asked"
+
+
+async def test_merged_handlers_all_share_the_same_event():
+    """Merged handlers are handed the very same data, which each reads as it likes
+
+    There is a single flavour of event data, so a merged handler never needs arguments
+    dressed up differently from those of its siblings.
+    """
+    received: dict[str, Any] = {}
+
+    async def first_handler(args):
+        received["first"] = args[0]
+
+    async def second_handler(args):
+        received["second"] = args[0]
+
+    merged = merge_event_handlers(
+        [EventHandler(first_handler), EventHandler(second_handler)]
+    )
+
+    @component
+    def MyComponent():
+        return reactpy.html.div({"onClick": merged})
+
+    _backend, client = make_client(make_objects())
+
+    async with Layout(MyComponent()) as layout:
+        connect(layout, client)
+        model = (await layout.render())["model"]
+        target = event_handlers_of(model)["onClick"]["target"]
+        await layout.deliver(
+            event_message(target, {EVENT_MARKER_KEY: {"id": "evt"}, "type": "click"})
+        )
+        await poll(lambda: len(received) == 2)
+
+    assert isinstance(received["first"], Event)
+    assert isinstance(received["second"], Event)
+    assert received["first"] is received["second"]
+    assert (await received["first"].read("type")) == ("click",)
+    assert client.requests == [], "the type was already known to both of them"
+
+
+async def test_proxy_responses_are_routed_not_delivered():
+    _backend, client = make_client(make_objects())
+
+    @component
+    def MyComponent():
+        return reactpy.html.div()
+
+    async with Layout(MyComponent()) as layout:
+        connect(layout, client)
+        assert layout.handle_event_proxy_response(
+            {"type": EVENT_PROXY_RESPONSE_TYPE, "requestId": "unknown", "ok": True}
+        )
+        assert not layout.handle_event_proxy_response({"type": "layout-update"})
+
+
+async def test_stop_immediate_propagation_is_detected_and_forwarded():
+    async def on_click(event):
+        event.stopImmediatePropagation()
+
+    @component
+    def MyComponent():
+        return reactpy.html.div({"onClick": on_click})
+
+    async with Layout(MyComponent()) as layout:
+        model = (await layout.render())["model"]
+        handler = event_handlers_of(model)["onClick"]
+        assert handler["stopPropagation"] is True
+        assert handler["stopImmediatePropagation"] is True
+
+
+async def test_a_timed_out_read_does_not_poison_that_path(monkeypatch):
+    """A request which timed out must not be handed to whoever asks next
+
+    The in-flight record used to be left behind when a read timed out, and the future
+    inside it had already been cancelled by the wait. Reading the very same property
+    again then took the "already in flight" branch and raised ``CancelledError`` at the
+    handler rather than an :class:`EventProxyError` - and because that branch never
+    reaches the timeout bookkeeping, the consecutive-timeout budget stopped counting,
+    so a client stuck on one property could never trip the guard which switches live
+    access off.
+    """
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_TIMEOUT, "current", 0.05)
+    monkeypatch.setattr(REACTPY_EVENT_PROXY_MAX_TIMEOUTS, "current", 3)
+    backend, _client = make_client(make_objects(), respond=False)
+    event_object = make_event(backend, "evt")
+
+    for _ in range(3):
+        with pytest.raises(EventProxyTimeout):
+            await event_object.target.value
+
+    # counting really happened, so the connection is now considered dead
+    assert backend.disabled
+    assert not backend.available

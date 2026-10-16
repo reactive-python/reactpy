@@ -1,6 +1,5 @@
 {
   "workspaces": [
-    "packages/event-to-object",
     "packages/@reactpy/app",
     "packages/@reactpy/client"
   ],
@@ -11,8 +10,7 @@
     "typescript": "^5.9.3",
     "json-pointer": "^0.6.2",
     "@types/json-pointer": "^1.0.34",
-    "@reactpy/client": "file:./packages/@reactpy/client",
-    "event-to-object": "2.0.0"
+    "@reactpy/client": "file:./packages/@reactpy/client"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

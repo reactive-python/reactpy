@@ -177,9 +177,9 @@ async def test_set_state_checks_equality_not_identity(display: DisplayFixture):
     event_count = reactpy.Ref(0)
 
     def event_count_tracker(function):
-        def tracker(*args, **kwargs):
+        async def tracker(event):
             event_count.current += 1
-            return function(*args, **kwargs)
+            return await function(event)
 
         return tracker
 
@@ -187,19 +187,25 @@ async def test_set_state_checks_equality_not_identity(display: DisplayFixture):
     def TestComponent():
         state, set_state = reactpy.hooks.use_state(r_1)
 
+        async def set_state_to_r_1(event):
+            set_state(r_1)
+
+        async def set_state_to_r_2(event):
+            set_state(r_2)
+
         render_count.current += 1
         return reactpy.html.div(
             reactpy.html.button(
                 {
                     "id": "r_1",
-                    "onClick": event_count_tracker(lambda event: set_state(r_1)),
+                    "onClick": event_count_tracker(set_state_to_r_1),
                 },
                 "r_1",
             ),
             reactpy.html.button(
                 {
                     "id": "r_2",
-                    "onClick": event_count_tracker(lambda event: set_state(r_2)),
+                    "onClick": event_count_tracker(set_state_to_r_2),
                 },
                 "r_2",
             ),
@@ -242,8 +248,9 @@ async def test_simple_input_with_use_state(display: DisplayFixture):
         message_ref.current = message
 
         async def on_change(event):
-            if event["target"]["value"] == "this is a test":
-                set_message(event["target"]["value"])
+            value = await event.target.value
+            if value == "this is a test":
+                set_message(value)
 
         if message is None:
             return reactpy.html.input({"id": "input", "onChange": on_change})
@@ -265,7 +272,7 @@ async def test_double_set_state(display: DisplayFixture):
         state_1, set_state_1 = reactpy.hooks.use_state(0)
         state_2, set_state_2 = reactpy.hooks.use_state(0)
 
-        def double_set_state(event):
+        async def double_set_state(event):
             set_state_1(state_1 + 1)
             set_state_2(state_2 + 1)
 
@@ -1472,3 +1479,70 @@ async def test_async_effect_cancelled_on_dependency_change():
 
         # Verify the previous effect was cancelled
         await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+
+
+def test_a_render_is_marked_before_the_scheduler_is_handed_it():
+    """The request must be raised before the scheduler is given the work
+
+    The state change which gets us here can arrive from the thread a synchronous
+    event handler ran on, while the thread which owns the layout is midway through a
+    render and about to clear this very flag.  Raising it only after the hand-off
+    allowed the write to land *after* that clear, and since nothing was then ever
+    going to render again to reset it, every later state change was silently
+    deduplicated away and the component was stranded on a stale model for the rest
+    of its life.
+    """
+    seen_while_handing_off: list[bool] = []
+    hook = LifeCycleHook(lambda: seen_while_handing_off.append(hook._scheduled_render))
+
+    hook.schedule_render()
+
+    assert seen_while_handing_off == [True]
+
+
+def test_a_failed_schedule_leaves_the_flag_down():
+    """A request which never reached the scheduler must not count as pending"""
+    attempts = 0
+
+    def explode():
+        nonlocal attempts
+        attempts += 1
+        raise RuntimeError("no scheduler available")
+
+    hook = LifeCycleHook(explode)
+
+    with assert_reactpy_did_log(
+        match_message="Failed to schedule render", error_type=RuntimeError
+    ):
+        hook.schedule_render()
+
+        assert hook._scheduled_render is False
+
+        # the flag went back down, so the next change is not deduplicated away
+        hook.schedule_render()
+
+    assert attempts == 2
+
+
+def test_a_cancelled_render_does_not_swallow_later_state_changes():
+    """Cancelling a pending render has to give back the right to render
+
+    The layout cancels a component's pending render whenever it renders that
+    component as part of updating its parent.  Once that happens nothing is left
+    which will ever clear the flag raised by ``schedule_render()``, so the layout
+    must reset it itself - otherwise this render, and every one after it, is lost.
+    """
+    scheduled: list[int] = []
+    hook = LifeCycleHook(lambda: scheduled.append(1))
+
+    hook.schedule_render()
+    assert scheduled == [1]
+
+    # a second request is deduplicated while the first is still pending
+    hook.schedule_render()
+    assert scheduled == [1]
+
+    hook.unschedule_render()
+
+    hook.schedule_render()
+    assert scheduled == [1, 1]

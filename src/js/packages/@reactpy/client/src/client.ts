@@ -1,4 +1,5 @@
 import logger from "./logger";
+import { EVENT_PROXY_REQUEST_TYPE, EventProxyRegistry } from "./event-proxy";
 import type {
   ReactPyClientInterface,
   ReactPyModule,
@@ -12,9 +13,18 @@ export abstract class BaseReactPyClient implements ReactPyClientInterface {
   protected readonly ready: Promise<void>;
   private resolveReady: (value: undefined) => void;
 
+  /**
+   * Keeps recently dispatched objects around so the server can read properties from,
+   * and call methods on, whatever actually triggered an event.
+   */
+  readonly eventProxy: EventProxyRegistry;
+
   constructor() {
     this.resolveReady = () => {};
     this.ready = new Promise((resolve) => (this.resolveReady = resolve));
+    this.eventProxy = new EventProxyRegistry((message) =>
+      this.sendMessage(message),
+    );
   }
 
   onMessage(type: string, handler: (message: any) => void): () => void {
@@ -38,6 +48,13 @@ export abstract class BaseReactPyClient implements ReactPyClientInterface {
   protected handleIncoming(message: any): void {
     if (!message.type) {
       logger.warn("Received message without type", message);
+      return;
+    }
+
+    // Live event access is answered by every client, and must not wait on anybody
+    // having registered a handler for it.
+    if (message.type === EVENT_PROXY_REQUEST_TYPE) {
+      this.eventProxy.handleMessage(message);
       return;
     }
 

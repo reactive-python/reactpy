@@ -166,13 +166,34 @@ class LifeCycleHook:
     def schedule_render(self) -> None:
         if self._scheduled_render:
             return None
+        # Raise the latch *before* handing off to the scheduler, not afterwards.
+        #
+        # A state change can reach this method from the thread a synchronous event
+        # handler ran on, while the layout's own thread is midway through a render
+        # and is about to clear this latch.  Setting it after the hand-off let that
+        # write land *after* the clear, which left the latch permanently raised since
+        # nothing was ever going to render again to reset it.  Every later state
+        # change was then silently deduplicated away and the component stalled on a
+        # stale model for the rest of its life.  Setting first means the clear of
+        # any render we could have scheduled is guaranteed to follow our write.
+        self._scheduled_render = True
         try:
             self._schedule_render_callback()
         except Exception:
+            self._scheduled_render = False
             msg = f"Failed to schedule render via {self._schedule_render_callback}"
             logger.exception(msg)
-        else:
-            self._scheduled_render = True
+
+    def unschedule_render(self) -> None:
+        """Undo :meth:`schedule_render` when its pending render is cancelled
+
+        The latch set by :meth:`schedule_render` is cleared only once a render
+        actually begins.  If the scheduled render is cancelled before it ever
+        starts, nothing else resets that latch - so every later state change
+        would be silently deduplicated away, leaving the component stuck on a
+        stale model indefinitely.
+        """
+        self._scheduled_render = False
 
     def use_state(self, function: Callable[[], T]) -> T:
         """Add state to this hook

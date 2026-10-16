@@ -9,7 +9,12 @@ from reactpy.core.events import EventHandler
 from reactpy.core.vdom import Vdom, is_vdom, validate_vdom_json
 from reactpy.types import VdomDict, VdomTypeDict
 
-FAKE_EVENT_HANDLER = EventHandler(lambda data: None)
+
+async def _noop_handler(*args):
+    """A handler which does nothing, for tests which only need something to bind"""
+
+
+FAKE_EVENT_HANDLER = EventHandler(_noop_handler)
 FAKE_EVENT_HANDLER_DICT = {"onEvent": FAKE_EVENT_HANDLER}
 
 
@@ -91,9 +96,10 @@ def test_simple_node_construction(actual, expected):
 async def test_callable_attributes_are_cast_to_event_handlers():
     params_from_calls = []
 
-    node = reactpy.Vdom("div")(
-        {"onEvent": lambda *args: params_from_calls.append(args)}
-    )
+    async def on_event(*args):
+        params_from_calls.append(args)
+
+    node = reactpy.Vdom("div")({"onEvent": on_event})
 
     event_handlers = node.pop("eventHandlers")
     assert node == {"tagName": "div"}

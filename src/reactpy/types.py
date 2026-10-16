@@ -20,6 +20,8 @@ from typing import (
     overload,
 )
 
+from reactpy._event_proxy import Event, EventProxy
+
 CarrierType = TypeVar("CarrierType")
 _Type = TypeVar("_Type")
 
@@ -84,6 +86,7 @@ class BaseLayout(Protocol[_Render_co, _Event_contra]):
     __slots__: tuple[str, ...] = (
         "__weakref__",
         "_event_handlers",
+        "_event_proxy_backend",
         "_model_states_by_life_cycle_state_id",
         "_render_tasks",
         "_render_tasks_ready",
@@ -915,6 +918,7 @@ class JsonEventTarget(TypedDict):
     target: str
     preventDefault: bool
     stopPropagation: bool
+    stopImmediatePropagation: NotRequired[bool]
     debounce: NotRequired[int]
     throttle: NotRequired[int]
 
@@ -944,6 +948,7 @@ class BaseEventHandler:
         "debounce",
         "function",
         "prevent_default",
+        "stop_immediate_propagation",
         "stop_propagation",
         "target",
         "throttle",
@@ -957,6 +962,13 @@ class BaseEventHandler:
 
     stop_propagation: bool
     """Stops the default action associate with the event from taking place."""
+
+    stop_immediate_propagation: bool
+    """Whether to also block other listeners of the same event in the browser
+
+    This is detected automatically from calls to
+    ``event.stopImmediatePropagation()`` inside the handler.
+    """
 
     debounce: int | None
     """Server-→client debounce window in milliseconds.
@@ -1132,6 +1144,9 @@ class ReactPyConfig(TypedDict, total=False):
     debug: bool
     max_queue_size: int
     tests_default_timeout: int
+    event_proxy_timeout: float
+    event_proxy_max_depth: int
+    event_proxy_max_timeouts: int
 
 
 class PyScriptOptions(TypedDict, total=False):
@@ -1154,25 +1169,15 @@ class EllipsisRepr:
         return "..."
 
 
-class Event(dict):
-    """
-    A light `dict` wrapper for event data passed to event handler functions.
-    """
-
-    debounce: int | None
-
-    def __getattr__(self, name: str) -> Any:
-        value = self.get(name)
-        return Event(value) if isinstance(value, dict) else value
-
-    def preventDefault(self) -> None:
-        """Prevent the default action of the event."""
-
-    def stopPropagation(self) -> None:
-        """Stop the event from propagating."""
-
-
 SourceType = NewType("SourceType", str)
+
+
+EventObject: TypeAlias = Event[Any] | EventProxy[Any]
+"""Anything which may be handed to an event handler as event data
+
+Either the event object itself, or something lazily resolved out of it. Both are
+awaitable, and both are documented on :class:`~reactpy._event_proxy.EventProxy`.
+"""
 
 
 @dataclass(frozen=True)

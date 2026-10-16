@@ -6,10 +6,5 @@
     "noEmit": false
   },
   "extends": "../../../tsconfig.json",
-  "include": ["src"],
-  "references": [
-    {
-      "path": "../../event-to-object"
-    }
-  ]
+  "include": ["src"]
 }

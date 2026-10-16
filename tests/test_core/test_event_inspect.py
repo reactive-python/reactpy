@@ -16,7 +16,7 @@ from reactpy.core._event_inspect import (
     _closure_lookup,
     _constant_ints_by_name,
     _function_arg_defaults,
-    _resolve_debounce_value,
+    _resolve_stored_value,
     inspect_event_handler,
 )
 
@@ -29,7 +29,7 @@ from reactpy.core._event_inspect import (
 def test_non_int_positional_default_is_ignored():
     """A positional default that isn't an int must be skipped."""
 
-    def handler(event, ms="not-an-int"):
+    async def handler(event, ms="not-an-int"):
         event.debounce = ms
 
     # Public API confirms the int default was filtered out and the closure
@@ -43,7 +43,7 @@ def test_non_int_positional_default_is_ignored():
 def test_non_int_load_const_debounce_returns_none():
     """``LOAD_CONST`` with a non-int value should resolve to ``None``."""
 
-    def handler(event):
+    async def handler(event):
         event.debounce = "not-an-int"
 
     from reactpy.core.events import EventHandler
@@ -55,7 +55,7 @@ def test_non_int_load_const_debounce_returns_none():
 def test_mixed_default_with_string_and_int_uses_int():
     """Defaults that aren't int are ignored, leaving int ones intact."""
 
-    def handler(event, label="x", ms=275):
+    async def handler(event, label="x", ms=275):
         event.debounce = ms
 
     from reactpy.core.events import EventHandler
@@ -73,7 +73,7 @@ def test_target_loaded_from_global_returns_none():
 
     GLOBAL_EVENT = object()
 
-    def handler(event):
+    async def handler(event):
         GLOBAL_EVENT.debounce = 100
 
     # Sanity: confirm the target is loaded by something other than
@@ -94,7 +94,7 @@ def test_target_local_differs_from_event_arg_returns_none():
 
     from reactpy.core.events import EventHandler
 
-    def handler(other):
+    async def handler(other):
         event = other
         event.debounce = 100
 
@@ -107,7 +107,7 @@ def test_closure_lookup_handles_extra_cells():
     in pathological bytecode but shouldn't happen in pure Python), the
     helper must defensively stop iterating."""
 
-    def handler(event):
+    async def handler(event):
         pass
 
     # Simulate the defensive branch by calling the helper directly with a
@@ -127,7 +127,7 @@ def test_closure_lookup_skips_uninitialized_cells():
     def make():
         captured = 100
 
-        def handler(event):
+        async def handler(event):
             return captured
 
         return handler
@@ -184,7 +184,7 @@ def test_closure_lookup_stops_when_more_cells_than_freevars():
 
 
 def test_function_arg_defaults_ignores_non_int_positional():
-    def handler(event, label="x", ms=275):
+    async def handler(event, label="x", ms=275):
         pass
 
     defaults = _function_arg_defaults(handler)
@@ -193,43 +193,43 @@ def test_function_arg_defaults_ignores_non_int_positional():
 
 
 def test_function_arg_defaults_returns_empty_when_only_string_defaults():
-    def handler(event, label="x"):
+    async def handler(event, label="x"):
         pass
 
     assert _function_arg_defaults(handler) == {}
 
 
 def test_closure_lookup_returns_empty_when_no_closure():
-    def handler(event):
+    async def handler(event):
         pass
 
     assert _closure_lookup(handler) == {}
 
 
 def test_constant_ints_by_name_returns_empty():
-    def handler(event):
+    async def handler(event):
         pass
 
     assert _constant_ints_by_name(handler.__code__) == {}
 
 
-def test_resolve_debounce_value_returns_none_for_empty_store_index():
+def test_resolve_stored_value_returns_none_for_empty_store_index():
     # With an empty instruction list and a store index of 0, the defensive
-    # guard at the top of ``_resolve_debounce_value`` triggers.
-    assert _resolve_debounce_value([], 0, "event", {}, {}, {}) is None
+    # guard at the top of ``_resolve_stored_value`` triggers.
+    assert _resolve_stored_value([], 0, "event", {}, {}, {}) is None
 
 
-def test_resolve_debounce_value_returns_none_when_store_index_below_offset():
+def test_resolve_stored_value_returns_none_when_store_index_below_offset():
     # The defensive ``store_index < _STORE_ATTR_VALUE_OFFSET`` guard.
     # With a single preceding instruction and a store index of 1, the guard
     # at the bottom of the function triggers.
     instructions = _build_fake_instructions([("LOAD_FAST", "event")])
     # The single LOAD_FAST sits at index 0; index 1 corresponds to "STORE_ATTR"
     # which is below the offset of 2.
-    assert _resolve_debounce_value(instructions, 1, "event", {}, {}, {}) is None
+    assert _resolve_stored_value(instructions, 1, "event", {}, {}, {}) is None
 
 
-def test_resolve_debounce_value_superinstruction_with_non_event_target_returns_none():
+def test_resolve_stored_value_superinstruction_with_non_event_target_returns_none():
     """When the previous instruction IS a
     ``LOAD_FAST_LOAD_FAST``/``LOAD_FAST_BORROW_LOAD_FAST_BORROW``
     superinstruction but the fused target name does not match
@@ -246,12 +246,10 @@ def test_resolve_debounce_value_superinstruction_with_non_event_target_returns_n
     instructions = [val, prev]
     # ``store_index`` of 2 represents the (hypothetical) ``STORE_ATTR`` slot
     # after the two preceding instructions.
-    assert (
-        _resolve_debounce_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
-    )
+    assert _resolve_stored_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
 
 
-def test_resolve_debounce_value_target_opname_not_allowed_returns_none():
+def test_resolve_stored_value_target_opname_not_allowed_returns_none():
     """When the target instruction's ``opname`` is not one of the allowed
     ``LOAD_FAST`` family members, the resolver must ``return None``.
 
@@ -263,12 +261,10 @@ def test_resolve_debounce_value_target_opname_not_allowed_returns_none():
     val = types.SimpleNamespace(opname="LOAD_FAST_BORROW", argval="ms")
     prev = types.SimpleNamespace(opname="LOAD_GLOBAL", argval="event")
     instructions = [val, prev]
-    assert (
-        _resolve_debounce_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
-    )
+    assert _resolve_stored_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
 
 
-def test_resolve_debounce_value_target_argval_mismatch_returns_none():
+def test_resolve_stored_value_target_argval_mismatch_returns_none():
     """When the target ``LOAD_FAST_BORROW`` references a local that isn't
     the event argument, the resolver must ``return None``.
 
@@ -279,12 +275,10 @@ def test_resolve_debounce_value_target_argval_mismatch_returns_none():
     val = types.SimpleNamespace(opname="LOAD_FAST_BORROW", argval="ms")
     prev = types.SimpleNamespace(opname="LOAD_FAST_BORROW", argval="other")
     instructions = [val, prev]
-    assert (
-        _resolve_debounce_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
-    )
+    assert _resolve_stored_value(instructions, 2, "event", {"ms": 800}, {}, {}) is None
 
 
-def test_resolve_debounce_value_val_instr_load_fast_borrow_returns_default():
+def test_resolve_stored_value_val_instr_load_fast_borrow_returns_default():
     """When the value being stored is loaded via ``LOAD_FAST``/
     ``LOAD_FAST_BORROW`` (a local variable that's an argument), the
     resolver looks up that local in ``arg_defaults`` and returns the
@@ -300,11 +294,11 @@ def test_resolve_debounce_value_val_instr_load_fast_borrow_returns_default():
     prev = types.SimpleNamespace(opname="LOAD_FAST_BORROW", argval="event")
     instructions = [val, prev]
     assert (
-        _resolve_debounce_value(instructions, 2, "event", {"delay": 350}, {}, {}) == 350
+        _resolve_stored_value(instructions, 2, "event", {"delay": 350}, {}, {}) == 350
     )
 
 
-def test_resolve_debounce_value_superinstruction_match_returns_default():
+def test_resolve_stored_value_superinstruction_match_returns_default():
     """When the previous instruction IS a
     ``LOAD_FAST_LOAD_FAST`` / ``LOAD_FAST_BORROW_LOAD_FAST_BORROW``
     superinstruction whose fused ``(value_name, target_name)`` tuple is
@@ -322,7 +316,7 @@ def test_resolve_debounce_value_superinstruction_match_returns_default():
     )
     val = types.SimpleNamespace(opname="LOAD_CONST", argval=1)  # not used here
     instructions = [val, prev]
-    assert _resolve_debounce_value(instructions, 2, "event", {"ms": 800}, {}, {}) == 800
+    assert _resolve_stored_value(instructions, 2, "event", {"ms": 800}, {}, {}) == 800
 
 
 def test_inspect_event_handler_handles_fused_superinstruction():
@@ -338,7 +332,7 @@ def test_inspect_event_handler_handles_fused_superinstruction():
     import dis
     from unittest.mock import patch
 
-    def handler(event, ms=400):
+    async def handler(event, ms=400):
         event.debounce = ms
 
     fake_prev = types.SimpleNamespace(
@@ -378,7 +372,7 @@ def test_inspect_event_handler_with_borrow_superinstruction():
 
     from reactpy.core.events import EventHandler
 
-    def handler(event, ms=225):
+    async def handler(event, ms=225):
         event.debounce = ms
 
     # Sanity: confirm the superinstruction is actually emitted on this
@@ -397,9 +391,9 @@ def test_inspect_event_handler_with_borrow_superinstruction():
     not _PYTHON_314_OR_NEWER,
     reason="LOAD_FAST_BORROW_LOAD_FAST_BORROW only exists in CPython 3.14+",
 )
-def test_resolve_debounce_value_with_borrow_superinstruction_non_event_target():
+def test_resolve_stored_value_with_borrow_superinstruction_non_event_target():
     """When the fused superinstruction's target name does not match the event
-    argument, ``_resolve_debounce_value`` falls through to ``return None``."""
+    argument, ``_resolve_stored_value`` falls through to ``return None``."""
 
     # We can't easily hand-craft bytecode on 3.14+, so test via the public
     # API by using a handler that loads two unrelated locals before the
@@ -407,7 +401,7 @@ def test_resolve_debounce_value_with_borrow_superinstruction_non_event_target():
     # followed by ``event``.
     from reactpy.core.events import EventHandler
 
-    def handler(event, other, ms=175):
+    async def handler(event, other, ms=175):
         # Force two LOAD_FAST ops before STORE_ATTR. ``other`` and ``event``
         # are emitted as the fused superinstruction; if the event detector
         # picks up ``other`` instead, debounce detection should still work
@@ -460,3 +454,28 @@ def _build_fake_instructions(items):
             )
         result.append(instr)
     return result
+
+
+def test_a_callable_whose_call_carries_no_bytecode_reports_nothing():
+    """An object made callable by a built-in ``__call__`` has no code to walk
+
+    Detection reads the bytecode of the handler, and a built-in keeps none, so the
+    inspector has to settle for having looked at all.
+    """
+
+    class Talkative:
+        __call__ = print  # a built-in, which carries no bytecode of its own
+
+    handler = Talkative()
+
+    assert inspect_event_handler(handler) == (False, False, None)
+    assert _function_arg_defaults(handler) == {}
+
+
+def test_no_detect_debounce_from_a_bool():
+    """The reverse holds too: a bool is not a debounce window"""
+
+    async def handler(event):
+        event.debounce = False
+
+    assert inspect_event_handler(handler) == (False, False, None)
