@@ -155,10 +155,13 @@ If you're familiar with object-oriented programming, refs might remind you of in
 Typically, you will use a ref when your component needs to "step outside" ReactPy and communicate with external APIs — often an API that won't impact the appearance of the component. Here are a few of these rare situations:
 
 -   Storing [`asyncio` tasks](https://docs.python.org/3/library/asyncio-task.html#creating-tasks) or timer handles, as in the stopwatch above
--   Storing and manipulating [DOM elements](https://developer.mozilla.org/docs/Web/API/Element), which we cover on [the next page](./manipulating-the-dom-with-refs.md)
--   Storing other objects that aren't needed to calculate the VDOM
+-   Storing other objects that aren't needed to calculate the VDOM — a client, a cache, a handle from an external library
 
 If your component needs to store some value, but it doesn't impact the rendering logic, choose refs.
+
+!!! warning "A ref cannot hold a DOM node"
+
+    React's docs list "accessing a DOM element" among the top reasons to reach for a ref. That one does not carry over: `reactpy.utils.Ref` is a plain Python box that lives on the server, and there is no attribute that hands a browser node to Python. What you do instead — give the element an `#!python "id"` and reach it from inline JavaScript — uses no ref at all. See [Manipulating the DOM with Refs](./manipulating-the-dom-with-refs.md) for why the name is a misnomer and what replaces each React example.
 
 ## Best practices for refs
 
@@ -180,7 +183,7 @@ You also don't need to worry about [avoiding mutation](./updating-objects-in-sta
 
 ## Refs and the DOM
 
-You can point a ref to any value. However, the most common use case for a ref is to access a DOM element — for example, if you want to focus an input programmatically. ReactPy does not have a `#!python ref` attribute you can pass to a tag; instead you hand the element an `#!python id` and reach it from an effect. You can read more about this in [Manipulating the DOM with Refs.](./manipulating-the-dom-with-refs.md)
+You can point a ref to any value — but not to a DOM element. ReactPy has no `#!python ref` attribute to pass to a tag, and no server-side handle on a browser node: `use_ref` lives in the Python process, the node lives in the page. The React idiom `#!python input_ref.current.focus()` therefore has no Python spelling at all. What replaces it is to give the element an `#!python "id"` and reach it from **inline JavaScript**, which runs in the page — and which uses no ref. The trap to avoid is reaching for it from an effect: effects run on the server too, where `#!python document` does not exist. [Manipulating the DOM with Refs](./manipulating-the-dom-with-refs.md) walks through focus, scrolling, and play/pause.
 
 ## Summary
 
