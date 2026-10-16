@@ -138,13 +138,19 @@ Both are raised at render time, so they surface as a 500 on the page — not as 
     {% include "../../examples/reference_jinja/component_tag/home.html" %}
     ```
 
+=== "pages.py"
+
+    ```python
+    {% include "../../examples/reference_jinja/component_tag/pages.py" %}
+    ```
+
 === ":material-play: Run"
 
     ```python
     # TODO
     ```
 
-The component must live in an importable module, since the browser reaches it by dotted path — a component defined inside the view function is not reachable that way. The template's path and the `#!python root_components` list have to agree exactly.
+The components cannot live in `#!python main.py` even though that is where the wiring is. The browser reaches them by dotted path, so they must sit in a module the server can import — a component defined next to the view is reachable as `#!python main.counter`, but then the template has to say exactly that. Whatever you choose, the path in `{% component %}` and the entry in `#!python root_components` must agree character for character. Nothing checks it for you: a mismatch emits markup that mounts an element which stays empty forever, and the failed import surfaces only as a server-side traceback on the websocket request.
 
 ### A client-side component
 
