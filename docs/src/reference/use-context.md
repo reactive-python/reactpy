@@ -107,19 +107,43 @@ Note the type annotation on `#!python Cart`. Because the default is `#!python No
 
 ### Nesting providers
 
-The provider nearest above the reader wins, and sibling subtrees are independent:
+The provider nearest above the reader wins, and sibling subtrees are independent. "Above" means *in the tree that renders it*, so the reader has to live inside a child component — reading in the enclosing body runs before the provider is rendered:
 
 ```python linenums="0"
+Theme = create_context("light")
+
+
+@component
+def swatch():
+    # A child component: it renders after the provider above it has registered.
+    return html.p(use_context(Theme))
+
+
 @component
 def page():
     return Theme(
-        html.p(use_context(Theme)),          # "outer"
-        Theme(html.p(use_context(Theme)), value="inner"),  # "inner"
+        swatch(),                                     # "outer"
+        Theme(swatch(), value="inner"),               # "inner"
         value="outer",
     )
 ```
 
-Verified: the first reads `#!python "outer"`, the second `#!python "inner"`; two sibling providers with different values each see their own. Removing a provider returns its descendants to the default — nothing stays pinned to the last value.
+Verified: the first reads `#!python "outer"`, the second `#!python "inner"`; two sibling providers with different values each see their own.
+
+!!! warning "Do not read the context in the same body that renders the provider"
+
+    ```python linenums="0"
+    @component
+    def page():
+        return Theme(
+            html.p(use_context(Theme)),   # "light", not "outer"
+            value="outer",
+        )
+    ```
+
+    Arguments are evaluated while `#!python page()` runs, and the provider registers its value only when the layout later renders it. Both reads here return the `#!python create_context("light")` default. Move the read into a child component. The same rule explains why reading inside an effect fails ([below](#reading-context-inside-an-effect)).
+
+Removing a provider returns its descendants to the default. What actually produces that is the remount: a provider is a component node in the tree, so dropping it moves its children to a different position and ReactPy rebuilds them — verified, a counter below a removed provider went back to `#!python 0` along with its value. Do not lean on that. `core/_life_cycle_hook.py`, `set_current` only ever *merges* the parent's providers into a hook (`_context_providers.update(...)`) and nothing prunes the dict, so a component that survives a render keeps whatever it inherited. If you need a guaranteed reset, change the child's `#!python "key"`.
 
 ### Reading context inside an effect
 

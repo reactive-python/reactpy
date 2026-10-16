@@ -134,11 +134,13 @@ If you prefer more compact code, you can use the [ternary operator.](https://www
 {% include "../../examples/quick_start/conditional_rendering_ternary.py" start="# start"%}
 ```
 
-When you don't need the `#!python else` branch, you can also use a shorter [logical `#!python and` syntax](https://www.geeksforgeeks.org/short-circuiting-techniques-python/):
+When you don't need the `#!python else` branch, unpack a list that is either one item or empty — and *not* Python's [logical `#!python and`](https://www.geeksforgeeks.org/short-circuiting-techniques-python/), which React's `cond && <X/>` habit tempts people into writing:
 
 ```python linenums="0"
-{% include "../../examples/quick_start/conditional_rendering_logical_and.py" start="# start" %}
+{% include "../../examples/quick_start/conditional_rendering_no_else.py" start="# start" %}
 ```
+
+`#!python is_logged_in and admin_panel()` returns `#!python False` when the test fails, and ReactPy renders that as the literal word `#!python False` on the page — only `#!python None` and an absent child disappear. See [Conditional Rendering](./conditional-rendering.md#excluding-a-child-with-a-conditional) for the same trap with numbers.
 
 All of these approaches also work for conditionally specifying attributes. If you're unfamiliar with some of this Python syntax, you can start by always using `if...else`.
 
@@ -186,7 +188,7 @@ Notice how `"onClick": handle_click` has no parentheses at the end! Do not _call
 
 Often, you'll want your component to "remember" some information and display it. For example, maybe you want to count the number of times a button is clicked. To do this, add _state_ to your component.
 
-First, import [`#!python use_state`](../reference/use-state.md) from React:
+First, import [`#!python use_state`](../reference/use-state.md) from `reactpy`:
 
 ```python linenums="0"
 {% include "../../examples/quick_start/updating_the_screen_use_state.py" end="# end" %}
@@ -232,7 +234,7 @@ Notice how each button "remembers" its own `#!python count` state and doesn't af
 
 ## Using Hooks
 
-Functions starting with `use` are called _Hooks_. `#!python use_state` is a built-in Hook provided by React. You can find other built-in Hooks in the [API reference.](../reference/use-state.md) You can also write your own Hooks by combining the existing ones.
+Functions starting with `use` are called _Hooks_. `#!python use_state` is a built-in Hook provided by ReactPy. You can find other built-in Hooks in the [API reference.](../reference/use-state.md) You can also write your own Hooks by combining the existing ones.
 
 Hooks are more restrictive than other functions. You can only call Hooks _at the top_ of your components (or other Hooks). If you want to use `#!python use_state` in a condition or a loop, extract a new component and put it there.
 
@@ -254,7 +256,7 @@ Now when you click either button, the `#!python count` in `#!python my_app` will
 
 First, _move the state up_ from `#!python my_button` into `#!python my_app`:
 
-```python linenums="0" hl_lines="3-6 17"
+```python linenums="0" hl_lines="3-6 16"
 {% include "../../examples/quick_start/sharing_data_between_components_move_state.py" start="# start" %}
 ```
 

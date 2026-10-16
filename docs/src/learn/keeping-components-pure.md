@@ -175,7 +175,7 @@ When possible, try to express your logic with rendering alone. You'll be surpris
 
     Writing pure functions takes some habit and discipline. But it also unlocks real opportunities:
 
-    -   **Your components can run on the server.** Since they return the same result for the same inputs, one component can serve many user requests. ReactPy renders components to HTML with `#!python reactpy_to_string`, which is only safe because rendering is pure — a component that mutated module state would leak one request's output into another's.
+    -   **Your components can run on the server, and be rendered to a string.** Components already execute server-side in ReactPy; purity is what makes it safe for one component to serve many requests. The same property lets `#!python reactpy_to_string` turn a component into HTML — with one limit worth knowing: it calls `#!python component.render()` with no `#!python Layout` behind it, so the component may use no hooks at all. Hand it `#!python html.*` elements or a hook-free component; anything with `#!python use_state` raises `#!python RuntimeError: No life cycle hook is active. Are you rendering in a layout?`. It is a string helper for fragments and tests, not a way to server-render an app. A component that mutated module state would leak one request's output into another's.
     -   **Rendering can be restarted.** ReactPy may need to discard an in-progress render, and purity makes it safe to stop calculating at any time.
     -   **Reasoning and testing become mechanical.** A pure component is an ordinary Python function: call it inside a `reactpy.core.layout.Layout`, render it twice, and compare the results — no browser required.
 

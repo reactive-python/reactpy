@@ -128,7 +128,7 @@ Had that input carried `#!python "value": something`, ReactPy would own it and r
 
 !!! info "You can skip the browser entirely"
 
-    Because rendering is pure Python, the same components can be rendered to an HTML string with `#!python reactpy_to_string` from `reactpy.utils` — no browser, no websocket. This is how server-side rendering works in ReactPy, and it is only safe because rendering is pure. A component that reads the clock or mutates a global will leak one request's output into another's.
+    Because rendering is pure Python, the same components can be rendered to an HTML string with `#!python reactpy_to_string` from `reactpy.utils` — no browser, no websocket. That is useful for email bodies, static fragments, and tests. It is **not** server-side rendering of an app: it calls `#!python component.render()` directly, with no `#!python Layout` behind it, so a component that uses any hook raises `#!python RuntimeError: No life cycle hook is active. Are you rendering in a layout?` — including the `#!python use_state` example further up this page. Plain `#!python html.*` elements and hook-free components are all it can render. And it is only safe because rendering is pure: a component that reads the clock or mutates a global will leak one request's output into another's.
 
 ## Epilogue: Browser paint
 

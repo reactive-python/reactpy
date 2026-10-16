@@ -146,14 +146,14 @@ Surprised? If you use the substitution method, you can see the "snapshot" of the
 
 ```python linenums="0"
 set_number(0 + 5)
-call_later(3, delayed)   # delayed() closes over number == 0
+get_running_loop().call_later(3, delayed)   # delayed() closes over number == 0
 ```
 
 The state stored in ReactPy may have changed by the time the callback runs, but the callback was scheduled using a snapshot of the state at the time the user interacted with it.
 
-!!! warning "Callbacks scheduled outside a render need care"
+!!! warning "The updater form rescues only the value it updates"
 
-    The `#!python call_later` above works because `#!python set_seen` is stable and the closure captures a value, not a live binding. The trap is the reverse: a callback that reaches for the *current* value will get the one from whichever render created it. When you need the newest value inside a scheduled callback, use the updater form — `#!python set_seen(lambda previous: [*previous, number])` — so ReactPy hands you the state that is actually current instead of the one your closure froze.
+    The scheduled callback above works because `#!python set_seen` is stable and the closure captures a value, not a live binding. The trap is the reverse: a callback that reaches for the *current* value gets the one from whichever render created it. An updater looks like the fix, but it is narrower than it appears. ReactPy applies an updater to the current value of **that one** state variable the instant you call the setter (`core/hooks.py`, `_CurrentState.dispatch` calls `new(self.value)`), so `#!python set_seen(lambda previous: [*previous, number])` hands you the freshest `#!python seen` — while `#!python number` inside it is still the name frozen when the callback was built. Reach for the updater when the value you need *is* the value you are setting. For anything else, read it before scheduling and pass it in, or keep it in a [`use_ref`](../reference/use-ref.md) box and read `#!python box.current` when the callback finally runs.
 
 **A state variable's value never changes within a render,** even if its event handler's code is asynchronous. Inside _that render's_ `#!python handle_click`, the value of `#!python number` continues to be `#!python 0` even after `#!python set_number(number + 5)` was called. Its value was "fixed" when ReactPy "took the snapshot" of the UI by calling your component.
 
