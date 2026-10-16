@@ -291,7 +291,7 @@ async def save(event):
 html.button({"onClick": save}, "Save")
 ```
 
-The name is forwarded as the DOM event to listen for, so the names that work are the DOM event names in camelCase — `#!python onClick`, `#!python onInput`, `#!python onKeyDown`. The handler receives one argument: the event data as a JSON-serializable `#!python dict`, wrapped in `#!python reactpy.types.Event` so nested keys are also readable as attributes. There is no `#!python "data"` key to unwrap — the browser sends a *list* of arguments, and ReactPy hands you its single element. Make the handler `#!python async` when the work is slow, because a plain function blocks the client while it runs — see [Responding to Events](../learn/responding-to-events.md).
+The name is forwarded as the DOM event to listen for, so the names that work are the DOM event names in camelCase — `#!python onClick`, `#!python onInput`, `#!python onKeyDown`. The handler receives one argument: the event data as a JSON-serializable `#!python dict`, wrapped in `#!python reactpy.types.Event` so nested keys are also readable as attributes. There is no `#!python "data"` key to unwrap — the browser sends a *list* of arguments, and ReactPy hands you its single element. Make the handler `#!python async` when the work is slow, because a plain `#!python def` handler runs to completion **inside the server's event loop**: `core/events.py`, `to_event_handler_function` wraps a non-coroutine in an `#!python async def wrapper` that simply calls it, so nothing is handed to a thread. A slow or blocking handler stalls every connection in the process, not just the one that clicked. See [Responding to Events](../learn/responding-to-events.md).
 
 !!! warning "A handler wrapped in `EventHandler` receives the raw list"
     A plain callable is called with the browser's argument list **unpacked**, so `def f(event)` gets the event dict. An `EventHandler` does the opposite: it is called with the **list itself**, so `def f(data)` must index into it. The difference stays invisible until a handler is converted, and then `event["target"]` becomes `TypeError: list indices must be integers or slices, not str`:
@@ -413,7 +413,7 @@ element["bogus"] = 1
 KeyError: 'Invalid key: bogus'
 ```
 
-A `#!python dict` used as a child with no `#!python "tagName"` does not raise. It sends an error to the client, where it appears in the browser console as an `#!python error` field on the model:
+A `#!python dict` used as a child with no `#!python "tagName"` does not raise on the server. The layout catches it, logs the traceback, and sends an element whose `#!python error` field carries the message — which the client prints **in the page**, in a `<pre>` that replaces the component, not in the console:
 
 ```python linenums="0"
 html.div(None, {"children": ["x"]})
@@ -423,7 +423,7 @@ html.div(None, {"children": ["x"]})
 ValueError: Expected a VDOM element dict, not {'children': ['x']}
 ```
 
-Anything the layout cannot render is reported this way rather than taking the server down: the client receives the `#!python error` field and the server logs the traceback. Check both when an element renders as nothing.
+That text exists only under `#!python REACTPY_DEBUG=1`. Verified in a browser with a bad child between two headings: with debug on, the page read `above / ValueError: Expected a VDOM element dict… / below`; with debug off the bad component simply vanished — `above / below`, no `<pre>`, and nothing at all in the console. The server log has the traceback either way. So when an element renders as nothing, check the server log first and re-run with `#!python REACTPY_DEBUG=1` before trusting the page. See [Protocol Structure](./protocol-structure.md#errors-arrive-as-a-model).
 
 ---
 

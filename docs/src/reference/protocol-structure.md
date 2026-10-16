@@ -266,9 +266,23 @@ The client compares that number against its own counter to decide whether the se
 
 The value lives in a dedicated attribute rather than among your own so it cannot collide with, or leak into, a real DOM attribute. It is added only to those three tags, and only once at least one event has arrived for the element.
 
-!!! note "Debounce and throttle never reach the wire"
+!!! note "Debounce and throttle do travel on the wire"
 
-    They change when events leave the browser, not what is in them. Both are applied client-side before the message is built, and an invalid value is dropped with a console warning rather than an error. See [Common Props](./common-props.md#reactpys-own-options).
+    They change *when* events leave the browser, not what is in them — but the layout still has to tell the client about them. `core/layout.py`, `_serialize_event_handler` copies both into the handler's model entry whenever they are not `#!python None`, and `#!js vdom.tsx` reads them back off that entry. `#!python @event(handler, debounce=250, throttle=500)` arrives as:
+
+    ```json linenums="0"
+    {
+      "onClick": {
+        "target": "/0:onClick",
+        "preventDefault": false,
+        "stopPropagation": false,
+        "debounce": 250,
+        "throttle": 500
+      }
+    }
+    ```
+
+    Both are omitted entirely when `#!python None`, which is what keeps the common case minimal. On arrival the client validates each with `#!js isValidDebounce` — finite, non-negative integer — and an invalid one is dropped with a `#!js console.warn` naming the handler rather than an error, leaving the handler live but un-debounced. Build a non-Python client from this page and you must carry these two fields; skipping them silently loses the throttling. See [Common Props](./common-props.md#reactpys-own-options).
 
 ---
 
