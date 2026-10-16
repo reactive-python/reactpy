@@ -201,7 +201,7 @@ from reactpy import Vdom
 Vdom("text")("hello")  # {'tagName': 'text', 'children': ['hello']}
 ```
 
-The bundled client creates every element with `#!python document.createElementNS(namespace, ...)` and picks the namespace from the tag name — `static/index-bz53xswt.js` sets `#!python Q = "http://www.w3.org/2000/svg"` when the type is `#!python "svg"` and the MathML URI for `#!python "math"`. Inside the SVG namespace attribute names are forwarded verbatim rather than lower-cased, so `#!python viewBox` keeps its capital `#!python B` — write it that way, since `#!python viewbox` is a different attribute to the DOM.
+The bundled client creates every element through `#!js document.createElementNS(namespace, ...)`, picking the namespace from the tag name: `#!python "svg"` gets `http://www.w3.org/2000/svg`, `#!python "math"` gets the MathML URI, everything else the XHTML one. That logic lives in the preact runtime ReactPy bundles into its client chunks, not in ReactPy's own `#!js @reactpy/client` source — so grep there for `createElementNS` and you will find nothing. Inside the SVG namespace attribute names are forwarded verbatim rather than lower-cased, so `#!python viewBox` keeps its capital `#!python B` — write it that way, since `#!python viewbox` is a different attribute to the DOM.
 
 ## Choosing children over attributes
 

@@ -68,9 +68,9 @@ By convention, it is common to name event handlers as `#!python handle` followed
     html.button({"onClick": handle_click}, "Click me")   # correct
     ```
 
-    Writing `#!python html.button({"on_click": handle_click}, ...)` does **not** raise. ReactPy accepts any `#!python on*` key as a handler and ships it to the browser verbatim — but no browser event is named `#!python on_click`, so the button looks fine and simply never fires. Only the names *you* define (variables, components, component props) are `#!python snake_case`.
+    Writing `#!python html.button({"on_click": handle_click}, ...)` does **not** raise. ReactPy ships it to the browser verbatim as a handler for an event called `#!python _click` — the client registers a listener for the key with the leading `#!js on` stripped — and no browser ever fires one. The button looks fine and simply never responds. Only the names *you* define (variables, components, component props) are `#!python snake_case`.
 
-    ReactPy recognises a key as an event handler when it matches `#!python ^on[A-Z]\w+` (`core/vdom.py`, `EVENT_ATTRIBUTE_PATTERN`).
+    Note what does and does not decide "this is a handler". In `core/vdom.py`, `separate_attributes_handlers_and_inline_javascript` the test is **`callable(v)` on the value**, checked before the key is ever looked at: a callable under `#!python "on_click"`, or even under `#!python "foo"`, lands in `#!python eventHandlers`. The key pattern `#!python ^on[A-Z]\w+` (`core/vdom.py`, `EVENT_ATTRIBUTE_PATTERN`) is used only for the *string* case below — it decides whether a string becomes `#!python inlineJavaScript` or a plain attribute. So `#!python {"onClick": "alert(1)"}` runs as JavaScript, while `#!python {"onclick": "alert(1)"}` and `#!python {"on_click": "alert(1)"}` become inert attributes.
 
 Alternatively, you can define an event handler inline with a `#!python lambda`:
 
@@ -102,7 +102,7 @@ Inline event handlers are convenient for short functions.
     html.button({"onClick": handle_click()}, "...")  # wrong: fires during render
     ```
 
-    In the second case the `#!python ()` calls `#!python handle_click` _immediately_ during [rendering](./render-and-commit.md), without any clicks — because the Python inside the call is evaluated right away, exactly like an expression inside JSX braces. Whatever it returns is then stored as the handler, which is usually `#!python None`. ReactPy does not reject that: `#!python None` is serialised as a handler that never runs, so the button renders and does nothing, forever.
+    In the second case the `#!python ()` calls `#!python handle_click` _immediately_ during [rendering](./render-and-commit.md), without any clicks — because the Python inside the call is evaluated right away, exactly like an expression inside JSX braces. Whatever it returns is what gets stored, and a function that ends without a `#!python return` gives `#!python None`. ReactPy does not reject that: handlers are picked out by `#!python callable(v)`, and `#!python None` is not callable, so it falls through to the plain attributes and ships as `#!python {"onClick": None}` — a DOM attribute named `onClick` holding `null`. Nothing registers, nothing fires, and the button renders and does nothing, forever.
 
     The same trap appears with inline code:
 
