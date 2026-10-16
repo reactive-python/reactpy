@@ -27,4 +27,6 @@ starlette_app = Starlette(routes=[Route("/", home)])
 # imports it to satisfy that request. Register exactly the paths the template
 # passes to `{% component %}` -- here the `counter` and `badge` functions in
 # the sibling `pages.py`.
-my_app = ReactPyMiddleware(starlette_app, root_components=["pages.counter", "pages.badge"])
+my_app = ReactPyMiddleware(
+    starlette_app, root_components=["pages.counter", "pages.badge"]
+)
