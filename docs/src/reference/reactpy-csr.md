@@ -24,7 +24,9 @@ from reactpy.executors.asgi import ReactPyCsr
 
 #### Parameters
 
--   **`*file_paths`**: One or more paths to Python files containing components. Each is read at request time and its **source is inlined into the served HTML**. Accepts `#!python str` or `#!python pathlib.Path`.
+-   **`*file_paths`**: One or more paths to Python files containing components. Their **source is inlined into the served HTML**. Accepts `#!python str` or `#!python pathlib.Path`.
+
+    Read once, then cached for the life of the process: `executors/pyscript/utils.py`, `fetch_cached_python_file` is decorated with `#!python functools.cache`, keyed on the path. Editing the file does not change the page on reload — restart the server. The same cache strips comments and docstrings before inlining (see [Jinja](./jinja.md#pyscript_component-tag)), so what reaches the browser is not quite what you wrote.
 
 -   **`root_name`** *(optional)*: The name of the root component inside your Python file. Defaults to `#!python "root"`. The file may define any number of components; this one is mounted.
 
@@ -89,10 +91,10 @@ Serve with `#!python uvicorn main:my_app`. The served page carries the `#!python
 The page ReactPy generates does three things:
 
 1. Links PyScript's CSS and module script from `{path_prefix}static/`.
-2. Declares the packages to install, starting with ReactPy's own wheel and `#!python morphdom`.
+2. Declares what PyScript should fetch: a `#!python packages` list for Python — ReactPy's own wheel from `{path_prefix}static/wheels/` and `#!python jsonpointer==3.*` — and a separate `#!python js_modules` entry for `#!python morphdom`, served from `{path_prefix}static/morphdom/morphdom-esm.js`. They are different lists with different installers; `#!python morphdom` is not a `#!python packages` entry.
 3. Inlines your Python, then runs it under PyScript.
 
-Verified against a running server: the initial response contains the PyScript `#!python core.js`, the `#!python packages` list pointing at the ReactPy wheel, and the `#!python initial` placeholder inside a `#!python <div class="pyscript">`.
+Verified against a running server: the initial response carries the PyScript `#!python core.js`, `"packages": ["/reactpy/static/wheels/reactpy-2.0.0b13-py3-none-any.whl", "jsonpointer==3.*"]`, `"js_modules": {"main": {"/reactpy/static/morphdom/morphdom-esm.js": "morphdom"}}`, and the `#!python initial` placeholder inside a `#!python <div class="pyscript">`. `#!python pyscript_config` lets you replace either list.
 
 !!! info "The first load is slow"
 

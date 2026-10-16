@@ -58,7 +58,7 @@ from reactpy.executors.asgi import ReactPy
 
 -   **`pyscript_options`** *(optional)*: A `#!python PyScriptOptions` configuring that behaviour.
 
--   **`**settings`**: Any key from `#!python ReactPyConfig`, applied to this app instance. See [Configuration](#configuration).
+-   **`**settings`**: Any key from `#!python ReactPyConfig`. Despite appearances these are **not** scoped to this app instance — each one is written to the matching global in `#!python reactpy.config`, so the last executor constructed wins process-wide. See [Configuration](#configuration).
 
 #### Returns
 
@@ -125,13 +125,21 @@ Settings are ordinary keyword arguments, and they reach the browser-side client:
 | `reconnect_max_retries` | `150` | Attempts before giving up. |
 | `reconnect_backoff_multiplier` | `1.25` | Growth factor between attempts. |
 | `async_rendering` | `True` | Allow renders to overlap. |
-| `debug` | `False` | Extra client-side checks and messages. |
+| `debug` | `False` | Server-side checks and richer error text — see the note below. |
 | `max_queue_size` | `1000` | Bound on the pending event queue per connection. |
-| `tests_default_timeout` | `15.0` | Default timeout for `reactpy.testing`. |
+| `tests_default_timeout` | `15.0` | Default timeout for `reactpy.testing`. **Not settable this way** — see the note below. |
 
 Verified: setting `#!python path_prefix="/apps/reactpy/"` moves asset serving to that prefix, and the reconnect values appear in the generated mount call.
 
-Each has an environment-variable twin in `reactpy.config` — `#!python REACTPY_PATH_PREFIX`, `#!python REACTPY_RECONNECT_INTERVAL`, and so on. Passing the keyword is the per-app form; the environment variable is process-wide.
+!!! warning "These keywords are process-wide, not per-app"
+
+    `executors/utils.py`, `process_settings` walks the keywords and calls `set_current()` on the matching `#!python reactpy.config` `Option` object. Those objects are module-level globals, so the *last constructor to run wins for the whole process* — including for any app built before it. Verified: two `#!python ReactPy` instances created with `#!python reconnect_interval=111` and `#!python reconnect_interval=999` leave `#!python REACTPY_RECONNECT_INTERVAL.current` at `#!python 999` for both. There is no per-app configuration layer; do not host two apps that need different values.
+
+    `#!python tests_default_timeout` is worse than ineffective. Its `Option` is declared `#!python mutable=False` in `reactpy/config.py`, and `#!python _option.py`, `set_current` raises `TypeError` on an immutable option — so passing it raises `Option(REACTPY_TESTS_DEFAULT_TIMEOUT=15.0) cannot be modified after initial load` out of the constructor. Set it via the `#!bash REACTPY_TESTS_DEFAULT_TIMEOUT` environment variable before import, or not at all.
+
+    `#!python debug` is not a client switch. `#!python REACTPY_DEBUG` turns on server-side VDOM and JSON-attribute validation, populates the model's `#!python error` text (without it, a failed component ships `#!python "error": ""` and renders as nothing), and changes a few asset URLs to their `#!js ?dev` forms. See [Common Props](common-props.md#invalid-dictionaries).
+
+Each setting also has an environment-variable twin in `#!python reactpy.config` — `#!python REACTPY_PATH_PREFIX`, `#!python REACTPY_RECONNECT_INTERVAL`, and so on. Since the keyword already writes to that same global option, the two differ only in timing: the environment variable is read when the module is first imported, the keyword whenever an executor is constructed.
 
 ---
 

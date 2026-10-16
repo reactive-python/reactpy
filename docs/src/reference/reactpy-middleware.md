@@ -56,15 +56,16 @@ The wrapped app is untouched. Verified with Starlette: a plain `#!python /health
 
 ### What the middleware actually claims
 
-`ReactPyMiddleware.__call__` handles exactly four kinds of request and forwards everything else:
+`ReactPyMiddleware.__call__` handles exactly three kinds of request and forwards everything else:
 
 | Path | Handled by |
 | --- | --- |
 | websocket matching `{path_prefix}{dotted_path}/` | ReactPy render stream |
 | `{path_prefix}static/...` | ReactPy client bundle |
 | `{path_prefix}modules/...` | built web modules |
-| user-registered routes | your handlers |
 | **anything else** | **your app** |
+
+There is no fourth row. `ReactPyMiddleware.match_extra_paths` is a hook that returns `#!python None` — its own comment says custom routes are "unused by default to encourage users to handle routing within your ASGI framework of choice". The `#!python @my_app.route(...)` registry people expect belongs to the standalone `#!python ReactPy` executor, which overrides that method to match `#!python extra_http_routes` / `#!python extra_ws_routes`. Under the middleware, every route is your app's.
 
 !!! warning "The middleware never serves your HTML"
 

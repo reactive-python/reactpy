@@ -126,10 +126,18 @@ So the two want opposite things:
 
 | | `#!js componentPath` | Unmatched dotted path |
 | --- | --- | --- |
-| `#!python ReactPyMiddleware` | **required**, with trailing slash | Falls through to your app (commonly `403`) |
-| `#!python ReactPy` | **must be omitted** — the bare `{pathPrefix}` is the route | `500`, from `NotImplementedError: ReactPy app received unsupported request of type 'websocket'` |
+| `#!python ReactPyMiddleware` | **required**, with trailing slash | Falls through to your app (with Starlette's websocket handler, a `403` handshake rejection) |
+| `#!python ReactPy` | **must be omitted** — the bare `{pathPrefix}` is the route | socket error; the server logs `NotImplementedError` (see below) |
 
 Verified against both executors on the same build: the middleware accepts `#!js /reactpy/main.counter/` and refuses `#!js /reactpy/`; the standalone app does exactly the reverse. A mount snippet copied from one executor to the other therefore produces a socket that never opens.
+
+The standalone rejection does not read like a normal exception. `executors/asgi/standalone.py`, `ReactPyApp.__call__` builds `msg` as a **tuple** of a `%`-format template and its arguments and raises `NotImplementedError(msg)` without ever formatting it, so the server logs it verbatim — the placeholders survive and the path is appended:
+
+```text linenums="0"
+NotImplementedError: ("ReactPy app received unsupported request of type '%s' at path '%s'", 'websocket', '/reactpy//')
+```
+
+Do not search the log for `...type 'websocket'`; search for `unsupported request of type`. The same tuple is written by `_logger.warning` immediately before the raise.
 
 ### The socket does not open immediately
 
@@ -150,7 +158,7 @@ Note that `#!js path` and `#!js qs` are query parameters, not path segments. The
 
 For a server-rendered component, no import map is needed. The bundle imports its own two chunks by relative path and has preact inlined, so nothing it loads statically is a bare specifier. Verified: a page with no map at all mounted, connected, and the server never received a single request for `#!js preact.js`.
 
-The map becomes load-bearing only when the model contains `#!json importSource`. Rendering such an element runs `#!js await import("react")` and `#!js await import("react-dom/client")` — *dynamic* imports, which are exactly what an import map resolves. If they succeed, real React renders the subtree; if they fail, the client falls back to its own preact bindings and says so:
+The map becomes load-bearing only when the model contains `#!json importSource` **and** the resolved module does not export its own `#!js bind`. Rendering such an element goes through `#!js loadImportSource`, which uses the module's `#!js bind` when it is a function and only otherwise calls `#!js infer_bind_from_environment()` — the function that runs `#!js await import("react")` and `#!js await import("react-dom/client")`. Those are *dynamic* imports, which are exactly what an import map resolves. If they succeed, real React renders the subtree; if they fail, the client falls back to its own preact bindings and says so:
 
 ```text linenums="0"
 ReactPy will render JavaScript components using internal bindings for 'react'.
@@ -172,7 +180,7 @@ The **id is the trigger, not the content**. Verified across three pages, all ser
 | Your own map, any other id | Yes — a second map appears, alongside yours | The same `did not detect` line, plus the browser's own `An import map rule for specifier 'react' was removed, as it conflicted with an existing rule.` |
 | Your own map with `id="reactpy-importmap"` | No | Nothing at all. |
 
-Both of those messages come from the Python side of the bootstrap (`executors/utils.py`, `server_side_component_html`), emitted as unprefixed `#!js console.debug`, not from the client bundle.
+The two messages have different authors, which matters when you search a minified bundle. The `#!js did not detect` line is written by the **Python** side of the bootstrap — `executors/utils.py`, `server_side_component_html` emits it inside the inline `#!html <script>` it generates, so it is in the served HTML, not in the bundle. The `#!js internal bindings for 'react'` line comes from the **client** — `#!js infer_bind_from_environment` in `bind.tsx`, reached from `loadImportSource` in `#!js vdom.tsx`. Both are unprefixed `#!js console.debug`, so neither shows up under a `[ReactPy]` filter.
 
 To control resolution yourself, use that exact id. Two maps is worse than untidy: the browser keeps the **first** rule it sees for a specifier and discards the later one, so with two maps the winner is decided by document order — which is why the warning above names a rule being *removed*.
 
@@ -257,7 +265,7 @@ Nothing is required beyond an element and the call. Both files below were run to
     # TODO
     ```
 
-The component is registered with `#!python root_components`, and the `#!js componentPath` in the page — `#!python "hand_written.counter/"` — is that dotted path with a slash appended.
+The component is registered with `#!python root_components`, and the `#!js componentPath` in the page — `#!python "main.counter/"` — is that dotted path with a slash appended.
 
 !!! warning "The 404 in the console is usually not yours"
 

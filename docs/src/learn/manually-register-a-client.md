@@ -46,7 +46,7 @@ Three details are load-bearing, all verified in a real browser:
 -   **`#!js componentPath` carries a trailing slash** and must name a component the server knows. `#!js "main.counter/"`, not `#!js "main.counter"`.
 -   **The import must be `#!html <script type="module">`.** The bundle statically imports two sibling chunks; a classic script fails with `#!python SyntaxError: Cannot use import statement outside a module` before anything ReactPy-related runs.
 
-The component itself lives in a Python module the backend can import. Under `#!python ReactPyMiddleware`, `#!python componentPath` is the dotted path you listed in `#!python root_components` plus a slash — the middleware matches `#!python ^{path_prefix}(?P<dotted_path>[a-zA-Z0-9_.]+)/$`. Under `#!python ReactPy` there is one root and `#!python componentPath` must be **omitted**: the client builds the URL as `#!js pathPrefix + componentPath` (`static/index.js`) and `ReactPy.match_dispatch_path` compares the result against `#!python dispatcher_path` exactly, so a stray `#!js "/"` produces `#!python /reactpy//`, matches nothing, and is rejected with `#!python NotImplementedError: ReactPy app received unsupported request of type 'websocket'`. See [The executors route differently](../reference/client-api.md#the-executors-route-differently).
+The component itself lives in a Python module the backend can import. Under `#!python ReactPyMiddleware`, `#!python componentPath` is the dotted path you listed in `#!python root_components` plus a slash — the middleware matches `#!python ^{path_prefix}(?P<dotted_path>[a-zA-Z0-9_.]+)/$`. Under `#!python ReactPy` there is one root and `#!python componentPath` must be **omitted**: the client builds the URL as `#!js pathPrefix + componentPath` (`static/index.js`) and `ReactPy.match_dispatch_path` compares the result against `#!python dispatcher_path` exactly, so a stray `#!js "/"` produces `#!python /reactpy//`, matches nothing, and the socket dies while the server logs a `NotImplementedError` — one whose `%s` placeholders were never filled in, so the line reads `("ReactPy app received unsupported request of type '%s' at path '%s'", 'websocket', '/reactpy//')`. Grep for `unsupported request of type`, not for the literal you expect. See [The executors route differently](../reference/client-api.md#the-executors-route-differently).
 
 !!! warning "Nothing stops you from mounting twice into the same element"
 
@@ -126,7 +126,17 @@ app = ReactPy(
 
 ## Registering a JavaScript component
 
-Python describes; the browser runs. A JavaScript component is any ES module that exports the names you ask for, and the module needs one extra export — a `#!python bind` function that tells the client how to create, render, and unmount nodes in a container the client owns:
+Python describes; the browser runs. A JavaScript component is any ES module that exports the names you ask for. It *can* also export a `#!python bind` function that tells the client how to create, render, and unmount nodes in a container the client owns — and that is what you want, because the alternative is silent:
+
+```js linenums="0"
+// vdom.tsx, loadImportSource
+let { bind } = module;
+if (typeof bind !== "function") {
+    bind = await infer_bind_from_environment();
+}
+```
+
+`#!js bind` is therefore **optional**. Leave it out and the client infers one — first trying real React through the import map, then falling back to its bundled preact — and logs `#!js ReactPy will render JavaScript components using internal bindings for 'react'` at `console.debug`, with no `[ReactPy]` prefix. Your module still mounts and appears to work, so a missing or misnamed `#!js bind` is easy to miss. Ship it explicitly:
 
 === "badge.js"
 
