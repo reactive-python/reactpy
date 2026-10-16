@@ -33,8 +33,10 @@ from reactpy import use_async_effect
     | --- | --- |
     | omitted (`...`) | **Inferred** from the free variables of your closure. |
     | `#!python dependencies=[]` | Starts **once**, on mount. |
-    | `#!python dependencies=[a, b]` | Restarts when the identity of `#!python a` or `#!python b` changes. |
+    | `#!python dependencies=[a, b]` | Restarts when `#!python a` or `#!python b` changes. |
     | `#!python dependencies=None` | Restarts after **every** render. |
+
+    Comparison is `#!python strictly_equal` (`core/hooks.py`), not `#!python is` — see [Use Effect](./use-effect.md#parameters) for the rule.
 
 -   **`shield`** *(optional)*: When `#!python True`, an in-flight effect is **not** cancelled when the component unmounts or the effect is superseded. Default `#!python False`.
 
@@ -46,11 +48,11 @@ from reactpy import use_async_effect
 
 -   **The effect must take zero arguments.** ReactPy calls `#!python asyncio.create_task(func())` (`core/hooks.py`). The 1.x signature `#!python async def effect(stop):` is therefore broken — and it fails *silently*. Verified: the component renders normally, the model carries no error, the browser shows nothing wrong; the only trace is `Error in effect` / `TypeError: ... missing 1 required positional argument: 'stop'` in the **server** log. If your async effect "does nothing", check the server log first.
 -   There is **no `stop` event** to wait on. Cancellation is ordinary `#!python asyncio.CancelledError`; a long-running effect should loop and break out of it.
--   Cancelling is also how clean-up happens: when dependencies change, the running task is cancelled before the new one starts.
+-   Cancelling is one of two clean-up paths: when dependencies change, the running task is cancelled before the new one starts. The other is the function your coroutine returns — see [Cleanup](#cleanup).
 -   The default dependency behaviour is inference, not "every render". See [`use_effect`](./use-effect.md) for the full table.
 -   Effects run on the **server**. `#!python document` and `#!python window` do not exist.
 -   An exception raised inside the coroutine is logged on the server only — no error reaches the model or the browser.
--   A new effect does not wait for the old one to finish unless you await cancellation, so two overlapping tasks can briefly run side by side. Use `#!python shield` deliberately, not by default.
+-   The new effect cancels and awaits the previous task before starting its own (`core/hooks.py`), but that hand-off is best-effort: the bookkeeping that locates the previous task can miss it, so two effect coroutines can be alive at once. Measured over five runs each, with three dependency changes per run: changes spaced `#!python 0.3` s apart produced zero overlaps, anything faster produced two. Do not write an effect that assumes it is the only one running; make teardown idempotent.
 
 ---
 
@@ -134,11 +136,21 @@ Verified: with `#!python shield=True` a sleeping effect reached its completion l
 
 ### Cleanup
 
-Async effects do not return a clean-up function; cancellation *is* the clean-up. Put teardown in the `#!python except asyncio.CancelledError` branch, and re-raise so asyncio can finish cancelling:
+Async effects have **two** clean-up paths, and which one applies depends on whether your coroutine finishes.
+
+A coroutine that *completes* may **return a clean-up function**. ReactPy stores the coroutine's result (`core/hooks.py`, `cleanup_func.current = task.result()`) and runs it when the effect is next stopped — before a replacement effect starts, and again on unmount. Verified across three dependency changes and an unmount: every `#!python (start, n)` was followed by its own `#!python (cleanup, n)`.
 
 ```python linenums="0"
 async def effect():
-    handle = open_connection()
+    handle = await open_connection()
+    return handle.close  # runs at the next dependency change, and on unmount
+```
+
+A coroutine that *never* completes — the `#!python while True:` loop — never returns, so its return value cannot be the clean-up. Cancellation is:
+
+```python linenums="0"
+async def effect():
+    handle = await open_connection()
     try:
         while True:
             await handle.poll()

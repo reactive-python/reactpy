@@ -117,7 +117,7 @@ Two catches. Inference only sees *closure* variables, so a module-level name, or
 
 `#!python dependencies=None` opts out of caching entirely: the function runs on every render. That is what you want when the calculation reads something no dependency list can express, such as a module-level mutable.
 
-The label below reads `#!python config`, which lives at module scope. Inferred dependencies would be empty, so the label would be computed once and never notice a changed `#!python config`. With `#!python dependencies=None`, `#!python label()` runs each render.
+The label below reads `#!python config`, which lives at module scope. Inference only sees *closure* variables, so it would pick up `#!python count` and `#!python suffix` and miss `#!python config` entirely — the label would keep a stale prefix whenever `#!python config` changed. `#!python dependencies=None` sidesteps the question: `#!python label()` runs each render.
 
 === "app.py"
 

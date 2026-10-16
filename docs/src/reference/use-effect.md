@@ -29,14 +29,16 @@ from reactpy import use_effect
 
     The effect must be [pure](../learn/keeping-components-pure.md), and it must **not** be declared `#!python async def` — ReactPy raises for that; use [`use_async_effect`](./use-async-effect.md) instead.
 
--   **`dependencies`** *(optional)*: Controls when the effect re-runs. Unlike React, this argument has **three** distinct settings, and the default is not React's:
+-   **`dependencies`** *(optional)*: Controls when the effect re-runs. Unlike React, this argument has **four** distinct settings, and the default is not React's:
 
     | Value | Behaviour (verified) |
     | --- | --- |
-    | omitted (`...`) | **Inferred.** ReactPy reads the free variables of your closure (`core/hooks.py`, `_try_to_infer_closure_values`) and re-runs when any of them changes identity. A closure that reads nothing runs once. |
+    | omitted (`...`) | **Inferred.** ReactPy reads the free variables of your closure (`core/hooks.py`, `_try_to_infer_closure_values`) and re-runs when any of them changes. A closure that reads nothing runs once. |
     | `#!python dependencies=[]` | Runs **once**, after mount. |
-    | `#!python dependencies=[a, b]` | Runs when the identity of `#!python a` or `#!python b` changes. |
+    | `#!python dependencies=[a, b]` | Runs when `#!python a` or `#!python b` changes. |
     | `#!python dependencies=None` | Runs after **every** render. |
+
+    "Changes" means `#!python strictly_equal` (`core/hooks.py`), not `#!python is`: the two values must share a *type*, two locally-defined functions or lambdas are compared by bytecode, and everything else falls through to `#!python ==` with `#!python is` as the last resort. A rebuilt list or dict with equal contents does **not** re-run the effect. [Use Memo](./use-memo.md#caveats) documents the same function in full.
 
 #### Returns
 
@@ -45,7 +47,7 @@ from reactpy import use_effect
 #### Caveats
 
 -   **The default is inference, not "every render".** In React, omitting the dependency array means the effect runs after every render. In ReactPy it means "re-run when the variables my closure reads change". Code ported from React will therefore behave differently — pass `#!python dependencies=None` if you really want every-render behaviour, though usually you want to be explicit instead.
--   **Inference compares by `id`, and it is structural, not declared.** A closure that happens to read an extra local variable gains an extra dependency. If the effect runs more or less often than you expect, look at which names it actually reads.
+-   **Inference is structural, not declared, and it does not compare by `id`.** A closure that happens to read an extra local variable gains an extra dependency, and the comparison is `strictly_equal` — type, then bytecode for local functions, then `==` — so a rebuilt-but-equal container counts as unchanged. If the effect runs more or less often than you expect, look at which names it actually reads, and then at how those values compare.
 -   Effects run on the **server**, after rendering, not in the browser. There is no DOM to touch: `#!python document` and `#!python window` do not exist here. There is no `#!python document` or `#!python window` to reach for, and no ReactPy equivalent of attaching a listener to a node — see [Responding to Events](../learn/responding-to-events.md) for the supported way to react to the browser.
 -   **Children's effects run before their parent's, and siblings run in reverse order.** Verified output: `['child effect b', 'child effect a', 'parent effect']`. Two effects in one component run in declaration order. Do not rely on React's parent-first or source-order guarantees.
 -   Passing `#!python async def` to `use_effect` fails loudly: `TypeError: use_effect does not support async functions. Use use_async_effect instead.` The error lands in the model's `error` field and the component stops rendering.
@@ -73,6 +75,12 @@ Pass the setup function directly:
     {% include "../../examples/reference_use_effect/minimal/app.py" start="# start" %}
     ```
 
+=== "data.py"
+
+    ```python
+    {% include "../../examples/reference_use_effect/minimal/data.py" %}
+    ```
+
 === ":material-play: Run"
 
     ```python
@@ -95,6 +103,12 @@ Pass a dependency list to re-run only when something relevant changes:
 
     ```python
     {% include "../../examples/reference_use_effect/dependencies/app.py" start="# start" %}
+    ```
+
+=== "data.py"
+
+    ```python
+    {% include "../../examples/reference_use_effect/dependencies/data.py" %}
     ```
 
 === ":material-play: Run"
@@ -177,6 +191,6 @@ An effect runs in the connection's own task, after the render that scheduled it.
 An effect closes over the render that created it. If it then runs for a long time — an interval callback, a subscription handler — it can act on values that are no longer current. Two ways to handle it:
 
 -   Put the value in the dependency list, so a change tears the effect down and starts a new one with fresh values.
--   Keep the value in a [`use_ref`](./use-ref.md) box and read `#!python ref.current` when you need it, assigning `#!python ref.current` during render. The box persists across renders, so readers see the newest assignment.
+-   Keep the value in a [`use_ref`](./use-ref.md) box and read `#!python ref.current` when you need it. The box persists across renders, so readers see the newest value — as long as the write happens somewhere legal. Do **not** assign `#!python ref.current` from the component body: a render-phase write is exactly the impurity [Use Ref](./use-ref.md#caveats) warns about, and ReactPy has no Strict Mode to catch it. Assign it where the value is already produced — the event handler that changed it — or in its own effect, which runs after the render.
 
 If an effect reads state it does not declare, that is usually a sign the effect should be re-created when that state changes — reach for the dependency list first.

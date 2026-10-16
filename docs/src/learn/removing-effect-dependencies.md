@@ -62,9 +62,9 @@ This is where React's advice and ReactPy's behaviour part ways, and it decides w
 
 Dependencies go through `core/hooks.py`, `#!python strictly_equal`:
 
-1.  **Type gate first.** If `#!python type(x) is not type(y)`, it is a change.
-2.  **Local functions compare code.** For callables whose `#!python __qualname__` contains `#!python <locals>` or `#!python <lambda>`, the `#!python co_*` attributes of the bytecode are compared — same code means unchanged.
-3.  **Otherwise `#!python ==`**, falling back to `#!python is` if `#!python ==` raises.
+1.  **Type gate first.** If `#!python type(x) is not type(y)`, it is a change — `#!python 1` and `#!python 1.0` never compare equal here.
+2.  **Local functions compare code.** If *both* values have a `#!python __qualname__` containing `#!python <locals>` or `#!python <lambda>` *and* both expose `#!python __code__`, their `#!python co_*` bytecode attributes are compared — same code, and the same `#!python __qualname__`, means unchanged. One side qualifying is not enough: a locally-defined function compared against an import is not code-compared.
+3.  **Otherwise `#!python ==`**, but only if the value has an `#!python __eq__` at all (`hasattr(x, "__eq__")`), and falling back to `#!python is` if `#!python ==` raises.
 
 Note step 3. The `#!python strictly_equal` docstring claims only `#!python int`, `#!python float`, `#!python str`, `#!python bytes` and friends are compared by equality, but the implementation reaches `#!python x == y` for anything with an `#!python __eq__` — which is everything. Measured over 5 renders each (mount plus four unrelated state changes), counting how many times the Effect ran:
 

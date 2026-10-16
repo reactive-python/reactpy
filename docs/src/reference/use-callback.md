@@ -134,7 +134,7 @@ You cached it with an empty or incomplete dependency list. The function is the s
 
 ### My handler never fires
 
-Check the attribute name. `#!python {"on_click": handler}` and `#!python {"onClick": handler}` both render without complaint and are never called — the key must be the event name ReactPy expects (`#!python "onClick"`), and the value must be your function, not a call to it.
+Check the attribute name. `#!python {"on_click": handler}` renders without complaint, lands in `#!python eventHandlers`, and is never called — the client registers a DOM listener for the key with `#!python on` stripped, so the underscore spelling subscribes to an event named `#!python _click` that no browser ever fires. The key must be the DOM event name in camelCase (`#!python "onClick"`), and the value must be your function, not a call to it. A wrong name is invisible: the only difference is that nothing happens.
 
 ### I still get a new function every render
 
