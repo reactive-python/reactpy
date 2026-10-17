@@ -314,7 +314,9 @@
 <span class=normal>48</span>
 <span class=normal>49</span>
 <span class=normal>50</span>
-<span class=normal>51</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>51</span>
+<span class=normal>52</span>
+<span class=normal>53</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>form</span><span class=p>():</span>
     <span class=n>answer</span><span class=p>,</span> <span class=n>set_answer</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
     <span class=n>error</span><span class=p>,</span> <span class=n>set_error</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
@@ -324,9 +326,11 @@
         <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=s2>"That's right!"</span><span class=p>)</span>
 
     <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_submit</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
-        <span class=c1># Awaiting inside the handler is fine: ReactPy still submits the form's</span>
-        <span class=c1># defaults because it detects preventDefault() from the handler's code,</span>
-        <span class=c1># not from when it runs.</span>
+        <span class=c1># Awaiting inside the handler is fine: ReactPy still suppresses the</span>
+        <span class=c1># form's default navigation, because it detects the preventDefault()</span>
+        <span class=c1># call by reading this function's bytecode -- whether or not the handler</span>
+        <span class=c1># ever finishes does not matter. The call must appear in this function</span>
+        <span class=c1># itself, though: hiding it in a helper defeats the inspection.</span>
         <span class=n>event</span><span class=o>.</span><span class=n>preventDefault</span><span class=p>()</span>
         <span class=n>set_status</span><span class=p>(</span><span class=s2>"submitting"</span><span class=p>)</span>
         <span class=k>try</span><span class=p>:</span>
