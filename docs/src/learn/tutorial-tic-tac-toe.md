@@ -134,7 +134,7 @@ Now copy-paste your way to nine squares and... they come out in a single line, n
 === "app.py"
 
     ```python
-    {% include "../../examples/tutorial_tic_tac_toe/board/app.py" start="# start" %}
+    {% include "../../examples/tutorial_tic_tac_toe/nine_squares/app.py" start="# start" %}
     ```
 
 === "styles.css"
