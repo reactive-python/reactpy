@@ -22,9 +22,11 @@ def form():
         return html.h1("That's right!")
 
     async def handle_submit(event):
-        # Awaiting inside the handler is fine: ReactPy still submits the form's
-        # defaults because it detects preventDefault() from the handler's code,
-        # not from when it runs.
+        # Awaiting inside the handler is fine: ReactPy still suppresses the
+        # form's default navigation, because it detects the preventDefault()
+        # call by reading this function's bytecode -- whether or not the handler
+        # ever finishes does not matter. The call must appear in this function
+        # itself, though: hiding it in a helper defeats the inspection.
         event.preventDefault()
         set_status("submitting")
         try:

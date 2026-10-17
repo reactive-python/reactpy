@@ -9,7 +9,7 @@ There are two test suites in this project, and they live in different places. Th
 !!! summary "You will learn"
 
     -   How to run the Python test suite, and why it needs a browser installed
-    -   How to run the documentation build checks that gate every docs pull request
+    -   How to run the documentation build checks yourself, since no CI runs them for you
     -   Which command failures are yours and which are environmental
 
 !!! abstract "Note"
