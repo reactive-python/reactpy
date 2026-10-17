@@ -86,7 +86,7 @@ hatch test -k the_test_you_touched
 
 CI retries flaky tests, which is a mercy and a trap: a genuinely racy test can go green on the third attempt and stay in the tree. If a test fails once and passes on retry, that is a bug in the test — usually a bare `asyncio.sleep` where `poll(...)` belongs.
 
-Documentation pull requests get no CI at all. The workflow set on `main` runs against `main`, and the only workflow on `new-docs` deploys on push without `--strict`. So a docs change is verified by you or by nobody — run the `mkdocs build --strict` set from [Running Tests](./running-tests.md) and read its exit code, then expect the change to be live the moment it merges.
+A pull request into `new-docs` gets no CI at all, for two independent reasons. GitHub runs `pull_request` workflows from the **base** branch, and the only workflow that exists on `new-docs` is the docs deploy, which triggers on `push` — so nothing matches a PR. And the `test-documentation` job in `check.yml` on `main` is disabled outright with `if: 0` (temporarily, while the Sphinx-to-MkDocs transition finishes), so even a PR targeting `main` runs lint and Python tests but never builds the docs. A docs change is verified by you or by nobody — run the `mkdocs build --strict` set from [Running Tests](./running-tests.md) and read its exit code. The one thing that does run: pushing to `new-docs` deploys with `mkdocs gh-deploy --force`, no `--strict` — expect a change to be live the moment it merges, whether or not it builds cleanly.
 
 ## Working with reviewers
 

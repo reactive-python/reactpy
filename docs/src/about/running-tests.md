@@ -139,7 +139,7 @@ cd docs && mkdocs serve
 
 Then follow the printed URL. Editing any file under `docs/src/` or `docs/examples/` reloads the page.
 
-The requirements file pins `mkdocs-material==9.4.0`, which transitively pins `regex==2022.10.31`. That release ships wheels only through CPython 3.11, so on 3.12 and newer the install falls back to a source build and fails without a C compiler. If the docs install dies inside `regex`, use Python 3.11 or install a newer `mkdocs-material` — nothing in these pages depends on the pin.
+The requirements file pins `mkdocs-material==9.7.7`. Earlier revisions pinned `9.4.0`, which pulled in `regex~=2022.4` and resolved to a release shipping wheels only through CPython 3.11 — on newer Pythons that meant a source build and a hard failure without a C compiler. The current pin dropped the `regex` dependency altogether, so the install works on 3.12 and up. If you are on an older branch and the docs install dies inside `regex`, that is the reason: use Python 3.11 or raise the pin.
 
 ## Checking your work
 

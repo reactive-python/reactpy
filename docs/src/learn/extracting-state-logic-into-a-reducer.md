@@ -130,7 +130,7 @@ Verified trace of one click. `#!python dispatch` calls your reducer *immediately
 
 Three consequences:
 
--   **A reducer that raises is swallowed.** Verified: dispatching an action whose branch raises `#!python ValueError` leaves the state untouched, produces zero renders, and logs nothing under the `#!python reactpy` logger — only a root-logger `#!python ERROR: Failed to execute event handler` line. The component stays mounted and keeps working for later actions. This is the loudest failure the pattern has, and it is still quiet.
+-   **A reducer that raises surfaces as a failed event handler, not a reducer error.** Verified: dispatching an action whose branch raises `#!python ValueError` leaves the state untouched and produces zero renders. `#!python dispatch` ran the reducer inside the handler, so the exception propagates to `core/layout.py`, `Layout._process_event_queue`, which catches it and calls `#!python logger.exception` — one `#!python ERROR: Failed to execute event handler` record on the `#!python reactpy.core.layout` logger, with the reducer's traceback attached. ReactPy itself never reports "a reducer raised". The component stays mounted and keeps working for later actions.
 -   **Multiple dispatches in one handler batch into one render.** Verified: three `#!python dispatch` calls in a single handler produce three reducer calls, applied in order, and **one** render.
 -   **Purity is not optional, but for a different reason than in React.** Since the result is compared with `==`, mutating and returning the same object compares equal and schedules nothing.
 
@@ -183,7 +183,7 @@ Use a reducer when a component has produced real bugs from the wrong update path
 -   Therefore define reducers at **module level**, reading nothing but `#!python state` and `#!python action`. A reducer defined in the component body freezes its closure — verified charging `#!python total=20` at a displayed `#!python price=50`.
 -   `#!python dispatch` runs the reducer **immediately**, inside the handler, not at the next render. Verified by trace.
 -   Mutating the state and returning it compares equal, so nothing renders — verified: three presses, zero renders, no log line. Return new objects.
--   A raising reducer is swallowed with no `#!python reactpy` log entry; end the reducer with `#!python raise ValueError` so unknown actions surface.
+-   A raising reducer surfaces as `#!python ERROR: Failed to execute event handler` from `#!python reactpy.core.layout`, not as a reducer error; end the reducer with `#!python raise ValueError` so unknown actions surface.
 -   Several dispatches in one handler apply in order and cost one render (verified).
 -   `use_reducer` takes two arguments; pass a callable as `#!python initial_value` to build it lazily, once.
 

@@ -70,7 +70,7 @@ state, dispatch = use_reducer(tasks_reducer, INITIAL_STATE)
 TaskContext(task_list(), value=(state, dispatch))
 ```
 
-A tuple is the simplest value that carries both. If you prefer a dict or a dataclass, the same rules apply — but keep it a fresh object each render, since ReactPy compares the provided value with `==`, and an action that changes nothing should not re-render anything.
+A tuple is the simplest value that carries both. If you prefer a dict or a dataclass, the same rules apply — but do not expect the value to control how often consumers render. ReactPy compares nothing here: `use_context` hands back whatever the provider is currently holding, and a provider that re-renders re-renders its children whether the value is new, equal, or literally the same object. Re-render cost is governed by where you place the provider, not by how you build the value.
 
 ### Step 3: Use context anywhere in the tree
 

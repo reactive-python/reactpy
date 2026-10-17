@@ -22,7 +22,6 @@ def board():
 
         return inner
 
-    # start
     return html.fragment(
         html.div(
             {"className": "board-row"},
