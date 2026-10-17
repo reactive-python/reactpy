@@ -108,7 +108,7 @@ Emits a `#!html <div>` plus a `#!html <script type='py'>` that runs the named fi
 Because the files are read and inlined, the browser never fetches them and your app serves no route for them.
 
 !!! danger "The file's source ships to the client"
-    The whole file — code, comments, docstrings, every string literal — is embedded in the HTML. Never read a secret into one of these files at render time, and do not use this tag for code you would not publish. This is unrelated to debug mode: turning `#!python reactpy.config.REACTPY_DEBUG` off hides nothing here.
+    Nearly the whole file is embedded in the HTML: `executors/pyscript/utils.py`, `minify_python` deletes `#!python #` comments and inner docstrings before inlining, but the code and every string literal survive. One docstring does escape the filter — the **module** docstring, because the regex that removes docstrings needs a newline before the opening quotes and that docstring sits at the very start of the file (measured: a module docstring reached the page, a function docstring and both comment styles did not). Treat all of it as published, including any secret read into a string at render time. This is unrelated to debug mode: turning `#!python reactpy.config.REACTPY_DEBUG` off hides nothing here.
 
 | Mistake | Error |
 | --- | --- |

@@ -26,7 +26,7 @@ from reactpy.executors.asgi import ReactPyCsr
 
 -   **`*file_paths`**: One or more paths to Python files containing components. Their **source is inlined into the served HTML**. Accepts `#!python str` or `#!python pathlib.Path`.
 
-    Read once, then cached for the life of the process: `executors/pyscript/utils.py`, `fetch_cached_python_file` is decorated with `#!python functools.cache`, keyed on the path. Editing the file does not change the page on reload — restart the server. The same cache strips comments and docstrings before inlining (see [Jinja](./jinja.md#pyscript-component-tag)), so what reaches the browser is not quite what you wrote.
+    Read once, then cached for the life of the process: `executors/pyscript/utils.py`, `fetch_cached_python_file` is decorated with `#!python functools.cache`, keyed on the path. Editing the file does not change the page on reload — restart the server. The same call minifies the source before inlining — `#!python #` comments and inner docstrings are stripped, the module docstring is not — so what reaches the browser is not quite what you wrote (see [Jinja](./jinja.md#pyscript-component-tag)).
 
 -   **`root_name`** *(optional)*: The name of the root component inside your Python file. Defaults to `#!python "root"`. The file may define any number of components; this one is mounted.
 
