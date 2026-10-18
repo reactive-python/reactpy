@@ -1,0 +1,59 @@
+name: hatch-run
+
+on:
+    workflow_call:
+        inputs:
+            job-name:
+                required: true
+                type: string
+            run-cmd:
+                required: true
+                type: string
+            runs-on:
+                required: false
+                type: string
+                default: '["ubuntu-latest"]'
+            python-version:
+                required: false
+                type: string
+                default: '["3.x"]'
+        secrets:
+            node-auth-token:
+                required: false
+
+jobs:
+    hatch:
+        name: ${{ format(inputs.job-name, matrix.python-version, matrix.runs-on) }}
+        strategy:
+            matrix:
+                python-version: ${{ fromJson(inputs.python-version) }}
+                runs-on: ${{ fromJson(inputs.runs-on) }}
+        runs-on: ${{ matrix.runs-on }}
+        steps:
+            - uses: actions/checkout@v4
+            - if: runner.os == 'Windows'
+              name: Cache Playwright Install
+              uses: actions/cache@v5
+              with:
+                  path: C:\Users\runneradmin\AppData\Local\ms-playwright\
+                  key: ${{ runner.os }}-playwright
+            # FIXME: Temporarily added setup-node to fix lack of "Trusted Publishing" in Bun
+            # Ref: https://github.com/oven-sh/bun/issues/15601
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org/
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+            - name: Use Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v5
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  cache: "pip"
+            - name: Install Python Dependencies
+              run: pip install hatch
+            - name: Run Scripts
+              env:
+                  NPM_CONFIG_TOKEN: ${{ secrets.node-auth-token }}
+              run: ${{ inputs.run-cmd }}

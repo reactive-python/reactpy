@@ -1,21 +1,71 @@
-Temporary branch being used to rewrite ReactPy's documentation.
+# <img src="https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg" align="left" height="45"/> ReactPy
 
-Many of these pages are in progress, and are using the [original ReactJS docs](https://react.dev/learn) as placeholders.
+<p>
+    <a href="https://github.com/reactive-python/reactpy/actions/workflows/check.yml">
+        <img src="https://github.com/reactive-python/reactpy/actions/workflows/check.yml/badge.svg">
+    </a>
+    <a href="https://pypi.org/project/reactpy/">
+        <img src="https://img.shields.io/pypi/v/reactpy.svg?label=PyPI">
+    </a>
+    <a href="https://github.com/reactive-python/reactpy/blob/main/LICENSE">
+        <img src="https://img.shields.io/badge/License-MIT-purple.svg">
+    </a>
+    <a href="https://reactpy.dev/">
+        <img src="https://img.shields.io/website?down_message=offline&label=Docs&logo=read-the-docs&logoColor=white&up_message=online&url=https%3A%2F%2Freactpy.dev%2Fdocs%2Findex.html">
+    </a>
+    <a href="https://discord.gg/uNb5P4hA9X">
+        <img src="https://img.shields.io/discord/1111078259854168116?label=Discord&logo=discord">
+    </a>
+</p>
 
-See live preview here: https://reactive-python.github.io/reactpy
+[ReactPy](https://reactpy.dev/) is a library for building user interfaces in Python without Javascript. ReactPy interfaces are made from components that look and behave similar to those found in [ReactJS](https://reactjs.org/). Designed with simplicity in mind, ReactPy can be used by those without web development experience while also being powerful enough to grow with your ambitions.
 
-In order to set up an environment to develop these docs...
+<table align="center">
+    <thead>
+        <tr>
+            <th colspan="2" style="text-align: center">Supported Backends</th>
+        <tr>
+            <th style="text-align: center">Built-in</th>
+            <th style="text-align: center">External</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+        <td>
+            <a href="https://reactpy.dev/docs/guides/getting-started/installing-reactpy.html#officially-supported-servers">
+                Flask, FastAPI, Sanic, Tornado
+            </a>
+        </td>
+        <td>
+            <a href="https://github.com/reactive-python/reactpy-django">Django</a>,
+            <a href="https://github.com/reactive-python/reactpy-jupyter">Jupyter</a>,
+            <a href="https://github.com/idom-team/idom-dash">Plotly-Dash</a>
+        </td>
+        </tr>
+    </tbody>
+</table>
 
-1. Install [Python](https://www.python.org/downloads/) 3.9 or higher
-2. Fork and clone this repository
-3. _Optional_: Create a Python virtual environment with the following command: `python3 -m venv venv`
-4. _Optional_: Activate the virtual environment (this method will vary based on operating system)
-5. Install the dependencies with the following command: `pip install -r docs/requirements.txt`
-6. Run the following command: `mkdocs serve`
-7. Follow the on-screen prompts to view the documentation in your browser
-8. You can now edit the markdown files located within `docs/src/` and see the changes in real time
+# At a Glance
 
-🚧 : Unfinished tab
-🚫 : Tab is blocked from being started due to external factors 
+To get a rough idea of how to write apps in ReactPy, take a look at this tiny _Hello World_ application.
 
-Feel free to PR this branch with any changes you make to the documentation. If you have any questions, feel free to ask in the [Discord server](https://discord.gg/uNb5P4hA9X).
+```python
+from reactpy import component, html, run
+
+@component
+def hello_world():
+    return html.h1("Hello, World!")
+
+run(hello_world)
+```
+
+# Resources
+
+Follow the links below to find out more about this project.
+
+-   [Try ReactPy (Jupyter Notebook)](https://mybinder.org/v2/gh/reactive-python/reactpy-jupyter/main?urlpath=lab/tree/notebooks/introduction.ipynb)
+-   [Documentation](https://reactpy.dev/)
+-   [GitHub Discussions](https://github.com/reactive-python/reactpy/discussions)
+-   [Discord](https://discord.gg/uNb5P4hA9X)
+-   [Contributor Guide](https://reactpy.dev/docs/about/contributor-guide.html)
+-   [Code of Conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md)

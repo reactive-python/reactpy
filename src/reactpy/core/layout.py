@@ -1,0 +1,1119 @@
+from __future__ import annotations
+
+from asyncio import (
+    FIRST_COMPLETED,
+    CancelledError,
+    Queue,
+    Task,
+    create_task,
+    current_task,
+    get_running_loop,
+    sleep,
+    wait,
+)
+from collections import Counter
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from contextlib import AsyncExitStack, suppress
+from logging import getLogger
+from types import TracebackType
+from typing import (
+    Any,
+    Generic,
+    NamedTuple,
+    NewType,
+    TypeAlias,
+    TypeVar,
+    cast,
+)
+from uuid import uuid4
+from weakref import ref as weakref
+
+from anyio import Semaphore
+
+from reactpy._event_proxy import (
+    EVENT_PROXY_RESPONSE_TYPE,
+    EventArguments,
+    EventProxyBackend,
+)
+from reactpy.config import (
+    REACTPY_ASYNC_RENDERING,
+    REACTPY_CHECK_VDOM_SPEC,
+    REACTPY_DEBUG,
+    REACTPY_MAX_QUEUE_SIZE,
+)
+from reactpy.core._life_cycle_hook import HOOK_STACK, LifeCycleHook
+from reactpy.core.vdom import validate_vdom_json
+from reactpy.types import (
+    BaseLayout,
+    Component,
+    Context,
+    ContextProvider,
+    EventHandlerDict,
+    Key,
+    LayoutEventMessage,
+    LayoutUpdateMessage,
+    VdomChild,
+    VdomJson,
+)
+from reactpy.utils import Ref
+
+logger = getLogger(__name__)
+
+
+class Layout(BaseLayout):
+    def __init__(self, root: Component | Context[Any] | ContextProvider[Any]) -> None:
+        super().__init__()
+        if not isinstance(root, Component):
+            msg = f"Expected a ReactPy component, not {type(root)!r}."
+            raise TypeError(msg)
+        self.root = root
+        # Bound by reactpy.core.serve.serve_layout, possibly before we are entered.
+        self._event_proxy_sender: Callable[[dict[str, Any]], Awaitable[None]] | None = (
+            None
+        )
+
+    async def __aenter__(self) -> Layout:
+        # create attributes here to avoid access before entering context manager
+        self._event_handlers: EventHandlerDict = {}
+        self._event_queues: dict[str, Queue[LayoutEventMessage | dict[str, Any]]] = {}
+        self._event_processing_tasks: dict[str, Task[None]] = {}
+        self._render_tasks: set[Task[LayoutUpdateMessage]] = set()
+        self._render_tasks_by_id: dict[
+            _LifeCycleStateId, Task[LayoutUpdateMessage]
+        ] = {}
+        self._render_tasks_ready: Semaphore = Semaphore(0)
+        # Maps a running render task back to the component it belongs to.
+        # Used by the stale-render detection in `_parallel_render` to drop
+        # out-of-order completions when async rendering is enabled and a
+        # newer render for the same component has already been scheduled.
+        self._render_task_to_lcs_id: dict[
+            Task[LayoutUpdateMessage], _LifeCycleStateId
+        ] = {}
+        self._rendering_queue: _ThreadSafeQueue[_LifeCycleStateId] = _ThreadSafeQueue()
+        # Flipped as teardown begins. A render asked for after that point has nowhere
+        # to go: everything it would render with is on its way out, and a task created
+        # in the meantime would outlive the layout which made it and reach for state
+        # which teardown has already let go of. Unlike the rest it is left in place on
+        # the way out, since asking for a render is legitimate at any time.
+        self._has_closed = False
+        # Per-target event sequence tracking. Each incoming layout-event
+        # may carry an optional ``seq`` field (assigned by the client)
+        # which the server records here so it can be echoed back to the
+        # client as ``ackSeq`` on the originating element. This lets the
+        # client determine deterministically whether the server has
+        # processed all keystrokes without relying on a time-based
+        # debounce window.
+        self._last_event_seq_by_target: dict[str, int] = {}
+        # An acknowledgement only reaches the client inside the model of the
+        # element it describes, which means it travels with a render - and an
+        # event whose handler changes no state schedules no render of its own.
+        # These track, per handler target, the acknowledgement a render has
+        # already carried and the one a render has yet to carry, so that a
+        # newly handled event can prompt a render while a redundant request -
+        # one the client already holds, or which a render already queued will
+        # deliver - is dropped rather than spending another render on it.
+        self._pending_ack_by_target: dict[str, int] = {}
+        self._delivered_ack_by_target: dict[str, int] = {}
+        # The component to re-render in order to carry a given target's
+        # acknowledgement, recorded as that target's handler is rendered.
+        self._ack_owner_id_by_target: dict[str, _LifeCycleStateId] = {}
+        # Routes live ("event proxy") property reads and method calls made by event
+        # handlers back to the client which dispatched them.
+        self._event_proxy_backend = EventProxyBackend()
+        if self._event_proxy_sender is not None:
+            self._event_proxy_backend.set_sender(self._event_proxy_sender)
+        root_model_state = _new_root_model_state(self.root, self._schedule_render_task)
+        self._root_life_cycle_state_id = root_id = root_model_state.life_cycle_state.id
+        self._model_states_by_life_cycle_state_id = {root_id: root_model_state}
+        self._schedule_render_task(root_id)
+
+        return self
+
+    async def __aexit__(
+        self, exc_type: type[Exception], exc_value: Exception, traceback: TracebackType
+    ) -> None:
+        # Anything asked to render from here on is told there is nothing left to
+        # render. Cancelling the tasks below hands control back to the event loop, and
+        # a handler finishing its business during that window would otherwise create a
+        # render task which survives the loop over the tasks it knows about, only to
+        # reach, once teardown is over, for state which is no longer there.
+        self._has_closed = True
+
+        root_csid = self._root_life_cycle_state_id
+        root_model_state = self._model_states_by_life_cycle_state_id[root_csid]
+
+        for t in self._render_tasks:
+            t.cancel()
+            with suppress(CancelledError):
+                await t
+
+        for t in self._event_processing_tasks.values():
+            t.cancel()
+            with suppress(CancelledError):
+                await t
+
+        await self._unmount_model_states([root_model_state])
+        await self._rendering_queue.close()
+        self._event_proxy_backend.close()
+
+        # delete attributes here to avoid access after exiting context manager
+        del self._event_handlers
+        del self._event_proxy_backend
+        del self._event_queues
+        del self._event_processing_tasks
+        del self._rendering_queue
+        del self._render_tasks_by_id
+        del self._render_task_to_lcs_id
+        del self._root_life_cycle_state_id
+        del self._model_states_by_life_cycle_state_id
+        del self._last_event_seq_by_target
+        del self._pending_ack_by_target
+        del self._delivered_ack_by_target
+        del self._ack_owner_id_by_target
+
+    async def deliver(self, event: LayoutEventMessage | dict[str, Any]) -> None:
+        """Dispatch an event to the targeted handler"""
+        if event.get("type") == EVENT_PROXY_RESPONSE_TYPE:
+            # Not an event at all, but the answer to a live property read or method
+            # call made by a handler which is (or was) running.
+            self.handle_event_proxy_response(event)
+            return
+
+        # It is possible for an element in the frontend to produce an event
+        # associated with a backend model that has been deleted. We only handle
+        # events if the element and the handler exist in the backend. Otherwise
+        # we just ignore the event.
+        target = event["target"]
+        if target not in self._event_queues:
+            self._event_queues[target] = cast(
+                "Queue[LayoutEventMessage | dict[str, Any]]",
+                Queue(REACTPY_MAX_QUEUE_SIZE.current),
+            )
+            self._event_processing_tasks[target] = create_task(
+                self._process_event_queue(target, self._event_queues[target])
+            )
+
+        await self._event_queues[target].put(event)
+
+        # In test environments, we yield to the event loop to let the processing tasks run.
+        if REACTPY_DEBUG.current:
+            await sleep(0)
+
+    def set_event_proxy_sender(
+        self, send: Callable[[dict[str, Any]], Awaitable[None]]
+    ) -> EventProxyBackend | None:
+        """Tell the layout how to send live event requests to the client
+
+        Returns the :class:`~reactpy._event_proxy.EventProxyBackend` which answers the
+        reads and calls the layout's handlers make, so that callers can route replies
+        back to it. This is :data:`None` when the layout is not currently running, in
+        which case the sender is remembered and used once it starts.
+
+        This must be called from the event loop running the layout, and is what makes
+        it possible for event handlers to read properties from, and call methods on,
+        the browser objects which triggered them.
+
+        Binding a sender which is not the one already in place - which is what a
+        reconnect does - also brings live access back if an earlier client was switched
+        off for going quiet. A client which has just connected has not failed yet.
+        """
+        self._event_proxy_sender = send
+        backend = getattr(self, "_event_proxy_backend", None)
+        if backend is not None:
+            backend.set_sender(send)
+        return backend
+
+    def handle_event_proxy_response(self, message: Mapping[str, Any]) -> bool:
+        """Deliver the answer to a live event access request
+
+        Returns :data:`False` if the message was not meant for this layout, which
+        includes the case where the layout is not running and so has no backend to
+        hand the answer to.
+        """
+        backend = getattr(self, "_event_proxy_backend", None)
+        if backend is None:
+            return False
+        return backend.handle_response(message)
+
+    def _make_event_arguments(self, data: Sequence[Any]) -> EventArguments:
+        """Wrap raw event data for a handler
+
+        Every handler is handed the same thing. Whatever the client marked as an object
+        it is still holding becomes a live proxy which reads from and calls into the
+        browser; everything else arrives exactly as it did. A client which has gone away
+        cannot answer for that mark either way, because a backend without a sender
+        reports itself unavailable and awaiting anything through it raises
+        :class:`~reactpy._event_proxy.EventProxyUnavailable`.
+        """
+        return EventArguments(data, self._event_proxy_backend)
+
+    async def _process_event_queue(
+        self, target: str, queue: Queue[LayoutEventMessage | dict[str, Any]]
+    ) -> None:
+        while True:
+            event = await queue.get()
+
+            # Retry a few times to handle potential re-render race conditions where
+            # the handler is temporarily removed and then re-added.
+            handler = self._event_handlers.get(target)
+            if handler is None:
+                for _ in range(3):
+                    await sleep(0.01)
+                    handler = self._event_handlers.get(target)
+                    if handler is not None:
+                        break
+
+            try:
+                if handler is not None:
+                    try:
+                        await handler.function(
+                            self._make_event_arguments(event["data"])
+                        )
+                    except Exception:
+                        logger.exception(f"Failed to execute event handler {handler}")
+                else:
+                    logger.info(
+                        f"Ignored event - handler {event['target']!r} "
+                        "does not exist or its component unmounted"
+                    )
+            finally:
+                # The loop is on its way out once teardown has started, so there is no
+                # client left to acknowledge to and nothing left to record into.
+                if not self._has_closed:
+                    # Record the client-assigned event sequence number (if any) so it can
+                    # be echoed back on the originating element, once - and only once -
+                    # the handler which consumed the event is out of the way. Recording it
+                    # up front would let a render made while the handler is still running
+                    # claim that the event has been handled, even though the value that
+                    # render carries was read before the handler could update it. A client
+                    # which then wrote that value over what the user has typed since would
+                    # throw those keystrokes away. It is recorded even when the handler
+                    # failed or was never found, because no further state change can come
+                    # from that event and withholding the acknowledgement would leave the
+                    # client waiting for one forever.
+                    seq = event.get("seq")
+                    if isinstance(seq, int) and seq >= 0:
+                        prev = self._last_event_seq_by_target.get(target, -1)
+                        if seq > prev:
+                            self._last_event_seq_by_target[target] = seq
+                            self._schedule_ack_delivery(target, seq)
+
+    async def render(self) -> LayoutUpdateMessage:
+        if REACTPY_ASYNC_RENDERING.current:
+            return await self._parallel_render()
+        else:  # nocov
+            return await self._serial_render()
+
+    async def _serial_render(self) -> LayoutUpdateMessage:  # nocov
+        """Await the next available render. This will block until a component is updated"""
+        while True:
+            model_state_id = await self._rendering_queue.get()
+            try:
+                model_state = self._model_states_by_life_cycle_state_id[model_state_id]
+            except KeyError:
+                logger.debug(
+                    "Did not render component with model state ID "
+                    f"{model_state_id!r} - component already unmounted"
+                )
+            else:
+                return await self._create_layout_update(model_state)
+
+    async def _parallel_render(self) -> LayoutUpdateMessage:
+        """Await to fetch the first completed render within our asyncio task group."""
+        while True:
+            await self._render_tasks_ready.acquire()
+
+            if not self._render_tasks:  # nocov
+                continue
+
+            done, _ = await wait(self._render_tasks, return_when=FIRST_COMPLETED)
+            update_task: Task[LayoutUpdateMessage] = done.pop()
+            self._render_tasks.discard(update_task)
+
+            try:
+                return update_task.result()
+            except CancelledError:  # nocov
+                continue
+
+    async def _create_layout_update(
+        self, old_state: _ModelState
+    ) -> LayoutUpdateMessage:
+        token = HOOK_STACK.initialize()
+        try:
+            component = old_state.life_cycle_state.component
+            try:
+                parent: _ModelState | None = old_state.parent
+            except AttributeError:
+                parent = None
+
+            async with AsyncExitStack() as exit_stack:
+                new_state = await self._render_component(
+                    exit_stack,
+                    old_state,
+                    parent,
+                    old_state.index,
+                    old_state.key,
+                    component,
+                )
+
+            if parent is not None:
+                parent.children_by_key[new_state.key] = new_state
+                old_parent_model = parent.model.current
+                old_parent_children = old_parent_model.setdefault("children", [])
+                parent.model.current = {
+                    **old_parent_model,
+                    "children": [
+                        *old_parent_children[: new_state.index],
+                        new_state.model.current,
+                        *old_parent_children[new_state.index + 1 :],
+                    ],
+                }
+
+            if REACTPY_CHECK_VDOM_SPEC.current:
+                validate_vdom_json(new_state.model.current)
+
+            return {
+                "type": "layout-update",
+                "path": new_state.patch_path,
+                "model": new_state.model.current,
+            }
+        finally:
+            HOOK_STACK.reset(token)
+
+    async def _render_component(
+        self,
+        exit_stack: AsyncExitStack,
+        old_state: _ModelState | None,
+        parent: _ModelState | None,
+        index: int,
+        key: Any,
+        component: Component,
+    ) -> _ModelState:
+        if old_state is None:
+            new_state = _make_component_model_state(
+                parent, index, key, component, self._schedule_render_task
+            )
+        elif (
+            old_state.is_component_state
+            and old_state.life_cycle_state.component.type != component.type
+        ):
+            await self._unmount_model_states([old_state])
+            new_state = _make_component_model_state(
+                parent, index, key, component, self._schedule_render_task
+            )
+            old_state = None
+        elif not old_state.is_component_state:
+            await self._unmount_model_states([old_state])
+            new_state = _make_component_model_state(
+                parent, index, key, component, self._schedule_render_task
+            )
+            old_state = None
+        elif parent is None:
+            new_state = _copy_component_model_state(old_state)
+            new_state.life_cycle_state = _update_life_cycle_state(
+                old_state.life_cycle_state, component
+            )
+        else:
+            new_state = _update_component_model_state(
+                old_state, parent, index, component, self._schedule_render_task
+            )
+
+        life_cycle_state = new_state.life_cycle_state
+        life_cycle_hook = life_cycle_state.hook
+
+        self._model_states_by_life_cycle_state_id[life_cycle_state.id] = new_state
+
+        # If this component is scheduled to render, we can cancel that task since we
+        # are rendering it now.  We keep the cancelled task in ``_render_tasks`` so
+        # the semaphore token that ``_schedule_render_task`` released is still
+        # paired with an entry the consumer can pick up.  ``asyncio.wait`` returns
+        # cancelled tasks in the done set, and the ``CancelledError`` catch in
+        # ``_parallel_render`` drains the token naturally.
+        if life_cycle_state.id in self._render_tasks_by_id:
+            task = self._render_tasks_by_id[life_cycle_state.id]
+            if task is not current_task():
+                del self._render_tasks_by_id[life_cycle_state.id]
+                self._render_task_to_lcs_id.pop(task, None)
+                task.cancel()
+
+        await life_cycle_hook.affect_component_will_render(component)
+        exit_stack.push_async_callback(life_cycle_hook.affect_layout_did_render)
+        try:
+            raw_model = component.render()
+            # wrap the model in a fragment (i.e. tagName="") to ensure components have
+            # a separate node in the model state tree. This could be removed if this
+            # components are given a node in the tree some other way
+            new_state.model.current = {"tagName": ""}
+            await self._render_model_children(
+                exit_stack, old_state, new_state, [raw_model]
+            )
+        except Exception as error:
+            logger.exception(f"Failed to render {component}")
+            new_state.model.current = {
+                "tagName": "",
+                "error": (
+                    f"{type(error).__name__}: {error}" if REACTPY_DEBUG.current else ""
+                ),
+            }
+        finally:
+            await life_cycle_hook.affect_component_did_render()
+
+        return new_state
+
+    async def _render_model(
+        self,
+        exit_stack: AsyncExitStack,
+        old_state: _ModelState | None,
+        parent: _ModelState,
+        index: int,
+        key: Any,
+        raw_model: Any,
+    ) -> _ModelState:
+        if old_state is None:
+            new_state = _make_element_model_state(parent, index, key)
+        elif old_state.is_component_state:
+            await self._unmount_model_states([old_state])
+            new_state = _make_element_model_state(parent, index, key)
+            old_state = None
+        else:
+            new_state = _update_element_model_state(old_state, parent, index)
+
+        try:
+            new_state.model.current = {"tagName": raw_model["tagName"]}
+        except Exception as e:  # nocov
+            msg = f"Expected a VDOM element dict, not {raw_model}"
+            raise ValueError(msg) from e
+        key = raw_model.get("attributes", {}).get("key")
+        if key is not None:
+            new_state.key = key
+        if "importSource" in raw_model:
+            new_state.model.current["importSource"] = raw_model["importSource"]
+        self._render_model_attributes(old_state, new_state, raw_model)
+        await self._render_model_children(
+            exit_stack, old_state, new_state, raw_model.get("children", [])
+        )
+        return new_state
+
+    def _render_model_attributes(
+        self,
+        old_state: _ModelState | None,
+        new_state: _ModelState,
+        raw_model: dict[str, Any],
+    ) -> None:
+        # extract event handlers from 'eventHandlers' and 'attributes'
+        handlers_by_event: EventHandlerDict = raw_model.get("eventHandlers", {})
+
+        if "attributes" in raw_model:
+            attrs = raw_model["attributes"].copy()
+            new_state.model.current["attributes"] = attrs
+
+        if "inlineJavaScript" in raw_model:
+            inline_javascript = raw_model["inlineJavaScript"].copy()
+            new_state.model.current["inlineJavaScript"] = inline_javascript
+
+        if old_state is None:
+            self._render_model_event_handlers_without_old_state(
+                new_state, handlers_by_event
+            )
+            self._inject_event_ack_seq(new_state, raw_model.get("tagName"))
+            return None
+
+        for old_event in set(old_state.targets_by_event).difference(handlers_by_event):
+            old_target = old_state.targets_by_event[old_event]
+            del self._event_handlers[old_target]
+            # Nothing renders this target's acknowledgement any more, and a
+            # leftover record here would suppress the request to deliver one
+            # if the same target were to come back.
+            self._pending_ack_by_target.pop(old_target, None)
+            self._delivered_ack_by_target.pop(old_target, None)
+            self._ack_owner_id_by_target.pop(old_target, None)
+
+        if not handlers_by_event:
+            self._inject_event_ack_seq(new_state, raw_model.get("tagName"))
+            return None
+
+        model_event_handlers = new_state.model.current["eventHandlers"] = {}
+        for event, handler in handlers_by_event.items():
+            if handler.target is not None:
+                target = handler.target
+            else:
+                target = f"{new_state.key_path}:{event}"
+
+            new_state.targets_by_event[event] = target
+            self._event_handlers[target] = handler
+            model_event_handlers[event] = self._serialize_event_handler(handler, target)
+
+        self._inject_event_ack_seq(new_state, raw_model.get("tagName"))
+        return None
+
+    def _inject_event_ack_seq(
+        self, new_state: _ModelState, tag_name: str | None
+    ) -> None:
+        """Attach ``_reactpy_ack_seq`` to user-input element attributes so the
+        client can determine deterministically whether the server has processed
+        the latest keystrokes.
+
+        The value is a mapping of event name to the highest client-assigned
+        sequence number the server has finished handling for that event's
+        target. The client compares this, per event name, against the highest
+        sequence number it actually wrote to the wire for that event. A single
+        number across all events cannot do that: it lets a render which
+        predates the newest keystroke of one event look up to date because a
+        different event happened to be further along.
+        """
+        if tag_name not in {"input", "select", "textarea"}:
+            # Only these are rendered by the client's user-input element, and
+            # only that element holds anything up until an acknowledgement
+            # arrives. Prompting a render for an ordinary button or link would
+            # spend a round trip on a figure nobody is waiting for, and would
+            # break the rule that setting state to an equal value re-renders
+            # nothing at all.
+            return
+
+        # Remember which component has to be rendered for this element's
+        # acknowledgement to get out, as that is what prompting a render
+        # on an event's behalf costs.
+        owner_id = self._owner_component_id(new_state)
+        if owner_id is not None:
+            for target in new_state.targets_by_event.values():
+                self._ack_owner_id_by_target[target] = owner_id
+
+        ack_seq_by_event = {
+            event: seq
+            for event, target in new_state.targets_by_event.items()
+            if (seq := self._last_event_seq_by_target.get(target)) is not None
+        }
+        if not ack_seq_by_event:
+            return
+        attrs = new_state.model.current.get("attributes")
+        if not isinstance(attrs, dict):
+            return
+        # Never let this leak into the user's attributes (it's not a real DOM
+        # attribute). Store it in a dedicated key the client recognizes. It has
+        # to be assigned, not defaulted, because the value advances as the
+        # server catches up with the keystrokes the client has sent.
+        attrs["_reactpy_ack_seq"] = ack_seq_by_event  # type: ignore[reportGeneralTypeIssues]
+        for event, seq in ack_seq_by_event.items():
+            # This render is what carries the acknowledgement, so a later
+            # request to deliver the same one has nothing left to ask for.
+            target = new_state.targets_by_event[event]
+            self._delivered_ack_by_target[target] = seq
+            if self._pending_ack_by_target.get(target, -1) <= seq:
+                self._pending_ack_by_target.pop(target, None)
+
+    def _schedule_ack_delivery(self, target: str, seq: int) -> None:
+        """Prompt a render of the component owning ``target`` so that the
+        acknowledgement of the event it has just handled reaches the client.
+
+        An element waits on an acknowledgement before it will write the
+        server's value over what the user has typed, and that figure travels
+        inside the element's own model. A handler which changes no state
+        schedules no render of its own, so without prompting one here the newer
+        acknowledgement would never be sent and the element would wait forever.
+        A request is dropped when the client already holds that acknowledgement,
+        or when a render already queued will carry it, since a render costs a
+        round trip and the second time around buys nothing.
+        """
+        if self._has_closed:
+            # Teardown has begun: no render will carry this acknowledgement, and the
+            # bookkeeping below is about to be deleted.
+            return None
+        if self._delivered_ack_by_target.get(target, -1) >= seq:
+            return None
+        owner_id = self._ack_owner_id_by_target.get(target)
+        if owner_id is None:
+            # Either the event came from an element which does not wait on an
+            # acknowledgement, or the element is not rendered by anything right
+            # now. In both cases there is nothing to prompt: in the first no
+            # render is owed, in the second the model carries the acknowledgement
+            # the moment the element is rendered again.
+            return None
+        if self._pending_ack_by_target.get(target, -1) >= seq:
+            return None
+        self._pending_ack_by_target[target] = seq
+        self._schedule_render_task(owner_id)
+        return None
+
+    @staticmethod
+    def _owner_component_id(model_state: _ModelState) -> _LifeCycleStateId | None:
+        """The ID of the component which renders ``model_state``
+
+        Walks up from an element to the component nearest above it, since that
+        is the one whose re-render rewrites the element's model.
+        """
+        state = model_state
+        while not state.is_component_state:
+            try:
+                state = state.parent
+            except RuntimeError:
+                # Nothing above it remains mounted to render it.
+                return None
+        return state.life_cycle_state.id
+
+    def _render_model_event_handlers_without_old_state(
+        self,
+        new_state: _ModelState,
+        handlers_by_event: EventHandlerDict,
+    ) -> None:
+        if not handlers_by_event:
+            return None
+
+        model_event_handlers = new_state.model.current["eventHandlers"] = {}
+        for event, handler in handlers_by_event.items():
+            if handler.target is not None:
+                target = handler.target
+            else:
+                target = f"{new_state.key_path}:{event}"
+
+            new_state.targets_by_event[event] = target
+            self._event_handlers[target] = handler
+            model_event_handlers[event] = self._serialize_event_handler(handler, target)
+
+        return None
+
+    @staticmethod
+    def _serialize_event_handler(handler: Any, target: str) -> dict[str, Any]:
+        """Build the on-the-wire event handler entry.
+
+        ``debounce`` is forwarded unconditionally; the client applies it only
+        where it has an effect (user-input elements). ``throttle`` is
+        forwarded when set and applies to every element. Both are omitted
+        from the payload when ``None`` so the wire format stays minimal.
+
+        ``eventProxy`` is forwarded unless this handler has declined live access: an
+        absent key tells the client not to hold on to an event it knows nobody will ask
+        about, which is the whole cost of an event nobody reads past.
+        """
+        entry: dict[str, Any] = {
+            "target": target,
+            "preventDefault": handler.prevent_default,
+            "stopPropagation": handler.stop_propagation,
+        }
+        if getattr(handler, "stop_immediate_propagation", False):
+            entry["stopImmediatePropagation"] = True
+        if handler.debounce is not None:
+            entry["debounce"] = handler.debounce
+        if handler.throttle is not None:
+            entry["throttle"] = handler.throttle
+
+        return entry
+
+    async def _render_model_children(
+        self,
+        exit_stack: AsyncExitStack,
+        old_state: _ModelState | None,
+        new_state: _ModelState,
+        raw_children: Any,
+    ) -> None:
+        if not isinstance(raw_children, list):
+            if isinstance(raw_children, tuple):
+                raw_children = list(raw_children)
+            else:
+                raw_children = [raw_children]
+
+        children_info, new_keys = _get_children_info(raw_children)
+
+        if new_keys is None:
+            key_counter = Counter(item[2] for item in children_info)
+            duplicate_keys = [key for key, count in key_counter.items() if count > 1]
+            msg = f"Duplicate keys {duplicate_keys} at {new_state.patch_path or '/'!r}"
+            raise ValueError(msg)
+
+        if old_state is not None:
+            old_keys = set(old_state.children_by_key).difference(new_keys)
+            if old_keys:
+                await self._unmount_model_states(
+                    [old_state.children_by_key[key] for key in old_keys]
+                )
+
+        if raw_children:
+            new_state.model.current["children"] = []
+            for index, (child, child_type, key) in enumerate(children_info):
+                old_child_state = (
+                    old_state.children_by_key.get(key)
+                    if old_state is not None
+                    else None
+                )
+                if child_type is _DICT_TYPE:
+                    new_child_state = await self._render_model(
+                        exit_stack, old_child_state, new_state, index, key, child
+                    )
+                elif child_type is _COMPONENT_TYPE:
+                    child = cast(Component, child)
+                    new_child_state = await self._render_component(
+                        exit_stack, old_child_state, new_state, index, key, child
+                    )
+                else:
+                    if old_child_state is not None:
+                        await self._unmount_model_states([old_child_state])
+                    new_child_state = child
+
+                if isinstance(new_child_state, _ModelState):
+                    new_state.append_child(new_child_state.model.current)
+                    new_state.children_by_key[key] = new_child_state
+                else:
+                    new_state.append_child(new_child_state)
+
+    async def _unmount_model_states(self, old_states: list[_ModelState]) -> None:
+        to_unmount = old_states[::-1]  # unmount in reversed order of rendering
+        while to_unmount:
+            model_state = to_unmount.pop()
+
+            for target in model_state.targets_by_event.values():
+                del self._event_handlers[target]
+                # As above: nothing renders these acknowledgements any more and
+                # a leftover record would suppress the request to deliver one
+                # were the same target to be rendered again.
+                self._pending_ack_by_target.pop(target, None)
+                self._delivered_ack_by_target.pop(target, None)
+                self._ack_owner_id_by_target.pop(target, None)
+
+            if model_state.is_component_state:
+                life_cycle_state = model_state.life_cycle_state
+                del self._model_states_by_life_cycle_state_id[life_cycle_state.id]
+                await life_cycle_state.hook.affect_component_will_unmount()
+
+            to_unmount.extend(model_state.children_by_key.values())
+
+    def _schedule_render_task(self, lcs_id: _LifeCycleStateId) -> None:
+        if self._has_closed:
+            # Teardown has begun, so there is nothing left for this render to produce.
+            # A task made now would not run until after everything it renders with -
+            # the handlers, the model states, the queue - has been deleted.
+            return None
+        if not REACTPY_ASYNC_RENDERING.current:
+            self._rendering_queue.put(lcs_id)
+            return None
+        try:
+            model_state = self._model_states_by_life_cycle_state_id[lcs_id]
+        except KeyError:
+            logger.debug(
+                "Did not render component with model state ID "
+                f"{lcs_id!r} - component already unmounted"
+            )
+        else:
+            task = create_task(self._create_layout_update(model_state))
+            self._render_task_to_lcs_id[task] = lcs_id
+            self._render_tasks.add(task)
+            self._render_tasks_by_id[lcs_id] = task
+            self._render_tasks_ready.release()
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.root})"
+
+
+def _new_root_model_state(
+    component: Component, schedule_render: Callable[[_LifeCycleStateId], None]
+) -> _ModelState:
+    return _ModelState(
+        parent=None,
+        index=-1,
+        key=None,
+        model=Ref(),
+        patch_path="",
+        children_by_key={},
+        targets_by_event={},
+        life_cycle_state=_make_life_cycle_state(component, schedule_render),
+        key_path="",
+    )
+
+
+def _make_component_model_state(
+    parent: _ModelState | None,
+    index: int,
+    key: Any,
+    component: Component,
+    schedule_render: Callable[[_LifeCycleStateId], None],
+) -> _ModelState:
+    return _ModelState(
+        parent=parent,
+        index=index,
+        key=key,
+        model=Ref(),
+        patch_path=f"{parent.patch_path}/children/{index}" if parent else "",
+        children_by_key={},
+        targets_by_event={},
+        life_cycle_state=_make_life_cycle_state(component, schedule_render),
+        key_path=f"{parent.key_path}/{key}" if parent else "",
+    )
+
+
+def _copy_component_model_state(old_model_state: _ModelState) -> _ModelState:
+    # use try/except here because not having a parent is rare (only the root state)
+    try:
+        parent: _ModelState | None = old_model_state.parent
+    except AttributeError:
+        parent = None
+
+    return _ModelState(
+        parent=parent,
+        index=old_model_state.index,
+        key=old_model_state.key,
+        model=Ref(),  # does not copy the model
+        patch_path=old_model_state.patch_path,
+        children_by_key={},
+        targets_by_event={},
+        life_cycle_state=old_model_state.life_cycle_state,
+        key_path=old_model_state.key_path,
+    )
+
+
+def _update_component_model_state(
+    old_model_state: _ModelState,
+    new_parent: _ModelState,
+    new_index: int,
+    new_component: Component,
+    schedule_render: Callable[[_LifeCycleStateId], None],
+) -> _ModelState:
+    return _ModelState(
+        parent=new_parent,
+        index=new_index,
+        key=old_model_state.key,
+        model=Ref(),  # does not copy the model
+        patch_path=f"{new_parent.patch_path}/children/{new_index}",
+        children_by_key={},
+        targets_by_event={},
+        life_cycle_state=(
+            _update_life_cycle_state(old_model_state.life_cycle_state, new_component)
+            if old_model_state.is_component_state
+            else _make_life_cycle_state(new_component, schedule_render)
+        ),
+        key_path=f"{new_parent.key_path}/{old_model_state.key}",
+    )
+
+
+def _make_element_model_state(
+    parent: _ModelState,
+    index: int,
+    key: Any,
+) -> _ModelState:
+    return _ModelState(
+        parent=parent,
+        index=index,
+        key=key,
+        model=Ref(),
+        patch_path=f"{parent.patch_path}/children/{index}",
+        children_by_key={},
+        targets_by_event={},
+        key_path=f"{parent.key_path}/{key}",
+    )
+
+
+def _update_element_model_state(
+    old_model_state: _ModelState,
+    new_parent: _ModelState,
+    new_index: int,
+) -> _ModelState:
+    return _ModelState(
+        parent=new_parent,
+        index=new_index,
+        key=old_model_state.key,
+        model=Ref(),  # does not copy the model
+        patch_path=f"{new_parent.patch_path}/children/{new_index}",
+        children_by_key={},
+        targets_by_event={},
+        key_path=f"{new_parent.key_path}/{old_model_state.key}",
+    )
+
+
+class _ModelState:
+    """State that is bound to a particular element within the layout"""
+
+    __slots__ = (
+        "__weakref__",
+        "_parent_ref",
+        "_render_semaphore",
+        "children_by_key",
+        "index",
+        "key",
+        "key_path",
+        "life_cycle_state",
+        "model",
+        "patch_path",
+        "targets_by_event",
+    )
+
+    def __init__(
+        self,
+        parent: _ModelState | None,
+        index: int,
+        key: Any,
+        model: Ref[VdomJson | dict[str, Any]],
+        patch_path: str,
+        children_by_key: dict[Key, _ModelState],
+        targets_by_event: dict[str, str],
+        life_cycle_state: _LifeCycleState | None = None,
+        key_path: str = "",
+    ):
+        self.index = index
+        """The index of the element amongst its siblings"""
+
+        self.key = key
+        """A key that uniquely identifies the element amongst its siblings"""
+
+        self.model = model
+        """The actual model of the element"""
+
+        self.patch_path = patch_path
+        """A "/" delimited path to the element within the greater layout"""
+
+        self.children_by_key = children_by_key
+        """Child model states indexed by their unique keys"""
+
+        self.targets_by_event = targets_by_event
+        """The element's event handler target strings indexed by their event name"""
+
+        self.key_path = key_path
+        """A slash-delimited path using element keys"""
+
+        # === Conditionally Available Attributes ===
+        # It's easier to conditionally assign than to force a null check on every usage
+
+        if parent is not None:
+            self._parent_ref = weakref(parent)
+            """The parent model state"""
+
+        if life_cycle_state is not None:
+            self.life_cycle_state = life_cycle_state
+            """The state for the element's component (if it has one)"""
+
+    @property
+    def is_component_state(self) -> bool:
+        return hasattr(self, "life_cycle_state")
+
+    @property
+    def parent(self) -> _ModelState:
+        parent = self._parent_ref()
+        if parent is None:
+            raise RuntimeError("detached model state")  # nocov
+        return parent
+
+    def append_child(self, child: Any) -> None:
+        self.model.current.setdefault("children", []).append(child)
+
+    def __repr__(self) -> str:  # nocov
+        return f"ModelState({ {s: getattr(self, s, None) for s in self.__slots__} })"
+
+
+def _make_life_cycle_state(
+    component: Component,
+    schedule_render: Callable[[_LifeCycleStateId], None],
+) -> _LifeCycleState:
+    life_cycle_state_id = _LifeCycleStateId(uuid4().hex)
+    return _LifeCycleState(
+        life_cycle_state_id,
+        LifeCycleHook(lambda: schedule_render(life_cycle_state_id)),
+        component,
+    )
+
+
+def _update_life_cycle_state(
+    old_life_cycle_state: _LifeCycleState,
+    new_component: Component,
+) -> _LifeCycleState:
+    return _LifeCycleState(
+        old_life_cycle_state.id,
+        # the hook is preserved across renders because it holds the state
+        old_life_cycle_state.hook,
+        new_component,
+    )
+
+
+_LifeCycleStateId = NewType("_LifeCycleStateId", str)
+
+
+class _LifeCycleState(NamedTuple):
+    """Component state for :class:`_ModelState`"""
+
+    id: _LifeCycleStateId
+    """A unique identifier used in the :class:`~reactpy.core.hooks.LifeCycleHook` callback"""
+
+    hook: LifeCycleHook
+    """The life cycle hook"""
+
+    component: Component
+    """The current component instance"""
+
+
+_Type = TypeVar("_Type")
+
+
+class _ThreadSafeQueue(Generic[_Type]):
+    def __init__(self) -> None:
+        self._loop = get_running_loop()
+        self._queue: Queue[_Type] = Queue(REACTPY_MAX_QUEUE_SIZE.current)
+        self._pending: set[_Type] = set()
+        self._put_tasks: dict[_Type, Task[None]] = {}
+
+    def put(self, value: _Type) -> None:
+        if value not in self._pending:
+            self._pending.add(value)
+            self._loop.call_soon_threadsafe(self._schedule_put, value)
+
+    def _schedule_put(self, value: _Type) -> None:
+        self._put_tasks[value] = create_task(self._put_with_backpressure(value))
+
+    async def _put_with_backpressure(self, value: _Type) -> None:
+        try:
+            await self._queue.put(value)
+        except BaseException:
+            self._pending.discard(value)
+            raise
+        finally:
+            self._put_tasks.pop(value, None)
+
+    async def get(self) -> _Type:
+        value = await self._queue.get()
+        self._pending.remove(value)
+        return value
+
+    async def close(self) -> None:
+        for task in list(self._put_tasks.values()):
+            task.cancel()
+        for task in list(self._put_tasks.values()):
+            with suppress(CancelledError):
+                await task
+        self._put_tasks.clear()
+        self._pending.clear()
+
+
+def _get_children_info(
+    children: list[VdomChild],
+) -> tuple[list[_ChildInfo], set[Key] | None]:
+    infos: list[_ChildInfo] = []
+    keys: set[Key] = set()
+    has_duplicates = False
+
+    for index, child in enumerate(children):
+        if child is None:
+            continue
+        elif isinstance(child, dict):
+            child_type = _DICT_TYPE
+            key = child.get("attributes", {}).get("key")
+        elif isinstance(child, Component):
+            child_type = _COMPONENT_TYPE
+            key = child.key
+        else:
+            child = f"{child}"
+            child_type = _STRING_TYPE
+            key = None
+
+        if key is None:
+            key = index
+
+        if key in keys:
+            has_duplicates = True
+        keys.add(key)
+
+        infos.append((child, child_type, key))
+
+    return infos, None if has_duplicates else keys
+
+
+_ChildInfo: TypeAlias = tuple[Any, "_ElementType", Key]
+
+# used in _process_child_type_and_key
+_ElementType = NewType("_ElementType", int)
+_DICT_TYPE = _ElementType(1)
+_COMPONENT_TYPE = _ElementType(2)
+_STRING_TYPE = _ElementType(3)

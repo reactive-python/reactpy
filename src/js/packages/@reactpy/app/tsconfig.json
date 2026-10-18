@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "composite": true,
+    "noEmit": false,
+    "esModuleInterop": true
+  },
+  "extends": "../../../tsconfig.json",
+  "include": ["src"],
+  "references": [
+    {
+      "path": "../client"
+    }
+  ]
+}

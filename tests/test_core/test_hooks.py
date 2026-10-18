@@ -1,0 +1,1548 @@
+import asyncio
+
+import pytest
+
+import reactpy
+from reactpy import html
+from reactpy.config import REACTPY_DEBUG
+from reactpy.core._life_cycle_hook import LifeCycleHook
+from reactpy.core.hooks import strictly_equal, use_effect
+from reactpy.core.layout import Layout
+from reactpy.testing import (
+    DEFAULT_TYPE_DELAY,
+    DisplayFixture,
+    HookCatcher,
+    assert_reactpy_did_log,
+    poll,
+)
+from reactpy.testing.logs import assert_reactpy_did_not_log
+from reactpy.utils import Ref
+from tests.tooling.common import update_message
+
+
+async def test_must_be_rendering_in_layout_to_use_hooks():
+    @reactpy.component
+    def SimpleComponentWithHook():
+        reactpy.hooks.use_state(None)
+        return reactpy.html.div()
+
+    with pytest.raises(RuntimeError, match=r"No life cycle hook is active"):
+        await SimpleComponentWithHook().render()
+
+    async with Layout(SimpleComponentWithHook()) as layout:
+        await layout.render()
+
+
+async def test_simple_stateful_component():
+    index = 0
+
+    def set_index(x):
+        return None
+
+    @reactpy.component
+    def SimpleStatefulComponent():
+        nonlocal index, set_index
+        index, set_index = reactpy.hooks.use_state(0)
+        return reactpy.html.div(index)
+
+    sse = SimpleStatefulComponent()
+
+    async with Layout(sse) as layout:
+        update_1 = await layout.render()
+        assert update_1 == update_message(
+            path="",
+            model={
+                "tagName": "",
+                "children": [{"tagName": "div", "children": ["0"]}],
+            },
+        )
+        set_index(index + 1)
+
+        update_2 = await layout.render()
+        assert update_2 == update_message(
+            path="",
+            model={
+                "tagName": "",
+                "children": [{"tagName": "div", "children": ["1"]}],
+            },
+        )
+        set_index(index + 1)
+
+        update_3 = await layout.render()
+        assert update_3 == update_message(
+            path="",
+            model={
+                "tagName": "",
+                "children": [{"tagName": "div", "children": ["2"]}],
+            },
+        )
+
+
+async def test_set_state_callback_identity_is_preserved():
+    saved_set_state_hooks = []
+
+    @reactpy.component
+    def SimpleStatefulComponent():
+        index, set_index = reactpy.hooks.use_state(0)
+        saved_set_state_hooks.append(set_index)
+        set_index(index + 1)
+        return reactpy.html.div(index)
+
+    sse = SimpleStatefulComponent()
+
+    async with Layout(sse) as layout:
+        await layout.render()
+        await layout.render()
+        await layout.render()
+        await layout.render()
+
+    first_hook = saved_set_state_hooks[0]
+    for h in saved_set_state_hooks[1:]:
+        assert first_hook is h
+
+
+async def test_use_state_with_constructor():
+    constructor_call_count = reactpy.Ref(0)
+
+    set_outer_state = reactpy.Ref()
+    set_inner_key = reactpy.Ref()
+    set_inner_state = reactpy.Ref()
+
+    def make_default():
+        constructor_call_count.current += 1
+        return 0
+
+    @reactpy.component
+    def Outer():
+        state, set_outer_state.current = reactpy.use_state(0)
+        inner_key, set_inner_key.current = reactpy.use_state("first")
+        return reactpy.html.div(state, Inner(key=inner_key))
+
+    @reactpy.component
+    def Inner():
+        state, set_inner_state.current = reactpy.use_state(make_default)
+        return reactpy.html.div(state)
+
+    async with Layout(Outer()) as layout:
+        await layout.render()
+
+        assert constructor_call_count.current == 1
+
+        set_outer_state.current(1)
+        await layout.render()
+
+        assert constructor_call_count.current == 1
+
+        set_inner_state.current(1)
+        await layout.render()
+
+        assert constructor_call_count.current == 1
+
+        set_inner_key.current("second")
+        await layout.render()
+
+        assert constructor_call_count.current == 2
+
+
+async def test_set_state_with_reducer_instead_of_value():
+    count = reactpy.Ref()
+    set_count = reactpy.Ref()
+
+    def increment(count):
+        return count + 1
+
+    @reactpy.component
+    def Counter():
+        count.current, set_count.current = reactpy.hooks.use_state(0)
+        return reactpy.html.div(count.current)
+
+    async with Layout(Counter()) as layout:
+        await layout.render()
+
+        for i in range(4):
+            assert count.current == i
+            set_count.current(increment)
+            await layout.render()
+
+
+async def test_set_state_checks_equality_not_identity(display: DisplayFixture):
+    r_1 = reactpy.Ref("value")
+    r_2 = reactpy.Ref("value")
+
+    # refs are equal but not identical
+    assert r_1 == r_2
+    assert r_1 is not r_2
+
+    render_count = reactpy.Ref(0)
+    event_count = reactpy.Ref(0)
+
+    def event_count_tracker(function):
+        async def tracker(event):
+            event_count.current += 1
+            return await function(event)
+
+        return tracker
+
+    @reactpy.component
+    def TestComponent():
+        state, set_state = reactpy.hooks.use_state(r_1)
+
+        async def set_state_to_r_1(event):
+            set_state(r_1)
+
+        async def set_state_to_r_2(event):
+            set_state(r_2)
+
+        render_count.current += 1
+        return reactpy.html.div(
+            reactpy.html.button(
+                {
+                    "id": "r_1",
+                    "onClick": event_count_tracker(set_state_to_r_1),
+                },
+                "r_1",
+            ),
+            reactpy.html.button(
+                {
+                    "id": "r_2",
+                    "onClick": event_count_tracker(set_state_to_r_2),
+                },
+                "r_2",
+            ),
+            f"Last state: {'r_1' if state is r_1 else 'r_2'}",
+        )
+
+    await display.show(TestComponent)
+
+    client_r_1_button = await display.page.wait_for_selector("#r_1")
+    client_r_2_button = await display.page.wait_for_selector("#r_2")
+
+    poll_event_count = poll(lambda: event_count.current)
+    poll_render_count = poll(lambda: render_count.current)
+
+    assert render_count.current == 1
+    assert event_count.current == 0
+
+    await client_r_1_button.click()
+
+    await poll_event_count.until_equals(1)
+    await poll_render_count.until_equals(1)
+
+    await client_r_2_button.click()
+
+    await poll_event_count.until_equals(2)
+    await poll_render_count.until_equals(1)
+
+    await client_r_2_button.click()
+
+    await poll_event_count.until_equals(3)
+    await poll_render_count.until_equals(1)
+
+
+async def test_simple_input_with_use_state(display: DisplayFixture):
+    message_ref = reactpy.Ref(None)
+
+    @reactpy.component
+    def Input(message=None):
+        message, set_message = reactpy.hooks.use_state(message)
+        message_ref.current = message
+
+        async def on_change(event):
+            value = await event.target.value
+            if value == "this is a test":
+                set_message(value)
+
+        if message is None:
+            return reactpy.html.input({"id": "input", "onChange": on_change})
+        else:
+            return reactpy.html.p({"id": "complete"}, ["Complete"])
+
+    await display.show(Input)
+
+    button = await display.page.wait_for_selector("#input")
+    await button.type("this is a test", delay=DEFAULT_TYPE_DELAY)
+    await display.page.wait_for_selector("#complete")
+
+    assert message_ref.current == "this is a test"
+
+
+async def test_double_set_state(display: DisplayFixture):
+    @reactpy.component
+    def SomeComponent():
+        state_1, set_state_1 = reactpy.hooks.use_state(0)
+        state_2, set_state_2 = reactpy.hooks.use_state(0)
+
+        async def double_set_state(event):
+            set_state_1(state_1 + 1)
+            set_state_2(state_2 + 1)
+
+        return reactpy.html.div(
+            reactpy.html.div(
+                {"id": "first", "data-value": state_1}, f"value is: {state_1}"
+            ),
+            reactpy.html.div(
+                {"id": "second", "data-value": state_2}, f"value is: {state_2}"
+            ),
+            reactpy.html.button(
+                {"id": "button", "onClick": double_set_state}, "click me"
+            ),
+        )
+
+    await display.show(SomeComponent)
+
+    button = await display.page.wait_for_selector("#button")
+    first = await display.page.wait_for_selector("#first")
+    second = await display.page.wait_for_selector("#second")
+
+    await poll(first.get_attribute, "data-value").until_equals("0")
+    await poll(second.get_attribute, "data-value").until_equals("0")
+
+    await button.click()
+
+    await poll(first.get_attribute, "data-value").until_equals("1")
+    await poll(second.get_attribute, "data-value").until_equals("1")
+
+    await button.click()
+
+    await poll(first.get_attribute, "data-value").until_equals("2")
+    await poll(second.get_attribute, "data-value").until_equals("2")
+
+
+async def test_use_effect_callback_occurs_after_full_render_is_complete():
+    effect_triggered = reactpy.Ref(False)
+    effect_triggers_after_final_render = reactpy.Ref(None)
+
+    @reactpy.component
+    def OuterComponent():
+        return reactpy.html.div(
+            ComponentWithEffect(),
+            CheckNoEffectYet(),
+        )
+
+    @reactpy.component
+    def ComponentWithEffect():
+        @reactpy.hooks.use_effect
+        def effect():
+            effect_triggered.current = True
+
+        return reactpy.html.div()
+
+    @reactpy.component
+    def CheckNoEffectYet():
+        effect_triggers_after_final_render.current = not effect_triggered.current
+        return reactpy.html.div()
+
+    async with Layout(OuterComponent()) as layout:
+        await layout.render()
+
+    assert effect_triggered.current
+    assert effect_triggers_after_final_render.current is not None
+    assert effect_triggers_after_final_render.current
+
+
+async def test_use_effect_cleanup_occurs_before_next_effect():
+    component_hook = HookCatcher()
+    cleanup_triggered = reactpy.Ref(False)
+    cleanup_triggered_before_next_effect = reactpy.Ref(False)
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithEffect():
+        @reactpy.hooks.use_effect(dependencies=None)
+        def effect():
+            if cleanup_triggered.current:
+                cleanup_triggered_before_next_effect.current = True
+
+            def cleanup():
+                cleanup_triggered.current = True
+
+            return cleanup
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithEffect()) as layout:
+        await layout.render()
+
+        assert not cleanup_triggered.current
+
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+        assert cleanup_triggered.current
+        assert cleanup_triggered_before_next_effect.current
+
+
+async def test_use_effect_cleanup_occurs_on_will_unmount():
+    set_key = reactpy.Ref()
+    component_did_render = reactpy.Ref(False)
+    cleanup_triggered = reactpy.Ref(False)
+    cleanup_triggered_before_next_render = reactpy.Ref(False)
+
+    @reactpy.component
+    def OuterComponent():
+        key, set_key.current = reactpy.use_state("first")
+        return ComponentWithEffect(key=key)
+
+    @reactpy.component
+    def ComponentWithEffect():
+        if component_did_render.current and cleanup_triggered.current:
+            cleanup_triggered_before_next_render.current = True
+
+        component_did_render.current = True
+
+        @reactpy.hooks.use_effect
+        def effect():
+            def cleanup():
+                cleanup_triggered.current = True
+
+            return cleanup
+
+        return reactpy.html.div()
+
+    async with Layout(OuterComponent()) as layout:
+        await layout.render()
+
+        assert not cleanup_triggered.current
+
+        set_key.current("second")
+        await layout.render()
+
+        assert cleanup_triggered.current
+        assert cleanup_triggered_before_next_render.current
+
+
+async def test_memoized_effect_on_recreated_if_dependencies_change():
+    component_hook = HookCatcher()
+    set_state_callback = reactpy.Ref(None)
+    effect_run_count = reactpy.Ref(0)
+
+    first_value = 1
+    second_value = 2
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithMemoizedEffect():
+        state, set_state_callback.current = reactpy.hooks.use_state(first_value)
+
+        @reactpy.hooks.use_effect(dependencies=[state])
+        def effect():
+            effect_run_count.current += 1
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithMemoizedEffect()) as layout:
+        await layout.render()
+
+        assert effect_run_count.current == 1
+
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+        assert effect_run_count.current == 1
+
+        set_state_callback.current(second_value)
+        await layout.render()
+
+        assert effect_run_count.current == 2
+
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+        assert effect_run_count.current == 2
+
+
+async def test_memoized_effect_cleanup_only_triggered_before_new_effect():
+    component_hook = HookCatcher()
+    set_state_callback = reactpy.Ref(None)
+    cleanup_trigger_count = reactpy.Ref(0)
+
+    first_value = 1
+    second_value = 2
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithEffect():
+        state, set_state_callback.current = reactpy.hooks.use_state(first_value)
+
+        @reactpy.hooks.use_effect(dependencies=[state])
+        def effect():
+            def cleanup():
+                cleanup_trigger_count.current += 1
+
+            return cleanup
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithEffect()) as layout:
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 0
+
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 0
+
+        set_state_callback.current(second_value)
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 1
+
+
+async def test_memoized_async_effect_cleanup_only_triggered_before_new_effect():
+    """Test that use_async_effect cleanup is triggered when dependencies change.
+
+    This is the async version of test_memoized_effect_cleanup_only_triggered_before_new_effect.
+    Regression test for https://github.com/reactive-python/reactpy/issues/1327
+    """
+    component_hook = HookCatcher()
+    set_state_callback = reactpy.Ref(None)
+    cleanup_trigger_count = reactpy.Ref(0)
+
+    first_value = 1
+    second_value = 2
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithEffect():
+        state, set_state_callback.current = reactpy.hooks.use_state(first_value)
+
+        @reactpy.hooks.use_async_effect(dependencies=[state])
+        async def effect():
+            def cleanup():
+                cleanup_trigger_count.current += 1
+
+            return cleanup
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithEffect()) as layout:
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 0
+
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 0
+
+        set_state_callback.current(second_value)
+        await layout.render()
+
+        assert cleanup_trigger_count.current == 1
+
+
+async def test_use_async_effect():
+    effect_ran = asyncio.Event()
+
+    @reactpy.component
+    def ComponentWithAsyncEffect():
+        @reactpy.hooks.use_async_effect
+        async def effect():
+            effect_ran.set()
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithAsyncEffect()) as layout:
+        await layout.render()
+        await asyncio.wait_for(effect_ran.wait(), 1)
+
+
+async def test_use_async_effect_cleanup():
+    component_hook = HookCatcher()
+    effect_ran = asyncio.Event()
+    cleanup_ran = asyncio.Event()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithAsyncEffect():
+        # force this to run every time
+        @reactpy.hooks.use_async_effect(dependencies=None)
+        async def effect():
+            effect_ran.set()
+            return cleanup_ran.set
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithAsyncEffect()) as layout:
+        await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        await layout.render()
+
+    await asyncio.wait_for(cleanup_ran.wait(), 1)
+
+
+async def test_use_async_effect_cancel():
+    component_hook = HookCatcher()
+    effect_ran = asyncio.Event()
+    effect_was_cancelled = asyncio.Event()
+
+    event_that_never_occurs = asyncio.Event()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithLongWaitingEffect():
+        # force this to run every time
+        @reactpy.hooks.use_async_effect(dependencies=None)
+        async def effect():
+            effect_ran.set()
+            try:
+                await event_that_never_occurs.wait()
+            except asyncio.CancelledError:
+                effect_was_cancelled.set()
+                raise
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithLongWaitingEffect()) as layout:
+        await layout.render()
+
+        await effect_ran.wait()
+        component_hook.latest.schedule_render()
+
+        await layout.render()
+
+    await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+
+    # So I know we said the event never occurs but... to ensure the effect's future is
+    # cancelled before the test is cleaned up we need to set the event. This is because
+    # the cancellation doesn't propagate before the test is resolved which causes
+    # delayed log messages that impact other tests.
+    event_that_never_occurs.set()
+
+
+async def test_use_async_effect_shield():
+    component_hook = HookCatcher()
+    effect_ran = asyncio.Event()
+    effect_was_cancelled = asyncio.Event()
+    effect_finished = asyncio.Event()
+    stop_waiting = asyncio.Event()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithShieldedEffect():
+        @reactpy.hooks.use_async_effect(dependencies=None, shield=True)
+        async def effect():
+            effect_ran.set()
+            try:
+                await stop_waiting.wait()
+            except asyncio.CancelledError:
+                effect_was_cancelled.set()
+                raise
+            effect_finished.set()
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithShieldedEffect()) as layout:
+        await layout.render()
+
+        await effect_ran.wait()
+
+        # Trigger re-render which would normally cancel the effect
+        component_hook.latest.schedule_render()
+
+        # Give the loop a chance to process the render logic and potentially cancel
+        await asyncio.sleep(0.1)
+
+        # Verify effect hasn't finished yet but also wasn't cancelled
+        assert not effect_finished.is_set()
+        assert not effect_was_cancelled.is_set()
+
+        # Now allow the effect to finish
+        stop_waiting.set()
+
+        # The re-render should complete now that the shielded effect is done
+        await layout.render()
+
+    await asyncio.wait_for(effect_finished.wait(), 1)
+    assert not effect_was_cancelled.is_set()
+
+
+async def test_async_effect_sleep_is_cancelled_on_re_render():
+    """Test that async effects waiting on asyncio.sleep are properly cancelled."""
+    component_hook = HookCatcher()
+    effect_ran = asyncio.Event()
+    effect_was_cancelled = asyncio.Event()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithSleepEffect():
+        @reactpy.hooks.use_async_effect(dependencies=None)
+        async def effect():
+            effect_ran.set()
+            try:
+                await asyncio.sleep(1000)
+            except asyncio.CancelledError:
+                effect_was_cancelled.set()
+                raise
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithSleepEffect()) as layout:
+        await layout.render()
+
+        # Wait for the effect to start
+        await effect_ran.wait()
+
+        # Trigger a re-render which should cancel the previous effect
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+        # Verify the previous effect was cancelled
+        await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+
+
+async def test_error_in_effect_is_gracefully_handled():
+    @reactpy.component
+    def ComponentWithEffect():
+        @reactpy.hooks.use_effect
+        def bad_effect():
+            msg = "Something went wong :("
+            raise ValueError(msg)
+
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(match_message=r"Error in effect"):
+        async with Layout(ComponentWithEffect()) as layout:
+            await layout.render()  # no error
+
+
+async def test_error_in_effect_pre_unmount_cleanup_is_gracefully_handled():
+    set_key = reactpy.Ref()
+
+    @reactpy.component
+    def OuterComponent():
+        key, set_key.current = reactpy.use_state("first")
+        return ComponentWithEffect(key=key)
+
+    @reactpy.component
+    def ComponentWithEffect():
+        @reactpy.hooks.use_effect
+        def ok_effect():
+            def bad_cleanup():
+                msg = "Something went wong :("
+                raise ValueError(msg)
+
+            return bad_cleanup
+
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(
+        match_message=r"Error in effect",
+        error_type=ValueError,
+    ):
+        async with Layout(OuterComponent()) as layout:
+            await layout.render()
+            set_key.current("second")
+            await layout.render()  # no error
+
+
+async def test_use_reducer():
+    saved_count = reactpy.Ref(None)
+    saved_dispatch = reactpy.Ref(None)
+
+    def reducer(count, action):
+        if action == "increment":
+            return count + 1
+        elif action == "decrement":
+            return count - 1
+        else:
+            msg = f"Unknown action '{action}'"
+            raise ValueError(msg)
+
+    @reactpy.component
+    def Counter(initial_count):
+        saved_count.current, saved_dispatch.current = reactpy.hooks.use_reducer(
+            reducer, initial_count
+        )
+        return reactpy.html.div()
+
+    async with Layout(Counter(0)) as layout:
+        await layout.render()
+
+        assert saved_count.current == 0
+
+        saved_dispatch.current("increment")
+        await layout.render()
+
+        assert saved_count.current == 1
+
+        saved_dispatch.current("decrement")
+        await layout.render()
+
+        assert saved_count.current == 0
+
+
+async def test_use_reducer_dispatch_callback_identity_is_preserved():
+    saved_dispatchers = []
+
+    def reducer(count, action):
+        if action == "increment":
+            return count + 1
+        else:
+            msg = f"Unknown action '{action}'"
+            raise ValueError(msg)
+
+    @reactpy.component
+    def ComponentWithUseReduce():
+        saved_dispatchers.append(reactpy.hooks.use_reducer(reducer, 0)[1])
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithUseReduce()) as layout:
+        for _ in range(3):
+            await layout.render()
+            saved_dispatchers[-1]("increment")
+
+    first_dispatch = saved_dispatchers[0]
+    for d in saved_dispatchers[1:]:
+        assert first_dispatch is d
+
+
+async def test_use_callback_identity():
+    component_hook = HookCatcher()
+    used_callbacks = []
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithRef():
+        used_callbacks.append(reactpy.hooks.use_callback(lambda: None))
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithRef()) as layout:
+        await layout.render()
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+    assert used_callbacks[0] is used_callbacks[1]
+    assert len(used_callbacks) == 2
+
+
+async def test_use_callback_memoization():
+    component_hook = HookCatcher()
+    set_state_hook = reactpy.Ref(None)
+    used_callbacks = []
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithRef():
+        state, set_state_hook.current = reactpy.hooks.use_state(0)
+
+        @reactpy.hooks.use_callback(
+            dependencies=[state]
+        )  # use the deco form for coverage
+        def cb():
+            return None
+
+        used_callbacks.append(cb)
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithRef()) as layout:
+        await layout.render()
+        set_state_hook.current(1)
+        await layout.render()
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+    assert used_callbacks[0] is not used_callbacks[1]
+    assert used_callbacks[1] is used_callbacks[2]
+    assert len(used_callbacks) == 3
+
+
+async def test_use_memo():
+    component_hook = HookCatcher()
+    set_state_hook = reactpy.Ref(None)
+    used_values = []
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithMemo():
+        state, set_state_hook.current = reactpy.hooks.use_state(0)
+        value = reactpy.hooks.use_memo(
+            lambda: reactpy.Ref(
+                state
+            ),  # use a Ref here just to ensure it's a unique obj
+            [state],
+        )
+        used_values.append(value)
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithMemo()) as layout:
+        await layout.render()
+        set_state_hook.current(1)
+        await layout.render()
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+    assert used_values[0] is not used_values[1]
+    assert used_values[1] is used_values[2]
+    assert len(used_values) == 3
+
+
+async def test_use_memo_always_runs_if_dependencies_are_none():
+    component_hook = HookCatcher()
+    used_values = []
+
+    iter_values = iter([1, 2, 3])
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithMemo():
+        value = reactpy.hooks.use_memo(lambda: next(iter_values), dependencies=None)
+        used_values.append(value)
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithMemo()) as layout:
+        await layout.render()
+        component_hook.latest.schedule_render()
+        await layout.render()
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+    assert used_values == [1, 2, 3]
+
+
+async def test_use_memo_with_stored_deps_is_empty_tuple_after_deps_are_none():
+    component_hook = HookCatcher()
+    used_values = []
+
+    iter_values = iter([1, 2, 3])
+    deps_used_in_memo = reactpy.Ref(())
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithMemo():
+        value = reactpy.hooks.use_memo(
+            lambda: next(iter_values),
+            deps_used_in_memo.current,
+        )
+        used_values.append(value)
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithMemo()) as layout:
+        await layout.render()
+        component_hook.latest.schedule_render()
+        deps_used_in_memo.current = None
+        await layout.render()
+        component_hook.latest.schedule_render()
+        deps_used_in_memo.current = ()
+        await layout.render()
+
+    assert used_values == [1, 2, 2]
+
+
+async def test_use_memo_never_runs_if_deps_is_empty_list():
+    component_hook = HookCatcher()
+    used_values = []
+
+    iter_values = iter([1, 2, 3])
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithMemo():
+        value = reactpy.hooks.use_memo(lambda: next(iter_values), ())
+        used_values.append(value)
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithMemo()) as layout:
+        await layout.render()
+        component_hook.latest.schedule_render()
+        await layout.render()
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+    assert used_values == [1, 1, 1]
+
+
+async def test_use_ref():
+    component_hook = HookCatcher()
+    used_refs = []
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithRef():
+        used_refs.append(reactpy.hooks.use_ref(1))
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithRef()) as layout:
+        await layout.render()
+        component_hook.latest.schedule_render()
+        await layout.render()
+
+    assert used_refs[0] is used_refs[1]
+    assert len(used_refs) == 2
+
+
+def test_bad_schedule_render_callback():
+    def bad_callback():
+        msg = "something went wrong"
+        raise ValueError(msg)
+
+    with assert_reactpy_did_log(
+        match_message=f"Failed to schedule render via {bad_callback}"
+    ):
+        LifeCycleHook(bad_callback).schedule_render()
+
+
+async def test_use_effect_automatically_infers_closure_values():
+    set_count = reactpy.Ref()
+    did_effect = asyncio.Event()
+
+    @reactpy.component
+    def CounterWithEffect():
+        count, set_count.current = reactpy.hooks.use_state(0)
+
+        @reactpy.hooks.use_effect
+        def some_effect_that_uses_count():
+            """should automatically trigger on count change"""
+            _ = count  # use count in this closure
+            did_effect.set()
+
+        return reactpy.html.div()
+
+    async with Layout(CounterWithEffect()) as layout:
+        await layout.render()
+        await did_effect.wait()
+        did_effect.clear()
+
+        for i in range(1, 3):
+            set_count.current(i)
+            await layout.render()
+            await did_effect.wait()
+            did_effect.clear()
+
+
+async def test_use_memo_automatically_infers_closure_values():
+    set_count = reactpy.Ref()
+    did_memo = asyncio.Event()
+
+    @reactpy.component
+    def CounterWithEffect():
+        count, set_count.current = reactpy.hooks.use_state(0)
+
+        @reactpy.hooks.use_memo
+        def some_memo_func_that_uses_count():
+            """should automatically trigger on count change"""
+            _ = count  # use count in this closure
+            did_memo.set()
+
+        return reactpy.html.div()
+
+    async with Layout(CounterWithEffect()) as layout:
+        await layout.render()
+        await did_memo.wait()
+        did_memo.clear()
+
+        for i in range(1, 3):
+            set_count.current(i)
+            await layout.render()
+            await did_memo.wait()
+            did_memo.clear()
+
+
+async def test_use_context_default_value():
+    Context = reactpy.create_context("something")
+    value = reactpy.Ref()
+
+    @reactpy.component
+    def ComponentProvidesContext():
+        return Context(ComponentUsesContext())
+
+    @reactpy.component
+    def ComponentUsesContext():
+        value.current = reactpy.use_context(Context)
+        return html.div()
+
+    async with Layout(ComponentProvidesContext()) as layout:
+        await layout.render()
+        assert value.current == "something"
+
+    @reactpy.component
+    def ComponentUsesContext2():
+        value.current = reactpy.use_context(Context)
+        return html.div()
+
+    async with Layout(ComponentUsesContext2()) as layout:
+        await layout.render()
+        assert value.current == "something"
+
+
+def test_context_repr():
+    sample_context = reactpy.create_context(None)
+    assert repr(sample_context()) == f"ContextProvider({sample_context})"
+
+
+async def test_use_context_updates_components_even_if_memoized():
+    Context = reactpy.create_context(None)
+
+    value = reactpy.Ref(None)
+    render_count = reactpy.Ref(0)
+    set_state = reactpy.Ref()
+
+    @reactpy.component
+    def ComponentProvidesContext():
+        state, set_state.current = reactpy.use_state(0)
+        return Context(ComponentInContext(), value=state)
+
+    @reactpy.component
+    def ComponentInContext():
+        return reactpy.use_memo(MemoizedComponentUsesContext)
+
+    @reactpy.component
+    def MemoizedComponentUsesContext():
+        value.current = reactpy.use_context(Context)
+        render_count.current += 1
+        return html.div()
+
+    async with Layout(ComponentProvidesContext()) as layout:
+        await layout.render()
+        assert render_count.current == 1
+        assert value.current == 0
+
+        set_state.current(1)
+
+        await layout.render()
+        assert render_count.current == 2
+        assert value.current == 1
+
+        set_state.current(2)
+
+        await layout.render()
+        assert render_count.current == 3
+        assert value.current == 2
+
+
+async def test_context_values_are_scoped():
+    Context = reactpy.create_context(None)
+
+    @reactpy.component
+    def Parent():
+        return html(
+            Context(Context(Child1(), value=1), value="something-else"),
+            Context(Child2(), value=2),
+        )
+
+    @reactpy.component
+    def Child1():
+        assert reactpy.use_context(Context) == 1
+
+    @reactpy.component
+    def Child2():
+        assert reactpy.use_context(Context) == 2
+
+    async with Layout(Parent()) as layout:
+        await layout.render()
+
+
+async def test_error_in_layout_effect_cleanup_is_gracefully_handled():
+    component_hook = HookCatcher()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithEffect():
+        @reactpy.hooks.use_effect(dependencies=None)  # always run
+        def bad_effect():
+            msg = "The error message"
+            raise ValueError(msg)
+
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(
+        match_message=r"Error in effect",
+        error_type=ValueError,
+        match_error="The error message",
+    ):
+        async with Layout(ComponentWithEffect()) as layout:
+            await layout.render()
+            component_hook.latest.schedule_render()
+            await layout.render()  # no error
+
+
+async def test_set_state_during_render():
+    render_count = Ref(0)
+
+    @reactpy.component
+    def SetStateDuringRender():
+        render_count.current += 1
+        state, set_state = reactpy.use_state(0)
+        if not state:
+            set_state(state + 1)
+        return html.div(state)
+
+    async with Layout(SetStateDuringRender()) as layout:
+        await layout.render()
+
+        # we expect a second render to be triggered in the background
+        await poll(lambda: render_count.current).until_equals(2)
+
+        # give an opportunity for a render to happen if it were to.
+        await asyncio.sleep(0.1)
+
+    # however, we don't expect any more renders
+    assert render_count.current == 2
+
+
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only logs in debug mode")
+async def test_use_debug_mode():
+    set_message = reactpy.Ref()
+    component_hook = HookCatcher()
+
+    @reactpy.component
+    @component_hook.capture
+    def SomeComponent():
+        message, set_message.current = reactpy.use_state("hello")
+        reactpy.use_debug_value(f"message is {message!r}")
+        return reactpy.html.div()
+
+    async with Layout(SomeComponent()) as layout:
+        with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        with assert_reactpy_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+
+@pytest.mark.skipif(not REACTPY_DEBUG.current, reason="only logs in debug mode")
+async def test_use_debug_mode_with_factory():
+    set_message = reactpy.Ref()
+    component_hook = HookCatcher()
+
+    @reactpy.component
+    @component_hook.capture
+    def SomeComponent():
+        message, set_message.current = reactpy.use_state("hello")
+        reactpy.use_debug_value(lambda: f"message is {message!r}")
+        return reactpy.html.div()
+
+    async with Layout(SomeComponent()) as layout:
+        with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_reactpy_did_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+        component_hook.latest.schedule_render()
+
+        with assert_reactpy_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+
+@pytest.mark.skipif(REACTPY_DEBUG.current, reason="logs in debug mode")
+async def test_use_debug_mode_does_not_log_if_not_in_debug_mode():
+    set_message = reactpy.Ref()
+
+    @reactpy.component
+    def SomeComponent():
+        message, set_message.current = reactpy.use_state("hello")
+        reactpy.use_debug_value(lambda: f"message is {message!r}")
+        return reactpy.html.div()
+
+    async with Layout(SomeComponent()) as layout:
+        with assert_reactpy_did_not_log(r"SomeComponent\(.*?\) message is 'hello'"):
+            await layout.render()
+
+        set_message.current("bye")
+
+        with assert_reactpy_did_not_log(r"SomeComponent\(.*?\) message is 'bye'"):
+            await layout.render()
+
+
+async def test_conditionally_rendered_components_can_use_context():
+    set_state = reactpy.Ref()
+    used_context_values = []
+    some_context = reactpy.create_context(None)
+
+    @reactpy.component
+    def SomeComponent():
+        state, set_state.current = reactpy.use_state(True)
+        if state:
+            return FirstCondition()
+        else:
+            return SecondCondition()
+
+    @reactpy.component
+    def FirstCondition():
+        used_context_values.append(reactpy.use_context(some_context) + "-1")
+
+    @reactpy.component
+    def SecondCondition():
+        used_context_values.append(reactpy.use_context(some_context) + "-2")
+
+    async with Layout(some_context(SomeComponent(), value="the-value")) as layout:
+        await layout.render()
+        assert used_context_values == ["the-value-1"]
+        set_state.current(False)
+        await layout.render()
+        assert used_context_values == ["the-value-1", "the-value-2"]
+
+
+@pytest.mark.parametrize(
+    "x, y, result",
+    [
+        ("text", "text", True),
+        ("text", "not-text", False),
+        (b"text", b"text", True),
+        (b"text", b"not-text", False),
+        (bytearray([1, 2, 3]), bytearray([1, 2, 3]), True),
+        (bytearray([1, 2, 3]), bytearray([1, 2, 3, 4]), False),
+        (1.0, 1.0, True),
+        (1.0, 2.0, False),
+        (1j, 1j, True),
+        (1j, 2j, False),
+        # ints less than 5 and greater than 256 are always identical
+        (-100000, -100000, True),
+        (100000, 100000, True),
+        (123, 456, False),
+    ],
+)
+def test_strictly_equal(x, y, result):
+    assert strictly_equal(x, y) is result
+
+
+def test_strictly_equal_named_closures():
+    assert strictly_equal(lambda: "text", lambda: "text") is True
+    assert strictly_equal(lambda: "text", lambda: "not-text") is False
+
+    def x():
+        return "text"
+
+    def y():
+        return "not-text"
+
+    def generator():
+        def z():
+            return "text"
+
+        return z
+
+    assert strictly_equal(x, x) is True
+    assert strictly_equal(x, y) is False
+    assert strictly_equal(x, generator()) is False
+    assert strictly_equal(generator(), generator()) is True
+
+
+STRICT_EQUALITY_VALUE_CONSTRUCTORS = [
+    lambda: "string-text",
+    lambda: b"byte-text",
+    lambda: bytearray([1, 2, 3]),
+    lambda: bytearray([1, 2, 3]),
+    lambda: 1.0,
+    lambda: 10000000,
+    lambda: 1j,
+]
+
+
+@pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
+async def test_use_state_compares_with_strict_equality(get_value):
+    render_count = reactpy.Ref(0)
+    set_state = reactpy.Ref()
+
+    @reactpy.component
+    def SomeComponent():
+        _, set_state.current = reactpy.use_state(get_value())
+        render_count.current += 1
+
+    async with Layout(SomeComponent()) as layout:
+        await layout.render()
+        assert render_count.current == 1
+        set_state.current(get_value())
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(layout.render(), timeout=0.1)
+
+
+@pytest.mark.parametrize("get_value", STRICT_EQUALITY_VALUE_CONSTRUCTORS)
+async def test_use_effect_compares_with_strict_equality(get_value):
+    effect_count = reactpy.Ref(0)
+    value = reactpy.Ref(get_value())
+    hook = HookCatcher()
+
+    @reactpy.component
+    @hook.capture
+    def SomeComponent():
+        @reactpy.use_effect(dependencies=[value.current])
+        def incr_effect_count():
+            effect_count.current += 1
+
+    async with Layout(SomeComponent()) as layout:
+        await layout.render()
+        assert effect_count.current == 1
+        value.current = get_value()
+        hook.latest.schedule_render()
+        await layout.render()
+        # effect does not trigger
+        assert effect_count.current == 1
+
+
+async def test_use_state_named_tuple():
+    state = reactpy.Ref()
+
+    @reactpy.component
+    def some_component():
+        state.current = reactpy.use_state(1)
+
+    async with Layout(some_component()) as layout:
+        await layout.render()
+        assert state.current.value == 1
+        state.current.set_value(2)
+        await layout.render()
+        assert state.current.value == 2
+
+
+async def test_error_in_component_effect_cleanup_is_gracefully_handled():
+    component_hook = HookCatcher()
+
+    @reactpy.component
+    @component_hook.capture
+    def ComponentWithEffect():
+        @use_effect
+        def effect():
+            def bad_cleanup():
+                raise ValueError("The error message")
+
+            return bad_cleanup
+
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(
+        match_message="Error in effect",
+        error_type=ValueError,
+        match_error="The error message",
+    ):
+        async with Layout(ComponentWithEffect()) as layout:
+            await layout.render()
+            component_hook.latest.schedule_render()
+            await layout.render()  # no error
+
+
+def test_use_effect_exception_on_async_function():
+    @reactpy.component
+    def ComponentWithBadEffect():
+        @reactpy.hooks.use_effect
+        async def bad_effect():
+            pass
+
+        return reactpy.html.div()
+
+    with assert_reactpy_did_log(
+        match_error="does not support async functions",
+        error_type=TypeError,
+    ):
+
+        async def run_test():
+            async with Layout(ComponentWithBadEffect()) as layout:
+                await layout.render()
+
+        asyncio.run(run_test())
+
+
+async def test_async_effect_cancelled_on_dependency_change():
+    """Test that async effects are cancelled when dependencies change."""
+    set_state = reactpy.Ref()
+    effect_ran = asyncio.Event()
+    effect_was_cancelled = asyncio.Event()
+
+    @reactpy.component
+    def ComponentWithDependentEffect():
+        state, set_state.current = reactpy.hooks.use_state(0)
+
+        @reactpy.hooks.use_async_effect(dependencies=[state])
+        async def effect():
+            effect_ran.set()
+            try:
+                await asyncio.sleep(1000)
+            except asyncio.CancelledError:
+                effect_was_cancelled.set()
+                raise
+
+        return reactpy.html.div()
+
+    async with Layout(ComponentWithDependentEffect()) as layout:
+        await layout.render()
+
+        # Wait for the effect to start
+        await effect_ran.wait()
+        effect_ran.clear()
+
+        # Change state to trigger effect cleanup/re-run
+        set_state.current(1)
+        await layout.render()
+
+        # Verify the previous effect was cancelled
+        await asyncio.wait_for(effect_was_cancelled.wait(), 1)
+
+
+def test_a_render_is_marked_before_the_scheduler_is_handed_it():
+    """The request must be raised before the scheduler is given the work
+
+    The state change which gets us here can arrive from the thread a synchronous
+    event handler ran on, while the thread which owns the layout is midway through a
+    render and about to clear this very flag.  Raising it only after the hand-off
+    allowed the write to land *after* that clear, and since nothing was then ever
+    going to render again to reset it, every later state change was silently
+    deduplicated away and the component was stranded on a stale model for the rest
+    of its life.
+    """
+    seen_while_handing_off: list[bool] = []
+    hook = LifeCycleHook(lambda: seen_while_handing_off.append(hook._scheduled_render))
+
+    hook.schedule_render()
+
+    assert seen_while_handing_off == [True]
+
+
+def test_a_failed_schedule_leaves_the_flag_down():
+    """A request which never reached the scheduler must not count as pending"""
+    attempts = 0
+
+    def explode():
+        nonlocal attempts
+        attempts += 1
+        raise RuntimeError("no scheduler available")
+
+    hook = LifeCycleHook(explode)
+
+    with assert_reactpy_did_log(
+        match_message="Failed to schedule render", error_type=RuntimeError
+    ):
+        hook.schedule_render()
+
+        assert hook._scheduled_render is False
+
+        # the flag went back down, so the next change is not deduplicated away
+        hook.schedule_render()
+
+    assert attempts == 2
+
+
+def test_a_cancelled_render_does_not_swallow_later_state_changes():
+    """Cancelling a pending render has to give back the right to render
+
+    The layout cancels a component's pending render whenever it renders that
+    component as part of updating its parent.  Once that happens nothing is left
+    which will ever clear the flag raised by ``schedule_render()``, so the layout
+    must reset it itself - otherwise this render, and every one after it, is lost.
+    """
+    scheduled: list[int] = []
+    hook = LifeCycleHook(lambda: scheduled.append(1))
+
+    hook.schedule_render()
+    assert scheduled == [1]
+
+    # a second request is deduplicated while the first is still pending
+    hook.schedule_render()
+    assert scheduled == [1]
+
+    hook.unschedule_render()
+
+    hook.schedule_render()
+    assert scheduled == [1, 1]

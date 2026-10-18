@@ -1,0 +1,299 @@
+from __future__ import annotations
+
+import logging
+from asyncio import Event, Task, create_task, gather
+from collections.abc import Callable
+from contextvars import ContextVar, Token
+from typing import Any, Protocol, TypeVar
+
+from anyio import Semaphore
+
+from reactpy.core._thread_local import ThreadLocal
+from reactpy.types import Component, Context, ContextProvider
+from reactpy.utils import Singleton
+
+T = TypeVar("T")
+
+
+class EffectFunc(Protocol):
+    async def __call__(self, stop: Event) -> None: ...
+
+
+logger = logging.getLogger(__name__)
+
+
+class _HookStack(Singleton):  # nocov
+    """A singleton object which manages the current component tree's hooks.
+    Life cycle hooks can be stored in a thread local or context variable depending
+    on the platform."""
+
+    _state: ContextVar[list[LifeCycleHook]] = ContextVar("hook_state")
+
+    def get(self) -> list[LifeCycleHook]:
+        try:
+            return self._state.get()
+        except LookupError:
+            return []
+
+    def initialize(self) -> Token[list[LifeCycleHook]] | None:
+        return None if isinstance(self._state, ThreadLocal) else self._state.set([])
+
+    def reset(self, token: Token[list[LifeCycleHook]] | None) -> None:
+        if isinstance(self._state, ThreadLocal):
+            self._state.get().clear()
+        elif token:
+            self._state.reset(token)
+        else:
+            raise RuntimeError("Hook stack is an ContextVar but no token was provided")
+
+    def current_hook(self) -> LifeCycleHook:
+        hook_stack = self.get()
+        if not hook_stack:
+            msg = "No life cycle hook is active. Are you rendering in a layout?"
+            raise RuntimeError(msg)
+        return hook_stack[-1]
+
+
+HOOK_STACK = _HookStack()
+
+
+class LifeCycleHook:
+    """An object which manages the "life cycle" of a layout component.
+
+    The "life cycle" of a component is the set of events which occur from the time
+    a component is first rendered until it is removed from the layout. The life cycle
+    is ultimately driven by the layout itself, but components can "hook" into those
+    events to perform actions. Components gain access to their own life cycle hook
+    by calling :func:`HOOK_STACK.current_hook`. They can then perform actions such as:
+
+    1. Adding state via :meth:`use_state`
+    2. Adding effects via :meth:`add_effect`
+    3. Setting or getting context providers via
+       :meth:`LifeCycleHook.set_context_provider` and
+       :meth:`get_context_provider` respectively.
+
+    Components can request access to their own life cycle events and state through hooks
+    while :class:`~reactpy.core.proto.LayoutType` objects drive drive the life cycle
+    forward by triggering events and rendering view changes.
+
+    Example:
+
+        If removed from the complexities of a layout, a very simplified full life cycle
+        for a single component with no child components would look a bit like this:
+
+        .. testcode::
+
+            from reactpy.core._life_cycle_hook import LifeCycleHook
+            from reactpy.core.hooks import HOOK_STACK
+
+            # this function will come from a layout implementation
+            schedule_render = lambda: ...
+
+            # --- start life cycle ---
+
+            hook = LifeCycleHook(schedule_render)
+
+            # --- start render cycle ---
+
+            component = ...
+            await hook.affect_component_will_render(component)
+            try:
+                # render the component
+                ...
+
+                # the component may access the current hook
+                assert HOOK_STACK.current_hook() is hook
+
+                # and save state or add effects
+                HOOK_STACK.current_hook().use_state(lambda: ...)
+
+                async def my_effect(stop_event):
+                    ...
+
+                HOOK_STACK.current_hook().add_effect(my_effect)
+            finally:
+                await hook.affect_component_did_render()
+
+            # This should only be called after the full set of changes associated with a
+            # given render have been completed.
+            await hook.affect_layout_did_render()
+
+            # Typically an event occurs and a new render is scheduled, thus beginning
+            # the render cycle anew.
+            hook.schedule_render()
+
+
+            # --- end render cycle ---
+
+            hook.affect_component_will_unmount()
+            del hook
+
+            # --- end render cycle ---
+    """
+
+    __slots__ = (
+        "__weakref__",
+        "_context_providers",
+        "_current_state_index",
+        "_effect_funcs",
+        "_effect_stops",
+        "_effect_tasks",
+        "_render_access",
+        "_rendered_atleast_once",
+        "_schedule_render_callback",
+        "_scheduled_render",
+        "_state",
+        "component",
+    )
+
+    component: Component
+
+    def __init__(
+        self,
+        schedule_render: Callable[[], None],
+    ) -> None:
+        self._context_providers: dict[Context[Any], ContextProvider[Any]] = {}
+        self._schedule_render_callback = schedule_render
+        self._scheduled_render = False
+        self._rendered_atleast_once = False
+        self._current_state_index = 0
+        self._state: list = []
+        self._effect_funcs: list[EffectFunc] = []
+        self._effect_tasks: list[Task[None]] = []
+        self._effect_stops: list[Event] = []
+        self._render_access = Semaphore(1)  # ensure only one render at a time
+
+    def schedule_render(self) -> None:
+        if self._scheduled_render:
+            return None
+        # Raise the latch *before* handing off to the scheduler, not afterwards.
+        #
+        # A state change can reach this method from the thread a synchronous event
+        # handler ran on, while the layout's own thread is midway through a render
+        # and is about to clear this latch.  Setting it after the hand-off let that
+        # write land *after* the clear, which left the latch permanently raised since
+        # nothing was ever going to render again to reset it.  Every later state
+        # change was then silently deduplicated away and the component stalled on a
+        # stale model for the rest of its life.  Setting first means the clear of
+        # any render we could have scheduled is guaranteed to follow our write.
+        self._scheduled_render = True
+        try:
+            self._schedule_render_callback()
+        except Exception:
+            self._scheduled_render = False
+            msg = f"Failed to schedule render via {self._schedule_render_callback}"
+            logger.exception(msg)
+
+    def unschedule_render(self) -> None:
+        """Undo :meth:`schedule_render` when its pending render is cancelled
+
+        The latch set by :meth:`schedule_render` is cleared only once a render
+        actually begins.  If the scheduled render is cancelled before it ever
+        starts, nothing else resets that latch - so every later state change
+        would be silently deduplicated away, leaving the component stuck on a
+        stale model indefinitely.
+        """
+        self._scheduled_render = False
+
+    def use_state(self, function: Callable[[], T]) -> T:
+        """Add state to this hook
+
+        If this hook has not yet rendered, the state is appended to the state tuple.
+        Otherwise, the state is retrieved from the tuple. This allows state to be
+        preserved across renders.
+        """
+        if not self._rendered_atleast_once:
+            # since we're not initialized yet we're just appending state
+            result = function()
+            self._state.append(result)
+        else:
+            # once finalized we iterate over each succesively used piece of state
+            result = self._state[self._current_state_index]
+        self._current_state_index += 1
+        return result
+
+    def add_effect(self, effect_func: EffectFunc) -> None:
+        """Add an effect to this hook
+
+        A task to run the effect is created when the component is done rendering.
+        When the component will be unmounted, the event passed to the effect is
+        triggered and the task is awaited. The effect should eventually halt after
+        the event is triggered.
+        """
+        self._effect_funcs.append(effect_func)
+
+    def set_context_provider(self, provider: ContextProvider[Any]) -> None:
+        """Set a context provider for this hook
+
+        The context provider will be used to provide state to any child components
+        of this hook's component which request a context provider of the same type.
+        """
+        self._context_providers[provider.type] = provider
+
+    def get_context_provider(self, context: Context[T]) -> ContextProvider[T] | None:
+        """Get a context provider for this hook of the given type
+
+        The context provider will have been set by a parent component. If no provider
+        is found, ``None`` is returned.
+        """
+        return self._context_providers.get(context)
+
+    async def affect_component_will_render(self, component: Component) -> None:
+        """The component is about to render"""
+        await self._render_access.acquire()
+        self._scheduled_render = False
+        self.component = component
+        self.set_current()
+
+    async def affect_component_did_render(self) -> None:
+        """The component completed a render"""
+        self.unset_current()
+        self._rendered_atleast_once = True
+        self._current_state_index = 0
+        self._render_access.release()
+        del self.component
+
+    async def affect_layout_did_render(self) -> None:
+        """The layout completed a render"""
+        stop = Event()
+        self._effect_stops.append(stop)
+        self._effect_tasks.extend(create_task(e(stop)) for e in self._effect_funcs)
+        self._effect_funcs.clear()
+
+    async def affect_component_will_unmount(self) -> None:
+        """The component is about to be removed from the layout"""
+        for stop in self._effect_stops:
+            stop.set()
+        self._effect_stops.clear()
+        try:
+            await gather(*self._effect_tasks)
+        except Exception:
+            logger.exception("Error in effect")
+        finally:
+            self._effect_tasks.clear()
+
+    def set_current(self) -> None:
+        """Set this hook as the active hook in this thread
+
+        This method is called by a layout before entering the render method
+        of this hook's associated component.
+        """
+        hook_stack = HOOK_STACK.get()
+        if hook_stack:
+            parent = hook_stack[-1]
+            self._context_providers.update(parent._context_providers)
+        hook_stack.append(self)
+
+    def unset_current(self) -> None:
+        """Unset this hook as the active hook in this thread"""
+        hook_stack = HOOK_STACK.get()
+        if not hook_stack:
+            raise RuntimeError(  # nocov
+                "Attempting to unset current life cycle hook but it no longer exists!\n"
+                "A separate process or thread may have deleted this component's hook stack!"
+            )
+        if hook_stack and hook_stack.pop() is not self:
+            raise RuntimeError(  # nocov
+                "Hook stack is in an invalid state\n"
+                "A separate process or thread may have modified this component's hook stack!"
+            )

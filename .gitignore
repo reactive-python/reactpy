@@ -1,7 +1,10 @@
 # --- Build Artifacts ---
-src/reactpy/static/index.js*
+src/reactpy/static/*.js*
 src/reactpy/static/morphdom/
 src/reactpy/static/pyscript/
+src/reactpy/static/wheels/
+src/js/**/*.tgz
+src/js/**/LICENSE
 
 # --- Jupyter ---
 *.ipynb_checkpoints
@@ -45,7 +48,4 @@ pip-wheel-metadata
 
 # --- JS ---
 node_modules
-*.tsbuildinfo
 
-# --- Docs build output ---
-docs/site/

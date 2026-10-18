@@ -1,0 +1,5 @@
+{
+  "proseWrap": "never",
+  "trailingComma": "all",
+  "endOfLine": "auto"
+}

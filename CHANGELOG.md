@@ -10,15 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 <!--
 Using the following categories, list your changes in this order:
-    - "Added" for new features.
-    - "Changed" for changes in existing functionality.
-    - "Deprecated" for soon-to-be removed features.
-    - "Removed" for now removed features.
-    - "Fixed" for any bug fixes.
-    - "Security" in case of vulnerabilities.
- -->
+[Added, Changed, Deprecated, Removed, Fixed, Security]
 
-<!--changelog-start-->
+Don't forget to remove deprecated code on each major release!
+-->
 
 ## [Unreleased]
 
@@ -28,10 +23,10 @@ Using the following categories, list your changes in this order:
 - Added type hints to `reactpy.html` attributes.
 - Added support for nested components in web modules
 - Added support for inline JavaScript as event handlers or other attributes that expect a callable via `reactpy.types.InlineJavaScript`
-- Event functions can now call `event.preventDefault()` and `event.stopPropagation()` methods directly on the event data object, rather than using the `@event` decorator.
-- Event data now supports accessing properties via dot notation (ex. `event.target.value`).
+- Event functions can now call `event.preventDefault()`, `event.stopPropagation()`, and `event.stopImmediatePropagation()` methods directly on the event data object, rather than using the `@event` decorator.
+- Event data now supports accessing properties via dot notation (ex. `await event.target.value`).
 - Added support for partial functions in EventHandler
-- Added `reactpy.types.Event` to provide type hints for the standard `data` function argument (for example `def on_click(event: Event): ...`).
+- Added `reactpy.types.Event` to provide type hints for the standard `data` function argument (for example `async def on_click(event: Event): ...`).
 - Added `asgi` and `jinja` installation extras (for example `pip install reactpy[asgi, jinja]`).
 - Added `reactpy.executors.asgi.ReactPy` that can be used to run ReactPy in standalone mode via ASGI.
 - Added `reactpy.executors.asgi.ReactPyCsr` that can be used to run ReactPy in standalone mode via ASGI, but rendered entirely client-sided.
@@ -49,6 +44,15 @@ Using the following categories, list your changes in this order:
 - Events now support `debounce` and `throttle`, configurable per event via `event.debounce = <milliseconds>` and `EventHandler(fn, throttle=<milliseconds>)` respectively.
     - `debounce` waits until activity stops, then fires once. Default is 200 ms on `input`/`select`/`textarea`, 0 ms elsewhere.
     - `throttle` caps the rate how often an event is allowed to execute. No default; opt in per event.
+- Added a live event proxy which lets event handlers read properties from, and call methods on, the browser objects which triggered them (ex. `await event.target.value`, `await event.target.focus()`) rather than being limited to whatever was serializable at the moment the event was dispatched.
+    - Only an id and the event's `type` travel with the event. Whatever a handler reaches past is fetched from the browser on demand, one round trip at a time, and resolved against the object itself.
+    - Properties which are in flight at the same moment go out as a single message, and `await event.read("target.value", "key")` reads several at once. Two handlers which want the same property at the same moment share that one message, and one which walks away from an answer it only borrowed leaves the message in place for the one which asked.
+    - A read belongs to the moment it is awaited: it reports the current state of the browser object, not the state it held when the event was dispatched.
+    - Whatever a read found is remembered against the event, so reading one property twice costs one round trip - and a handler which wants what the browser holds by now asks again with `await event.read("target.value", refresh=True)`.
+    - Whatever comes back out of a method call can be walked too: the page keeps what the call answered for as long as it keeps the event, so a reference into a result resolves against that answer rather than against the method.
+    - Unanswered requests are bounded by `reactpy.config.REACTPY_EVENT_PROXY_TIMEOUT`, `reactpy.config.REACTPY_EVENT_PROXY_MAX_TIMEOUTS`, and `reactpy.config.REACTPY_EVENT_PROXY_MAX_DEPTH`.
+    - What that budget counts is unanswered messages rather than properties: a batch which asked for four things and got no answer at all costs one of it, not four. The same depth bounds an argument handed to a client side method as well as the data which comes back.
+    - A client which reconnects is a fresh chance at live access: binding a new sender brings it back if an earlier one was switched off for going quiet.
 
 ### Changed
 
@@ -62,7 +66,6 @@ Using the following categories, list your changes in this order:
 - Renamed the `use_location` hook's `pathname` attribute to `path`.
 - Renamed `reactpy.config.REACTPY_DEBUG_MODE` to `reactpy.config.REACTPY_DEBUG`.
 - ReactPy no longer auto-converts `snake_case` props to `camelCase`. It is now the responsibility of the user to ensure that props are in the correct format.
-- Rewrite the `event-to-object` package to be more robust at handling properties on events.
 - Custom JS components will now automatically assume you are using ReactJS in the absence of a `bind` function.
 - Refactor layout rendering logic to improve readability and maintainability.
 - The JavaScript package `@reactpy/client` now exports `React` and `ReactDOM`, which allows third-party components to re-use the same React instance as ReactPy.
@@ -74,6 +77,7 @@ Using the following categories, list your changes in this order:
 - `reactpy.types.VdomDictConstructor` has been renamed to `reactpy.types.VdomConstructor`.
 - `REACTPY_ASYNC_RENDERING` can now de-duplicate renders where necessary.
 - `REACTPY_ASYNC_RENDERING` is now defaulted to `True` for up to 40x performance improvements in environments with high concurrency.
+- Event handlers must be coroutines. Whatever is handed to `EventHandler`, `@event`, or an `on_*` attribute has to be awaitable, and anything which is not is refused with a `TypeError` as it is made into a handler. This is what makes it safe for a handler to read live event data without stalling the layout, and to call `set_state()` while it waits.
 
 ### Deprecated
 
@@ -92,6 +96,7 @@ Using the following categories, list your changes in this order:
 - Removed deprecated function `module_from_template`.
 - Removed deprecated exception type `reactpy.core.serve.Stop`.
 - Removed deprecated component `reactpy.widgets.hotswap`.
+- Removed the `event-to-object` package. The client no longer serializes an event when it dispatches one, so nothing was producing that snapshot any more (see the live event proxy above).
 - Removed `reactpy.sample` module.
 - Removed `reactpy.svg` module. Contents previously within `reactpy.svg.*` can now be accessed via `reactpy.html.svg.*`.
 - Removed `reactpy.html._` function. Use `reactpy.html(...)` or `reactpy.html.fragment(...)` instead.
@@ -116,6 +121,9 @@ Using the following categories, list your changes in this order:
 - Fixed a bug where the `key` property provided within server-side ReactPy code was failing to propagate to the front-end JavaScript components.
 - Fixed a bug where `RuntimeError("Hook stack is in an invalid state")` errors could be generated when using a webserver that reuses threads.
 - Fixed a bug where events on controlled inputs (e.g. `html.input({"onChange": ...})`) could be lost during rapid actions.
+- Fixed a bug where a render which happened while an event handler was still running could write a stale value back over a controlled input, because the event which prompted it had been acknowledged before the handler was out of the way.
+- Fixed a bug where `event-proxy-response` messages were dropped by `reactpy.executors.asgi.ReactPyMiddleware` rather than being routed to the layout which asked for them, leaving every live event read to hang until it timed out.
+- Fixed a bug where a component could stop re-rendering for the rest of its life after a scheduled render was cancelled, since the internal 'a render is already scheduled' latch was never released.
 - Allow for ReactPy and ReactJS components to be arbitrarily inserted onto the page with any possible hierarchy.
 
 ## [1.1.0] - 2024-11-24
@@ -1076,5 +1084,3 @@ No changes.
 [0.2.0]: https://github.com/reactive-python/reactpy/compare/0.1.2...0.2.0
 [0.1.2]: https://github.com/reactive-python/reactpy/compare/0.1.0...0.1.2
 [0.1.0]: https://github.com/reactive-python/reactpy/releases/tag/0.1.0
-
-[unreleased]: https://github.com/reactive-python/reactpy/compare/reactpy-v2.0.0b13...HEAD

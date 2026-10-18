@@ -1,0 +1,739 @@
+<!doctype html><html lang=en class=no-js> <head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="It's React, but in Python."><meta name=author content=Archmonger><link href=https://reactive-python.github.io/reactpy/learn/you-might-not-need-an-effect/ rel=canonical><link href=../synchronizing-with-effects/ rel=prev><link href=../lifecycle-of-reactive-effects/ rel=next><link rel=icon href=https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg><meta name=generator content="mkdocs-1.6.1, mkdocs-material-9.7.7"><title>You Might Not Need an Effect - ReactPy</title><link rel=stylesheet href=../../assets/stylesheets/main.ec1eaa64.min.css><link rel=stylesheet href=../../assets/stylesheets/palette.ab4e12ef.min.css><style>:root{--md-admonition-icon--note:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20448%20512%22%3E%3C%21--%21%20Font%20Awesome%20Free%207.1.0%20by%20%40fontawesome%20-%20https%3A//fontawesome.com%20License%20-%20https%3A//fontawesome.com/license/free%20%28Icons%3A%20CC%20BY%204.0%2C%20Fonts%3A%20SIL%20OFL%201.1%2C%20Code%3A%20MIT%20License%29%20Copyright%202025%20Fonticons%2C%20Inc.--%3E%3Cpath%20d%3D%22M64%20480c-35.3%200-64-28.7-64-64V96c0-35.3%2028.7-64%2064-64h320c35.3%200%2064%2028.7%2064%2064v213.5c0%2017-6.7%2033.3-18.7%2045.3L322.7%20461.3c-12%2012-28.3%2018.7-45.3%2018.7zm325.5-176H296c-13.3%200-24%2010.7-24%2024v93.5z%22/%3E%3C/svg%3E');}</style><link rel=preconnect href=https://fonts.gstatic.com crossorigin><link rel=stylesheet href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback"><style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style><link rel=stylesheet href=../../assets/_mkdocstrings.css><link rel=stylesheet href=../../assets/css/main.css><link rel=stylesheet href=../../assets/css/button.css><link rel=stylesheet href=../../assets/css/admonition.css><link rel=stylesheet href=../../assets/css/banner.css><link rel=stylesheet href=../../assets/css/sidebar.css><link rel=stylesheet href=../../assets/css/navbar.css><link rel=stylesheet href=../../assets/css/table-of-contents.css><link rel=stylesheet href=../../assets/css/code.css><link rel=stylesheet href=../../assets/css/footer.css><link rel=stylesheet href=../../assets/css/home.css><script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script></head> <body dir=ltr data-md-color-scheme=slate data-md-color-primary=red data-md-color-accent=red> <input class=md-toggle data-md-toggle=drawer type=checkbox id=__drawer autocomplete=off> <input class=md-toggle data-md-toggle=search type=checkbox id=__search autocomplete=off> <label class=md-overlay for=__drawer></label> <div data-md-component=skip> <a href=#overview class=md-skip> Skip to content </a> </div> <div data-md-component=announce> </div> <div data-md-color-scheme=default data-md-component=outdated hidden> <aside class="md-banner md-banner--warning"> <div class="md-banner__inner md-grid md-typeset"> You're not viewing the latest release. <a href=../../..> <strong>Click here to go to latest.</strong> </a> </div> <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL("../.."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script> </aside> </div> <header class="md-header md-header--shadow md-header--lifted" data-md-component=header> <nav class="md-header__inner md-grid" aria-label=Header> <a href=../.. title=ReactPy class="md-header__button md-logo" aria-label=ReactPy data-md-component=logo> <img src=https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg alt=logo> </a> <label class="md-header__button md-icon" for=__drawer> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg> </label> <div class=md-header__title data-md-component=header-title> <div class=md-header__ellipsis> <div class=md-header__topic> <span class=md-ellipsis> ReactPy </span> </div> <div class=md-header__topic data-md-component=header-topic> <span class=md-ellipsis> You Might Not Need an Effect </span> </div> </div> </div> <form class=md-header__option data-md-component=palette> <input class=md-option data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme=slate data-md-color-primary=red data-md-color-accent=red aria-label="Switch to light mode" type=radio name=__palette id=__palette_0> <label class="md-header__button md-icon" title="Switch to light mode" for=__palette_1 hidden> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="m3.55 19.09 1.41 1.41 1.8-1.79-1.42-1.42M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6c0-3.32-2.69-6-6-6m8 7h3v-2h-3m-2.76 7.71 1.8 1.79 1.41-1.41-1.79-1.8M20.45 5l-1.41-1.4-1.8 1.79 1.42 1.42M13 1h-2v3h2M6.76 5.39 4.96 3.6 3.55 5l1.79 1.81zM1 13h3v-2H1m12 9h-2v3h2"/></svg> </label> <input class=md-option data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme=default data-md-color-primary=white data-md-color-accent=red aria-label="Switch to dark mode" type=radio name=__palette id=__palette_1> <label class="md-header__button md-icon" title="Switch to dark mode" for=__palette_0 hidden> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg> </label> </form> <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script> <label class="md-header__button md-icon" for=__search> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg> </label> <div class=md-search data-md-component=search role=dialog> <label class=md-search__overlay for=__search></label> <div class=md-search__inner role=search> <form class=md-search__form name=search> <input type=text class=md-search__input name=query aria-label=Search placeholder=Search autocapitalize=off autocorrect=off autocomplete=off spellcheck=false data-md-component=search-query required> <label class="md-search__icon md-icon" for=__search> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg> </label> <nav class=md-search__options aria-label=Search> <button type=reset class="md-search__icon md-icon" title=Clear aria-label=Clear tabindex=-1> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> </button> </nav> </form> <div class=md-search__output> <div class=md-search__scrollwrap tabindex=0 data-md-scrollfix> <div class=md-search-result data-md-component=search-result> <div class=md-search-result__meta> Initializing search </div> <ol class=md-search-result__list role=presentation></ol> </div> </div> </div> </div> </div> <div class=md-header__source> <a href=https://github.com/reactive-python/reactpy title="Go to repository" class=md-source data-md-component=source> <div class="md-source__icon md-icon"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 512 512"><!-- Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg> </div> <div class=md-source__repository> ReactPy </div> </a> </div> </nav> <nav class=md-tabs aria-label=Tabs data-md-component=tabs> <div class=md-grid> <ul class=md-tabs__list> <li class=md-tabs__item> <a href=../.. class=md-tabs__link> Home </a> </li> <li class=md-tabs__item> <a href=../quick-start/ class=md-tabs__link> Get Started </a> </li> <li class="md-tabs__item md-tabs__item--active"> <a href=../your-first-component/ class=md-tabs__link> Learn </a> </li> <li class=md-tabs__item> <a href=../../reference/overview/ class=md-tabs__link> Reference </a> </li> <li class=md-tabs__item> <a href=../../about/changelog/ class=md-tabs__link> About </a> </li> </ul> </div> </nav> </header> <div class=md-container data-md-component=container> <main class=md-main data-md-component=main> <div class="md-main__inner md-grid"> <div class="md-sidebar md-sidebar--primary" data-md-component=sidebar data-md-type=navigation> <div class=md-sidebar__scrollwrap> <div class=md-sidebar__inner> <nav class="md-nav md-nav--primary md-nav--lifted" aria-label=Navigation data-md-level=0> <label class=md-nav__title for=__drawer> <a href=../.. title=ReactPy class="md-nav__button md-logo" aria-label=ReactPy data-md-component=logo> <img src=https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg alt=logo> </a> ReactPy </label> <div class=md-nav__source> <a href=https://github.com/reactive-python/reactpy title="Go to repository" class=md-source data-md-component=source> <div class="md-source__icon md-icon"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 512 512"><!-- Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg> </div> <div class=md-source__repository> ReactPy </div> </a> </div> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../.. class=md-nav__link> <span class=md-ellipsis> Home </span> </a> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_2> <label class=md-nav__link for=__nav_2 id=__nav_2_label tabindex=0> <span class=md-ellipsis> Get Started </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=1 aria-labelledby=__nav_2_label aria-expanded=false> <label class=md-nav__title for=__nav_2> <span class="md-nav__icon md-icon"></span> Get Started </label> <ul class=md-nav__list data-md-scrollfix> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_2_1> <label class=md-nav__link for=__nav_2_1 id=__nav_2_1_label tabindex=0> <span class=md-ellipsis> Overview </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_2_1_label aria-expanded=false> <label class=md-nav__title for=__nav_2_1> <span class="md-nav__icon md-icon"></span> Overview </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../quick-start/ class=md-nav__link> <span class=md-ellipsis> Quick Start </span> </a> </li> <li class=md-nav__item> <a href=../tutorial-tic-tac-toe/ class=md-nav__link> <span class=md-ellipsis> Tutorial: Tic-Tac-Toe </span> </a> </li> <li class=md-nav__item> <a href=../thinking-in-react/ class=md-nav__link> <span class=md-ellipsis> Thinking in React </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_2_2> <label class=md-nav__link for=__nav_2_2 id=__nav_2_2_label tabindex=0> <span class=md-ellipsis> Installation </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_2_2_label aria-expanded=false> <label class=md-nav__title for=__nav_2_2> <span class="md-nav__icon md-icon"></span> Installation </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../creating-a-react-app/ class=md-nav__link> <span class=md-ellipsis> Creating a Standalone React App </span> </a> </li> <li class=md-nav__item> <a href=../add-react-to-an-existing-project/ class=md-nav__link> <span class=md-ellipsis> Add React to an Existing Project </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_2_3> <label class=md-nav__link for=__nav_2_3 id=__nav_2_3_label tabindex=0> <span class=md-ellipsis> Setup </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_2_3_label aria-expanded=false> <label class=md-nav__title for=__nav_2_3> <span class="md-nav__icon md-icon"></span> Setup </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../editor-setup/ class=md-nav__link> <span class=md-ellipsis> Editor Setup </span> </a> </li> <li class=md-nav__item> <a href=../tools-and-packages/ class=md-nav__link> <span class=md-ellipsis> Tools, Libraries, and Packages </span> </a> </li> </ul> </nav> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_3 checked> <label class=md-nav__link for=__nav_3 id=__nav_3_label tabindex> <span class=md-ellipsis> Learn </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=1 aria-labelledby=__nav_3_label aria-expanded=true> <label class=md-nav__title for=__nav_3> <span class="md-nav__icon md-icon"></span> Learn </label> <ul class=md-nav__list data-md-scrollfix> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_3_1> <label class=md-nav__link for=__nav_3_1 id=__nav_3_1_label tabindex=0> <span class=md-ellipsis> Describing the UI </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_3_1_label aria-expanded=false> <label class=md-nav__title for=__nav_3_1> <span class="md-nav__icon md-icon"></span> Describing the UI </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../your-first-component/ class=md-nav__link> <span class=md-ellipsis> Your First Component </span> </a> </li> <li class=md-nav__item> <a href=../importing-and-exporting-components/ class=md-nav__link> <span class=md-ellipsis> Importing and Exporting Components </span> </a> </li> <li class=md-nav__item> <a href=../passing-props-to-a-component/ class=md-nav__link> <span class=md-ellipsis> Passing Props to a Component </span> </a> </li> <li class=md-nav__item> <a href=../conditional-rendering/ class=md-nav__link> <span class=md-ellipsis> Conditional Rendering </span> </a> </li> <li class=md-nav__item> <a href=../rendering-lists/ class=md-nav__link> <span class=md-ellipsis> Rendering Lists </span> </a> </li> <li class=md-nav__item> <a href=../keeping-components-pure/ class=md-nav__link> <span class=md-ellipsis> Keeping Components Pure </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_3_2> <label class=md-nav__link for=__nav_3_2 id=__nav_3_2_label tabindex=0> <span class=md-ellipsis> Adding Interactivity </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_3_2_label aria-expanded=false> <label class=md-nav__title for=__nav_3_2> <span class="md-nav__icon md-icon"></span> Adding Interactivity </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../responding-to-events/ class=md-nav__link> <span class=md-ellipsis> Responding to Events </span> </a> </li> <li class=md-nav__item> <a href=../state-a-components-memory/ class=md-nav__link> <span class=md-ellipsis> State: A Component's Memory </span> </a> </li> <li class=md-nav__item> <a href=../render-and-commit/ class=md-nav__link> <span class=md-ellipsis> Render and Commit </span> </a> </li> <li class=md-nav__item> <a href=../state-as-a-snapshot/ class=md-nav__link> <span class=md-ellipsis> State as a Snapshot </span> </a> </li> <li class=md-nav__item> <a href=../queueing-a-series-of-state-updates/ class=md-nav__link> <span class=md-ellipsis> Queueing a Series of State Updates </span> </a> </li> <li class=md-nav__item> <a href=../updating-objects-in-state/ class=md-nav__link> <span class=md-ellipsis> Updating Objects in State </span> </a> </li> <li class=md-nav__item> <a href=../updating-arrays-in-state/ class=md-nav__link> <span class=md-ellipsis> Updating Arrays in State </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_3_3> <label class=md-nav__link for=__nav_3_3 id=__nav_3_3_label tabindex=0> <span class=md-ellipsis> Managing State </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_3_3_label aria-expanded=false> <label class=md-nav__title for=__nav_3_3> <span class="md-nav__icon md-icon"></span> Managing State </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../reacting-to-input-with-state/ class=md-nav__link> <span class=md-ellipsis> Reacting to Input with State </span> </a> </li> <li class=md-nav__item> <a href=../choosing-the-state-structure/ class=md-nav__link> <span class=md-ellipsis> Choosing the State Structure </span> </a> </li> <li class=md-nav__item> <a href=../sharing-state-between-components/ class=md-nav__link> <span class=md-ellipsis> Sharing State Between Components </span> </a> </li> <li class=md-nav__item> <a href=../preserving-and-resetting-state/ class=md-nav__link> <span class=md-ellipsis> Preserving and Resetting State </span> </a> </li> <li class=md-nav__item> <a href=../extracting-state-logic-into-a-reducer/ class=md-nav__link> <span class=md-ellipsis> Extracting State Logic into a Reducer </span> </a> </li> <li class=md-nav__item> <a href=../passing-data-deeply-with-context/ class=md-nav__link> <span class=md-ellipsis> Passing Data Deeply with Context </span> </a> </li> <li class=md-nav__item> <a href=../scaling-up-with-reducer-and-context/ class=md-nav__link> <span class=md-ellipsis> Scaling Up with Reducer and Context </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--active md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_3_4 checked> <label class=md-nav__link for=__nav_3_4 id=__nav_3_4_label tabindex=0> <span class=md-ellipsis> Escape Hatches </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_3_4_label aria-expanded=true> <label class=md-nav__title for=__nav_3_4> <span class="md-nav__icon md-icon"></span> Escape Hatches </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../referencing-values-with-refs/ class=md-nav__link> <span class=md-ellipsis> Referencing Values with Refs </span> </a> </li> <li class=md-nav__item> <a href=../manipulating-the-dom-with-refs/ class=md-nav__link> <span class=md-ellipsis> Manipulating the DOM with Refs </span> </a> </li> <li class=md-nav__item> <a href=../synchronizing-with-effects/ class=md-nav__link> <span class=md-ellipsis> Synchronizing with Effects </span> </a> </li> <li class="md-nav__item md-nav__item--active"> <input class="md-nav__toggle md-toggle" type=checkbox id=__toc> <label class="md-nav__link md-nav__link--active" for=__toc> <span class=md-ellipsis> You Might Not Need an Effect </span> <span class="md-nav__icon md-icon"></span> </label> <a href=./ class="md-nav__link md-nav__link--active"> <span class=md-ellipsis> You Might Not Need an Effect </span> </a> <nav class="md-nav md-nav--secondary" aria-label="Table of contents"> <label class=md-nav__title for=__toc> <span class="md-nav__icon md-icon"></span> Table of contents </label> <ul class=md-nav__list data-md-component=toc data-md-scrollfix> <li class=md-nav__item> <a href=#overview class=md-nav__link> <span class=md-ellipsis> Overview </span> </a> </li> <li class=md-nav__item> <a href=#how-to-remove-unnecessary-effects class=md-nav__link> <span class=md-ellipsis> How to remove unnecessary Effects </span> </a> <nav class=md-nav aria-label="How to remove unnecessary Effects"> <ul class=md-nav__list> <li class=md-nav__item> <a href=#updating-state-based-on-props-or-state class=md-nav__link> <span class=md-ellipsis> Updating state based on props or state </span> </a> </li> <li class=md-nav__item> <a href=#caching-expensive-calculations class=md-nav__link> <span class=md-ellipsis> Caching expensive calculations </span> </a> </li> <li class=md-nav__item> <a href=#resetting-all-state-when-a-prop-changes class=md-nav__link> <span class=md-ellipsis> Resetting all state when a prop changes </span> </a> </li> <li class=md-nav__item> <a href=#adjusting-some-state-when-a-prop-changes class=md-nav__link> <span class=md-ellipsis> Adjusting some state when a prop changes </span> </a> </li> <li class=md-nav__item> <a href=#sharing-logic-between-event-handlers class=md-nav__link> <span class=md-ellipsis> Sharing logic between event handlers </span> </a> </li> <li class=md-nav__item> <a href=#sending-a-post-request class=md-nav__link> <span class=md-ellipsis> Sending a POST request </span> </a> </li> <li class=md-nav__item> <a href=#notifying-parent-components-about-state-changes class=md-nav__link> <span class=md-ellipsis> Notifying parent components about state changes </span> </a> </li> <li class=md-nav__item> <a href=#chains-of-computations class=md-nav__link> <span class=md-ellipsis> Chains of computations </span> </a> </li> <li class=md-nav__item> <a href=#initializing-the-application class=md-nav__link> <span class=md-ellipsis> Initializing the application </span> </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=#subscribing-to-an-external-store class=md-nav__link> <span class=md-ellipsis> Subscribing to an external store </span> </a> </li> <li class=md-nav__item> <a href=#fetching-data-without-the-extra-effects class=md-nav__link> <span class=md-ellipsis> Fetching data, without the extra Effects </span> </a> </li> <li class=md-nav__item> <a href=#how-to-tell-whether-an-effect-is-necessary class=md-nav__link> <span class=md-ellipsis> How to tell whether an Effect is necessary </span> </a> </li> <li class=md-nav__item> <a href=#recap class=md-nav__link> <span class=md-ellipsis> Recap </span> </a> </li> <li class=md-nav__item> <a href=#related class=md-nav__link> <span class=md-ellipsis> Related </span> </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=../lifecycle-of-reactive-effects/ class=md-nav__link> <span class=md-ellipsis> Lifecycle of Reactive Effects </span> </a> </li> <li class=md-nav__item> <a href=../separating-events-from-effects/ class=md-nav__link> <span class=md-ellipsis> Separating Events from Effects </span> </a> </li> <li class=md-nav__item> <a href=../removing-effect-dependencies/ class=md-nav__link> <span class=md-ellipsis> Removing Effect Dependencies </span> </a> </li> <li class=md-nav__item> <a href=../reusing-logic-with-custom-hooks/ class=md-nav__link> <span class=md-ellipsis> Reusing Logic with Custom Hooks </span> </a> </li> <li class=md-nav__item> <a href=../communicate-data-between-server-and-client/ class=md-nav__link> <span class=md-ellipsis> Communicating Data Between Server and Client </span> </a> </li> <li class=md-nav__item> <a href=../convert-between-vdom-and-html/ class=md-nav__link> <span class=md-ellipsis> Convert Between VDOM and HTML </span> </a> </li> <li class=md-nav__item> <a href=../vdom-mutations/ class=md-nav__link> <span class=md-ellipsis> VDOM Mutations </span> </a> </li> <li class=md-nav__item> <a href=../creating-vdom-event-handlers/ class=md-nav__link> <span class=md-ellipsis> Creating VDOM Event Handlers </span> </a> </li> <li class=md-nav__item> <a href=../creating-html-tags/ class=md-nav__link> <span class=md-ellipsis> Creating HTML Tags </span> </a> </li> <li class=md-nav__item> <a href=../creating-backends/ class=md-nav__link> <span class=md-ellipsis> Creating Backends </span> </a> </li> <li class=md-nav__item> <a href=../manually-register-a-client/ class=md-nav__link> <span class=md-ellipsis> Manually Register a Client </span> </a> </li> </ul> </nav> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_4> <label class=md-nav__link for=__nav_4 id=__nav_4_label tabindex=0> <span class=md-ellipsis> Reference </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=1 aria-labelledby=__nav_4_label aria-expanded=false> <label class=md-nav__title for=__nav_4> <span class="md-nav__icon md-icon"></span> Reference </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../reference/overview/ class=md-nav__link> <span class=md-ellipsis> Overview </span> </a> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_4_2> <label class=md-nav__link for=__nav_4_2 id=__nav_4_2_label tabindex=0> <span class=md-ellipsis> Hooks </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_4_2_label aria-expanded=false> <label class=md-nav__title for=__nav_4_2> <span class="md-nav__icon md-icon"></span> Hooks </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../reference/use-state/ class=md-nav__link> <span class=md-ellipsis> Use State </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-effect/ class=md-nav__link> <span class=md-ellipsis> Use Effect </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-async-effect/ class=md-nav__link> <span class=md-ellipsis> Use Async Effect </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-context/ class=md-nav__link> <span class=md-ellipsis> Use Context </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-reducer/ class=md-nav__link> <span class=md-ellipsis> Use Reducer </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-callback/ class=md-nav__link> <span class=md-ellipsis> Use Callback </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-memo/ class=md-nav__link> <span class=md-ellipsis> Use Memo </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-ref/ class=md-nav__link> <span class=md-ellipsis> Use Ref </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-debug-value/ class=md-nav__link> <span class=md-ellipsis> Use Debug Value </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-connection/ class=md-nav__link> <span class=md-ellipsis> Use Connection </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-scope/ class=md-nav__link> <span class=md-ellipsis> Use Scope </span> </a> </li> <li class=md-nav__item> <a href=../../reference/use-location/ class=md-nav__link> <span class=md-ellipsis> Use Location </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_4_3> <label class=md-nav__link for=__nav_4_3 id=__nav_4_3_label tabindex=0> <span class=md-ellipsis> HTML Tags </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_4_3_label aria-expanded=false> <label class=md-nav__title for=__nav_4_3> <span class="md-nav__icon md-icon"></span> HTML Tags </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../reference/common-props/ class=md-nav__link> <span class=md-ellipsis> Common Props </span> </a> </li> <li class=md-nav__item> <a href=../../reference/usage/ class=md-nav__link> <span class=md-ellipsis> Usage </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_4_4> <label class=md-nav__link for=__nav_4_4 id=__nav_4_4_label tabindex=0> <span class=md-ellipsis> Executors </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_4_4_label aria-expanded=false> <label class=md-nav__title for=__nav_4_4> <span class="md-nav__icon md-icon"></span> Executors </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../reference/reactpy/ class=md-nav__link> <span class=md-ellipsis> ReactPy </span> </a> </li> <li class=md-nav__item> <a href=../../reference/reactpy-csr/ class=md-nav__link> <span class=md-ellipsis> ReactPyCsr </span> </a> </li> <li class=md-nav__item> <a href=../../reference/reactpy-middleware/ class=md-nav__link> <span class=md-ellipsis> ReactPyMiddleware </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_4_5> <label class=md-nav__link for=__nav_4_5 id=__nav_4_5_label tabindex=0> <span class=md-ellipsis> Rules of React </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_4_5_label aria-expanded=false> <label class=md-nav__title for=__nav_4_5> <span class="md-nav__icon md-icon"></span> Rules of React </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../reference/rules-of-react/ class=md-nav__link> <span class=md-ellipsis> Overview </span> </a> </li> <li class=md-nav__item> <a href=../../reference/components-and-hooks-must-be-pure/ class=md-nav__link> <span class=md-ellipsis> Components and Hooks must be pure </span> </a> </li> <li class=md-nav__item> <a href=../../reference/react-calls-components-and-hooks/ class=md-nav__link> <span class=md-ellipsis> React calls Components and Hooks </span> </a> </li> <li class=md-nav__item> <a href=../../reference/rules-of-hooks/ class=md-nav__link> <span class=md-ellipsis> Rules of Hooks </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_4_6> <label class=md-nav__link for=__nav_4_6 id=__nav_4_6_label tabindex=0> <span class=md-ellipsis> Template Tags </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=2 aria-labelledby=__nav_4_6_label aria-expanded=false> <label class=md-nav__title for=__nav_4_6> <span class="md-nav__icon md-icon"></span> Template Tags </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../reference/jinja/ class=md-nav__link> <span class=md-ellipsis> Jinja </span> </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=../../reference/protocol-structure/ class=md-nav__link> <span class=md-ellipsis> Protocol Structure </span> </a> </li> <li class=md-nav__item> <a href=../../reference/client-api/ class=md-nav__link> <span class=md-ellipsis> Client API </span> </a> </li> </ul> </nav> </li> <li class="md-nav__item md-nav__item--nested"> <input class="md-nav__toggle md-toggle " type=checkbox id=__nav_5> <label class=md-nav__link for=__nav_5 id=__nav_5_label tabindex=0> <span class=md-ellipsis> About </span> <span class="md-nav__icon md-icon"></span> </label> <nav class=md-nav data-md-level=1 aria-labelledby=__nav_5_label aria-expanded=false> <label class=md-nav__title for=__nav_5> <span class="md-nav__icon md-icon"></span> About </label> <ul class=md-nav__list data-md-scrollfix> <li class=md-nav__item> <a href=../../about/changelog/ class=md-nav__link> <span class=md-ellipsis> Changelog </span> </a> </li> <li class=md-nav__item> <a href=../../about/community/ class=md-nav__link> <span class=md-ellipsis> Community </span> </a> </li> <li class=md-nav__item> <a href=../../about/running-tests/ class=md-nav__link> <span class=md-ellipsis> Running Tests </span> </a> </li> <li class=md-nav__item> <a href=../../about/code/ class=md-nav__link> <span class=md-ellipsis> Contributing Code </span> </a> </li> <li class=md-nav__item> <a href=../../about/docs/ class=md-nav__link> <span class=md-ellipsis> Contributing Documentation </span> </a> </li> <li class=md-nav__item> <a href=../../about/licenses/ class=md-nav__link> <span class=md-ellipsis> Licenses </span> </a> </li> </ul> </nav> </li> </ul> </nav> </div> </div> </div> <div class="md-sidebar md-sidebar--secondary" data-md-component=sidebar data-md-type=toc> <div class=md-sidebar__scrollwrap> <div class=md-sidebar__inner> <nav class="md-nav md-nav--secondary" aria-label="Table of contents"> <label class=md-nav__title for=__toc> <span class="md-nav__icon md-icon"></span> Table of contents </label> <ul class=md-nav__list data-md-component=toc data-md-scrollfix> <li class=md-nav__item> <a href=#overview class=md-nav__link> <span class=md-ellipsis> Overview </span> </a> </li> <li class=md-nav__item> <a href=#how-to-remove-unnecessary-effects class=md-nav__link> <span class=md-ellipsis> How to remove unnecessary Effects </span> </a> <nav class=md-nav aria-label="How to remove unnecessary Effects"> <ul class=md-nav__list> <li class=md-nav__item> <a href=#updating-state-based-on-props-or-state class=md-nav__link> <span class=md-ellipsis> Updating state based on props or state </span> </a> </li> <li class=md-nav__item> <a href=#caching-expensive-calculations class=md-nav__link> <span class=md-ellipsis> Caching expensive calculations </span> </a> </li> <li class=md-nav__item> <a href=#resetting-all-state-when-a-prop-changes class=md-nav__link> <span class=md-ellipsis> Resetting all state when a prop changes </span> </a> </li> <li class=md-nav__item> <a href=#adjusting-some-state-when-a-prop-changes class=md-nav__link> <span class=md-ellipsis> Adjusting some state when a prop changes </span> </a> </li> <li class=md-nav__item> <a href=#sharing-logic-between-event-handlers class=md-nav__link> <span class=md-ellipsis> Sharing logic between event handlers </span> </a> </li> <li class=md-nav__item> <a href=#sending-a-post-request class=md-nav__link> <span class=md-ellipsis> Sending a POST request </span> </a> </li> <li class=md-nav__item> <a href=#notifying-parent-components-about-state-changes class=md-nav__link> <span class=md-ellipsis> Notifying parent components about state changes </span> </a> </li> <li class=md-nav__item> <a href=#chains-of-computations class=md-nav__link> <span class=md-ellipsis> Chains of computations </span> </a> </li> <li class=md-nav__item> <a href=#initializing-the-application class=md-nav__link> <span class=md-ellipsis> Initializing the application </span> </a> </li> </ul> </nav> </li> <li class=md-nav__item> <a href=#subscribing-to-an-external-store class=md-nav__link> <span class=md-ellipsis> Subscribing to an external store </span> </a> </li> <li class=md-nav__item> <a href=#fetching-data-without-the-extra-effects class=md-nav__link> <span class=md-ellipsis> Fetching data, without the extra Effects </span> </a> </li> <li class=md-nav__item> <a href=#how-to-tell-whether-an-effect-is-necessary class=md-nav__link> <span class=md-ellipsis> How to tell whether an Effect is necessary </span> </a> </li> <li class=md-nav__item> <a href=#recap class=md-nav__link> <span class=md-ellipsis> Recap </span> </a> </li> <li class=md-nav__item> <a href=#related class=md-nav__link> <span class=md-ellipsis> Related </span> </a> </li> </ul> </nav> </div> </div> </div> <div class=md-content data-md-component=content> <article class="md-content__inner md-typeset"> <h1>You Might Not Need an Effect</h1> <h2 id=overview>Overview<a class=headerlink href=#overview title="Permanent link">&para;</a></h2> <p class=intro> Most Effects are unnecessary. If your logic only adjusts one thing based on another thing you already have, it belongs in the render — not in an Effect. This page walks through the common cases where an Effect looks right and isn't, with the render counts each one costs. </p> <div class="admonition summary"> <p class=admonition-title>You will learn</p> <ul> <li>How to recognize an Effect that is doing a render's job</li> <li>What to write instead, case by case</li> <li>Why ReactPy cannot use React's "set state during render" escape hatch</li> <li>Which Effects genuinely <em>are</em> necessary</li> </ul> </div> <h2 id=how-to-remove-unnecessary-effects>How to remove unnecessary Effects<a class=headerlink href=#how-to-remove-unnecessary-effects title="Permanent link">&para;</a></h2> <p>Work through each Effect in your code and ask: <strong>does this code need to run after a render, or could it run while rendering?</strong></p> <p>An Effect is genuinely necessary when the component must reach something outside ReactPy — subscribing to a queue, opening a socket, starting a task. Everything below is the opposite case: the "external system" is a value your component already has.</p> <p>If you're not sure what Effects are for in the first place, start with <a href=../synchronizing-with-effects/ >Synchronizing with Effects</a>.</p> <h3 id=updating-state-based-on-props-or-state>Updating state based on props or state<a class=headerlink href=#updating-state-based-on-props-or-state title="Permanent link">&para;</a></h3> <p>A component shows a name built from two fields. The tempting version stores the combination and keeps it in step with an Effect:</p> <div class="tabbed-set tabbed-alternate" data-tabs=1:2><input checked=checked id=__tabbed_1_1 name=__tabbed_1 type=radio><input id=__tabbed_1_2 name=__tabbed_1 type=radio><div class=tabbed-labels><label for=__tabbed_1_1>app.py</label><label for=__tabbed_1_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>form</span><span class=p>():</span>
+    <span class=n>first_name</span><span class=p>,</span> <span class=n>set_first_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Ada"</span><span class=p>)</span>
+    <span class=n>last_name</span><span class=p>,</span> <span class=n>set_last_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Lovelace"</span><span class=p>)</span>
+    <span class=c1># Wrong: this value is not state, it is a calculation of other state.</span>
+    <span class=n>full_name</span><span class=p>,</span> <span class=n>set_full_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
+
+    <span class=k>def</span><span class=w> </span><span class=nf>effect</span><span class=p>():</span>
+        <span class=n>set_full_name</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>first_name</span><span class=si>}</span><span class=s2> </span><span class=si>{</span><span class=n>last_name</span><span class=si>}</span><span class=s2>"</span><span class=p>)</span>
+
+    <span class=n>use_effect</span><span class=p>(</span><span class=n>effect</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>first_name</span><span class=p>,</span> <span class=n>last_name</span><span class=p>])</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_first_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_first_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_last_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_last_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>full_name</span> <span class=ow>or</span> <span class=s2>"(nothing yet)"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+            <span class=p>{</span>
+                <span class=s2>"value"</span><span class=p>:</span> <span class=n>first_name</span><span class=p>,</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_first_name_change</span><span class=p>,</span>
+            <span class=p>}</span>
+        <span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+            <span class=p>{</span>
+                <span class=s2>"value"</span><span class=p>:</span> <span class=n>last_name</span><span class=p>,</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_last_name_change</span><span class=p>,</span>
+            <span class=p>}</span>
+        <span class=p>),</span>
+    <span class=p>)</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Remove the state variable and the Effect, and calculate it during render:</p> <div class="tabbed-set tabbed-alternate" data-tabs=2:2><input checked=checked id=__tabbed_2_1 name=__tabbed_2 type=radio><input id=__tabbed_2_2 name=__tabbed_2 type=radio><div class=tabbed-labels><label for=__tabbed_2_1>app.py</label><label for=__tabbed_2_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>form</span><span class=p>():</span>
+    <span class=n>first_name</span><span class=p>,</span> <span class=n>set_first_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Ada"</span><span class=p>)</span>
+    <span class=n>last_name</span><span class=p>,</span> <span class=n>set_last_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Lovelace"</span><span class=p>)</span>
+    <span class=c1># Right: calculated during rendering, so it is always in sync.</span>
+    <span class=n>full_name</span> <span class=o>=</span> <span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>first_name</span><span class=si>}</span><span class=s2> </span><span class=si>{</span><span class=n>last_name</span><span class=si>}</span><span class=s2>"</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_first_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_first_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_last_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_last_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>full_name</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+            <span class=p>{</span>
+                <span class=s2>"value"</span><span class=p>:</span> <span class=n>first_name</span><span class=p>,</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_first_name_change</span><span class=p>,</span>
+            <span class=p>}</span>
+        <span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+            <span class=p>{</span>
+                <span class=s2>"value"</span><span class=p>:</span> <span class=n>last_name</span><span class=p>,</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_last_name_change</span><span class=p>,</span>
+            <span class=p>}</span>
+        <span class=p>),</span>
+    <span class=p>)</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>The difference is measurable, and the first row of each is the part users actually see:</p> <table> <thead> <tr> <th></th> <th>First paint</th> <th>Renders for two keystrokes</th> </tr> </thead> <tbody> <tr> <td>Effect + stored state</td> <td><code class=highlight><span class=s2>"(nothing yet)"</span></code></td> <td>6</td> </tr> <tr> <td>Derived during render</td> <td><code class=highlight><span class=s2>"Ada Lovelace"</span></code></td> <td>3</td> </tr> </tbody> </table> <p>Verified in a <code class=highlight><span class=n>Layout</span></code>. The Effect version renders once with an empty name, sets state from the Effect, renders again — every keystroke costs two renders instead of one, and the very first paint is wrong. <strong>Nothing downstream can rescue that first frame, because it is a real render that a real client receives.</strong></p> <p><strong>When something can be calculated from existing props or state, don't put it in state.</strong> Calculate it during render. Fewer state variables means less code, no way for two of them to drift apart, and half the renders. If this feels unfamiliar, <a href=../thinking-in-react/ >Thinking in React</a> covers what belongs in state.</p> <div class="admonition info"> <p class=admonition-title>How expensive is too expensive?</p> <p>If you're not sure whether a calculation is costly enough to worry about, <strong>write it without caching first,</strong> then measure it: time the component body, or count how often it runs. In practice the work that is genuinely slow is usually obvious — parsing, sorting or filtering thousands of rows, regex over a large string, cryptographic hashes. String concatenation, <code class=highlight><span class=nb>len</span><span class=p>()</span></code>, and a loop over a page's worth of items are not worth a cache, and a cache costs more than it saves when its dependency list is wrong.</p> </div> <h3 id=caching-expensive-calculations>Caching expensive calculations<a class=headerlink href=#caching-expensive-calculations title="Permanent link">&para;</a></h3> <p>When a calculation genuinely is expensive, the answer is still not state plus an Effect — it is <code class=highlight><span class=n>use_memo</span></code>, which caches a <em>value</em> without adding a render:</p> <div class="tabbed-set tabbed-alternate" data-tabs=3:2><input checked=checked id=__tabbed_3_1 name=__tabbed_3 type=radio><input id=__tabbed_3_2 name=__tabbed_3 type=radio><div class=tabbed-labels><label for=__tabbed_3_1>app.py</label><label for=__tabbed_3_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>todo_list</span><span class=p>():</span>
+    <span class=n>filter_name</span><span class=p>,</span> <span class=n>set_filter_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"all"</span><span class=p>)</span>
+    <span class=n>new_todo</span><span class=p>,</span> <span class=n>set_new_todo</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
+
+    <span class=k>def</span><span class=w> </span><span class=nf>visible_todos</span><span class=p>():</span>
+        <span class=c1># A real filter over a real dataset. It records every run so the</span>
+        <span class=c1># effect of use_memo is countable.</span>
+        <span class=n>filter_runs</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>filter_name</span><span class=p>)</span>
+        <span class=k>if</span> <span class=n>filter_name</span> <span class=o>==</span> <span class=s2>"all"</span><span class=p>:</span>
+            <span class=k>return</span> <span class=n>todos</span>
+        <span class=k>if</span> <span class=n>filter_name</span> <span class=o>==</span> <span class=s2>"active"</span><span class=p>:</span>
+            <span class=k>return</span> <span class=p>[</span><span class=n>todo</span> <span class=k>for</span> <span class=n>todo</span> <span class=ow>in</span> <span class=n>todos</span> <span class=k>if</span> <span class=ow>not</span> <span class=n>todo</span><span class=p>[</span><span class=s2>"completed"</span><span class=p>]]</span>
+        <span class=k>return</span> <span class=p>[</span><span class=n>todo</span> <span class=k>for</span> <span class=n>todo</span> <span class=ow>in</span> <span class=n>todos</span> <span class=k>if</span> <span class=n>todo</span><span class=p>[</span><span class=s2>"completed"</span><span class=p>]]</span>
+
+    <span class=n>shown</span> <span class=o>=</span> <span class=n>use_memo</span><span class=p>(</span><span class=n>visible_todos</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_filter_name_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_filter_name</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"all"</span><span class=p>:</span> <span class=s2>"active"</span><span class=p>,</span> <span class=s2>"active"</span><span class=p>:</span> <span class=s2>"completed"</span><span class=p>,</span> <span class=s2>"completed"</span><span class=p>:</span> <span class=s2>"all"</span><span class=p>}[</span><span class=n>filter_name</span><span class=p>]</span>
+        <span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_new_todo_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_new_todo</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>shown</span><span class=p>)</span><span class=si>}</span><span class=s2> of </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>todos</span><span class=p>)</span><span class=si>}</span><span class=s2> shown (filter: </span><span class=si>{</span><span class=n>filter_name</span><span class=si>}</span><span class=s2>)"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>([</span><span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>({</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>todo</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]},</span> <span class=n>todo</span><span class=p>[</span><span class=s2>"text"</span><span class=p>])</span> <span class=k>for</span> <span class=n>todo</span> <span class=ow>in</span> <span class=n>shown</span><span class=p>]),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_filter_name_click</span><span class=p>},</span>
+            <span class=s2>"Change filter"</span><span class=p>,</span>
+        <span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+            <span class=p>{</span>
+                <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"new todo"</span><span class=p>,</span>
+                <span class=s2>"value"</span><span class=p>:</span> <span class=n>new_todo</span><span class=p>,</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_new_todo_change</span><span class=p>,</span>
+            <span class=p>}</span>
+        <span class=p>),</span>
+    <span class=p>)</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>The filter records each run so the result is countable. Verified: after two keystrokes the component has rendered three times and the filter has run <strong>once</strong>; pressing <strong>Change filter</strong> adds a render and a second run. The value is recomputed exactly when the inputs it reads change, and never on a render that didn't change them.</p> <p>Two properties worth knowing, both verified:</p> <ul> <li><code class=highlight><span class=n>use_memo</span></code> <strong>infers</strong> its dependencies the same way <code class=highlight><span class=n>use_effect</span></code> does — from the names the function reads. Pass <code class=highlight><span class=n>dependencies</span><span class=o>=</span><span class=p>[]</span></code> to pin a value forever, or <code class=highlight><span class=n>dependencies</span><span class=o>=</span><span class=kc>None</span></code> to recompute on every render. See <a href=../../reference/use-memo/ >Use Memo</a>.</li> <li>It caches the <strong>value</strong>, not the render. The component body still runs on every render; ReactPy has no component-level <code class=highlight><span class=n>memo</span></code>, so a child re-runs whenever its parent does. <code class=highlight><span class=n>use_memo</span></code> saves the computation, never the render — see <a href=../render-and-commit/ >Render and Commit</a>.</li> </ul> <p>Mutating a value in place and "setting" it back defeats <code class=highlight><span class=n>use_memo</span></code> too, for the same reason it defeats <code class=highlight><span class=n>use_state</span></code>: the new value compares equal to the old one. Build a new object instead (<a href=../updating-arrays-in-state/ >Updating Arrays in State</a>).</p> <h3 id=resetting-all-state-when-a-prop-changes>Resetting all state when a prop changes<a class=headerlink href=#resetting-all-state-when-a-prop-changes title="Permanent link">&para;</a></h3> <p>A profile page holds a comment draft. When the user navigates to a different profile, the draft should not follow them:</p> <div class="tabbed-set tabbed-alternate" data-tabs=4:2><input checked=checked id=__tabbed_4_1 name=__tabbed_4 type=radio><input id=__tabbed_4_2 name=__tabbed_4 type=radio><div class=tabbed-labels><label for=__tabbed_4_1>app.py</label><label for=__tabbed_4_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>profile</span><span class=p>(</span><span class=n>user_id</span><span class=p>):</span>
+    <span class=c1># Any state declared here is thrown away whenever the key changes, along</span>
+    <span class=c1># with the state of every component below it. No Effect needed.</span>
+    <span class=n>comment</span><span class=p>,</span> <span class=n>set_comment</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_comment_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_comment</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=sa>f</span><span class=s2>"profile </span><span class=si>{</span><span class=n>user_id</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>textarea</span><span class=p>(</span>
+            <span class=p>{</span>
+                <span class=s2>"value"</span><span class=p>:</span> <span class=n>comment</span><span class=p>,</span>
+                <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"leave a comment"</span><span class=p>,</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_comment_change</span><span class=p>,</span>
+            <span class=p>}</span>
+        <span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"draft: </span><span class=si>{</span><span class=n>comment</span><span class=w> </span><span class=ow>or</span><span class=w> </span><span class=s1>'(empty)'</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+    <span class=p>)</span>
+
+
+<span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>profile_page</span><span class=p>():</span>
+    <span class=n>user_id</span><span class=p>,</span> <span class=n>set_user_id</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"ada"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_user_id_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_user_id</span><span class=p>(</span><span class=s2>"grace"</span> <span class=k>if</span> <span class=n>user_id</span> <span class=o>==</span> <span class=s2>"ada"</span> <span class=k>else</span> <span class=s2>"ada"</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_user_id_click</span><span class=p>},</span>
+            <span class=s2>"Next profile"</span><span class=p>,</span>
+        <span class=p>),</span>
+        <span class=c1># The key is what makes ReactPy treat this as a different profile.</span>
+        <span class=n>profile</span><span class=p>(</span><span class=n>user_id</span><span class=p>,</span> <span class=n>key</span><span class=o>=</span><span class=n>user_id</span><span class=p>),</span>
+    <span class=p>)</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: type a draft, press <strong>Next profile</strong>, and the draft is empty on the new profile — in a single extra render.</p> <p>Passing <code class=highlight><span class=n>key</span><span class=o>=</span><span class=n>user_id</span></code> tells ReactPy that a different <code class=highlight><span class=n>user_id</span></code> means a different component instance. It tears down <code class=highlight><span class=n>profile</span><span class=p>()</span></code> and everything below it and builds them again, so all of their state starts fresh. One line, and it covers every piece of state in the whole subtree — no Effect, and no remembering to add one to each nested component.</p> <p>The Effect version (<code class=highlight><span class=n>set_comment</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span></code> in an Effect depending on <code class=highlight><span class=n>user_id</span></code>) is worse in three ways: the subtree renders once with the previous user's draft still in it, every nested component needs its own copy, and a piece of state added later silently fails to reset. See <a href=../preserving-and-resetting-state/ >Preserving and Resetting State</a> for the full mechanism.</p> <div class="admonition warning"> <p class=admonition-title><code class=highlight><span class=n>key</span></code> is spelled differently for elements and components</p> <p>Here it is a <strong>keyword</strong> argument to the component call: <code class=highlight><span class=n>profile</span><span class=p>(</span><span class=n>user_id</span><span class=p>,</span> <span class=n>key</span><span class=o>=</span><span class=n>user_id</span><span class=p>)</span></code>. On an element it goes in the attribute dict instead: <code class=highlight><span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>({</span><span class=s2>"key"</span><span class=p>:</span> <span class=mi>1</span><span class=p>},</span> <span class=o>...</span><span class=p>)</span></code>. Put it in the wrong place and you get <code class=highlight><span class=ne>TypeError</span><span class=p>:</span> <span class=n>Vdom</span><span class=o>.</span><span class=fm>__call__</span><span class=p>()</span> <span class=n>got</span> <span class=n>an</span> <span class=n>unexpected</span> <span class=n>keyword</span> <span class=n>argument</span> <span class=s1>'key'</span></code>, or a literal <code class=highlight><span class=n>key</span><span class=o>=</span><span class=s2>"..."</span></code> attribute in the page.</p> </div> <h3 id=adjusting-some-state-when-a-prop-changes>Adjusting some state when a prop changes<a class=headerlink href=#adjusting-some-state-when-a-prop-changes title="Permanent link">&para;</a></h3> <p>Sometimes you don't want to throw state away — just invalidate part of it when an input changes. A list keeps a selection, and a new <code class=highlight><span class=n>items</span></code> prop should clear it. React's advice is to call the setter during render, and <strong>that escape hatch does not work in ReactPy.</strong> Measured, the render-phase-setter version takes four renders and the client receives this sequence:</p> <div class=highlight><pre><span></span><code>&lt;root&gt;                     items: [a,b,c]     selected: None
+/children/0/children/1     items: [a,b,c]     selected: a
+&lt;root&gt;                     items: [a,b,c,i4]  selected: a     &lt;-- stale, and delivered
+/children/0/children/1     items: [a,b,c,i4]  selected: None
+</code></pre></div> <p>React throws the discarded render away; ReactPy hands the model to the socket as soon as it exists, so the stale frame ships. Use a derived read instead. Store the value alongside what it belonged to, and let the read decide whether it is still valid:</p> <div class="tabbed-set tabbed-alternate" data-tabs=5:2><input checked=checked id=__tabbed_5_1 name=__tabbed_5 type=radio><input id=__tabbed_5_2 name=__tabbed_5 type=radio><div class=tabbed-labels><label for=__tabbed_5_1>app.py</label><label for=__tabbed_5_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span>
+<span class=normal>41</span>
+<span class=normal>42</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>list_box</span><span class=p>(</span><span class=n>items</span><span class=p>):</span>
+    <span class=n>is_reverse</span><span class=p>,</span> <span class=n>set_is_reverse</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>False</span><span class=p>)</span>
+    <span class=c1># One state value that remembers which list the choice belonged to. The</span>
+    <span class=c1># selection is *derived*: if the items changed, the old choice is not</span>
+    <span class=c1># valid for the new list, so it reads back as None. No Effect, no</span>
+    <span class=c1># intermediate render with a stale selection.</span>
+    <span class=n>chosen</span><span class=p>,</span> <span class=n>set_chosen</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>({</span><span class=s2>"items"</span><span class=p>:</span> <span class=kc>None</span><span class=p>,</span> <span class=s2>"value"</span><span class=p>:</span> <span class=kc>None</span><span class=p>})</span>
+    <span class=n>selection</span> <span class=o>=</span> <span class=n>chosen</span><span class=p>[</span><span class=s2>"value"</span><span class=p>]</span> <span class=k>if</span> <span class=n>chosen</span><span class=p>[</span><span class=s2>"items"</span><span class=p>]</span> <span class=o>==</span> <span class=n>items</span> <span class=k>else</span> <span class=kc>None</span>
+
+    <span class=n>shown</span> <span class=o>=</span> <span class=n>items</span><span class=p>[::</span><span class=o>-</span><span class=mi>1</span><span class=p>]</span> <span class=k>if</span> <span class=n>is_reverse</span> <span class=k>else</span> <span class=n>items</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_is_reverse_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_is_reverse</span><span class=p>(</span><span class=ow>not</span> <span class=n>is_reverse</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_chosen_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_chosen</span><span class=p>({</span><span class=s2>"items"</span><span class=p>:</span> <span class=n>items</span><span class=p>,</span> <span class=s2>"value"</span><span class=p>:</span> <span class=n>shown</span><span class=p>[</span><span class=mi>0</span><span class=p>]})</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"items: </span><span class=si>{</span><span class=n>shown</span><span class=si>}</span><span class=s2>  selected: </span><span class=si>{</span><span class=n>selection</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_is_reverse_click</span><span class=p>},</span> <span class=s2>"Reverse"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_chosen_click</span><span class=p>},</span>
+            <span class=s2>"Select"</span><span class=p>,</span>
+        <span class=p>),</span>
+    <span class=p>)</span>
+
+
+<span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
+    <span class=n>items</span><span class=p>,</span> <span class=n>set_items</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([</span><span class=s2>"a"</span><span class=p>,</span> <span class=s2>"b"</span><span class=p>,</span> <span class=s2>"c"</span><span class=p>])</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_items_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_items</span><span class=p>([</span><span class=o>*</span><span class=n>items</span><span class=p>,</span> <span class=sa>f</span><span class=s2>"item </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>items</span><span class=p>)</span><span class=w> </span><span class=o>+</span><span class=w> </span><span class=mi>1</span><span class=si>}</span><span class=s2>"</span><span class=p>])</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_items_click</span><span class=p>},</span>
+            <span class=s2>"Add item"</span><span class=p>,</span>
+        <span class=p>),</span>
+        <span class=n>list_box</span><span class=p>(</span><span class=n>items</span><span class=p>),</span>
+    <span class=p>)</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: <strong>Select</strong> costs one render and shows the selection; <strong>Add item</strong> costs one render and the selection is already gone in that same patch — three renders total, no stale frame.</p> <p>The general shape is a guard on the read rather than a call to the setter:</p> <div class=highlight><pre><span></span><code><span class=n>is_valid</span> <span class=o>=</span> <span class=n>chosen</span><span class=p>[</span><span class=s2>"items"</span><span class=p>]</span> <span class=o>==</span> <span class=n>items</span>
+<span class=n>selection</span> <span class=o>=</span> <span class=n>chosen</span><span class=p>[</span><span class=s2>"value"</span><span class=p>]</span> <span class=k>if</span> <span class=n>is_valid</span> <span class=k>else</span> <span class=kc>None</span>
+</code></pre></div> <div class="admonition warning"> <p class=admonition-title>Do not set state from an Effect that depends on it</p> <p>The reflexive alternative — an Effect calling <code class=highlight><span class=n>set_selection</span><span class=p>(</span><span class=kc>None</span><span class=p>)</span></code> with <code class=highlight><span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>items</span><span class=p>]</span></code> — is not merely slow. When the value it sets is one it also reads, it is a loop, and ReactPy has no detector for one. Measured: an Effect that set a counter it depended on rendered <strong>86 times</strong> before the probe gave up. If a component visibly spins, read what the Effect awaits, what it depends on, and what it sets.</p> </div> <h3 id=sharing-logic-between-event-handlers>Sharing logic between event handlers<a class=headerlink href=#sharing-logic-between-event-handlers title="Permanent link">&para;</a></h3> <p>Two handlers should do the same thing on input. There is no reason for this to involve an Effect:</p> <div class="tabbed-set tabbed-alternate" data-tabs=6:2><input checked=checked id=__tabbed_6_1 name=__tabbed_6 type=radio><input id=__tabbed_6_2 name=__tabbed_6 type=radio><div class=tabbed-labels><label for=__tabbed_6_1>app.py</label><label for=__tabbed_6_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>shipping_form</span><span class=p>():</span>
+    <span class=n>shipping_city</span><span class=p>,</span> <span class=n>set_shipping_city</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
+    <span class=n>billing_city</span><span class=p>,</span> <span class=n>set_billing_city</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_shipping_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>city</span> <span class=o>=</span> <span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span>
+        <span class=n>set_shipping_city</span><span class=p>(</span><span class=n>city</span><span class=p>)</span>
+        <span class=c1># Shared logic: just call the other setter. Handlers are ordinary</span>
+        <span class=c1># functions; there is nothing to schedule and nothing to re-sync.</span>
+        <span class=n>set_billing_city</span><span class=p>(</span><span class=n>city</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_billing_city_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_billing_city</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"shipping: </span><span class=si>{</span><span class=n>shipping_city</span><span class=w> </span><span class=ow>or</span><span class=w> </span><span class=s1>'(empty)'</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"billing:  </span><span class=si>{</span><span class=n>billing_city</span><span class=w> </span><span class=ow>or</span><span class=w> </span><span class=s1>'(empty)'</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"value"</span><span class=p>:</span> <span class=n>shipping_city</span><span class=p>,</span> <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_shipping_change</span><span class=p>},</span>
+        <span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+            <span class=p>{</span>
+                <span class=s2>"value"</span><span class=p>:</span> <span class=n>billing_city</span><span class=p>,</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_billing_city_change</span><span class=p>,</span>
+            <span class=p>}</span>
+        <span class=p>),</span>
+    <span class=p>)</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: type in the shipping field and the billing readout changes with it, in one render, because both setters were called from one handler.</p> <p>Event handlers are ordinary functions — ordinary <code class=highlight><span class=k>async</span> <span class=k>def</span></code>s, which is to say the coroutine ReactPy requires of anything in a handler slot. Call one from the other (with <code class=highlight><span class=k>await</span></code>, since it is a coroutine), extract the shared part into a plain function, or pass the other setter as a parameter. Whatever React's docs tell you here transfers unchanged, because none of it is rendering work.</p> <h3 id=sending-a-post-request>Sending a POST request<a class=headerlink href=#sending-a-post-request title="Permanent link">&para;</a></h3> <p>Submitting a form is an event, not a consequence of rendering. Do the work in the handler:</p> <div class="tabbed-set tabbed-alternate" data-tabs=7:2><input checked=checked id=__tabbed_7_1 name=__tabbed_7 type=radio><input id=__tabbed_7_2 name=__tabbed_7 type=radio><div class=tabbed-labels><label for=__tabbed_7_1>app.py</label><label for=__tabbed_7_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>signup</span><span class=p>():</span>
+    <span class=n>email</span><span class=p>,</span> <span class=n>set_email</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
+    <span class=n>status</span><span class=p>,</span> <span class=n>set_status</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"idle"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_submit</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>event</span><span class=o>.</span><span class=n>preventDefault</span><span class=p>()</span>
+        <span class=c1># Wrong: set a "pending" flag and let an Effect notice it. That costs</span>
+        <span class=c1># a state variable, a render, and a way to submit the same value twice.</span>
+        <span class=c1>#     set_pending(True)</span>
+        <span class=c1>#</span>
+        <span class=c1># Right: do the work from the handler. It runs once per submission.</span>
+        <span class=n>set_status</span><span class=p>(</span><span class=s2>"sending..."</span><span class=p>)</span>
+        <span class=k>await</span> <span class=n>send_email</span><span class=p>(</span><span class=n>email</span><span class=p>)</span>
+        <span class=n>set_status</span><span class=p>(</span><span class=sa>f</span><span class=s2>"sent to </span><span class=si>{</span><span class=n>email</span><span class=si>}</span><span class=s2>"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_email_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_email</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=n>status</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>form</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"onSubmit"</span><span class=p>:</span> <span class=n>handle_submit</span><span class=p>},</span>
+            <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+                <span class=p>{</span>
+                    <span class=s2>"value"</span><span class=p>:</span> <span class=n>email</span><span class=p>,</span>
+                    <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"you@example.com"</span><span class=p>,</span>
+                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_email_change</span><span class=p>,</span>
+                <span class=p>}</span>
+            <span class=p>),</span>
+            <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"submit"</span><span class=p>},</span> <span class=s2>"Sign up"</span><span class=p>),</span>
+        <span class=p>),</span>
+    <span class=p>)</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: fill the field, submit, and the transport recorded exactly one send — <code class=highlight><span class=p>[</span><span class=s1>'ada@example.com'</span><span class=p>]</span></code>.</p> <p>The version to avoid is a flag plus an Effect: <code class=highlight><span class=n>set_pending</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span></code>, and an Effect that watches <code class=highlight><span class=n>pending</span></code>. It costs a state variable, an extra render per submission, and — because Effects re-run on dependency changes and remounts — a way to send twice. <code class=highlight><span class=n>event</span><span class=o>.</span><span class=n>preventDefault</span><span class=p>()</span></code> stops the page navigating, and must appear <strong>literally in the handler's body</strong>, since ReactPy detects it by bytecode inspection (<a href=../creating-vdom-event-handlers/ >Creating VDOM Event Handlers</a>).</p> <h3 id=notifying-parent-components-about-state-changes>Notifying parent components about state changes<a class=headerlink href=#notifying-parent-components-about-state-changes title="Permanent link">&para;</a></h3> <p>A child should tell its parent something happened. Pass a callback and call it from the child's event handler — this works exactly as it does in React:</p> <div class="tabbed-set tabbed-alternate" data-tabs=8:2><input checked=checked id=__tabbed_8_1 name=__tabbed_8 type=radio><input id=__tabbed_8_2 name=__tabbed_8 type=radio><div class=tabbed-labels><label for=__tabbed_8_1>app.py</label><label for=__tabbed_8_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>search_box</span><span class=p>(</span><span class=n>on_search</span><span class=p>):</span>
+    <span class=n>query</span><span class=p>,</span> <span class=n>set_query</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_submit</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>event</span><span class=o>.</span><span class=n>preventDefault</span><span class=p>()</span>
+        <span class=c1># Not an Effect: the search happens because the user submitted.</span>
+        <span class=n>on_search</span><span class=p>(</span><span class=n>query</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_query_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_query</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>form</span><span class=p>(</span>
+        <span class=p>{</span><span class=s2>"onSubmit"</span><span class=p>:</span> <span class=n>handle_submit</span><span class=p>},</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+            <span class=p>{</span>
+                <span class=s2>"value"</span><span class=p>:</span> <span class=n>query</span><span class=p>,</span>
+                <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"search"</span><span class=p>,</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_query_change</span><span class=p>,</span>
+            <span class=p>}</span>
+        <span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"submit"</span><span class=p>},</span> <span class=s2>"Search"</span><span class=p>),</span>
+    <span class=p>)</span>
+
+
+<span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
+    <span class=n>results</span><span class=p>,</span> <span class=n>set_results</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Type something and submit."</span><span class=p>)</span>
+
+    <span class=k>def</span><span class=w> </span><span class=nf>handle_search</span><span class=p>(</span><span class=n>query</span><span class=p>):</span>
+        <span class=n>set_results</span><span class=p>(</span><span class=sa>f</span><span class=s2>"searching for </span><span class=si>{</span><span class=n>query</span><span class=si>!r}</span><span class=s2>..."</span> <span class=k>if</span> <span class=n>query</span> <span class=k>else</span> <span class=s2>"empty query"</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span><span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=n>results</span><span class=p>),</span> <span class=n>search_box</span><span class=p>(</span><span class=n>handle_search</span><span class=p>))</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: type <code class=highlight><span class=n>ada</span></code>, submit, and the parent's paragraph reads <code class=highlight><span class=n>searching</span> <span class=k>for</span> <span class=s1>'ada'</span><span class=o>...</span></code>.</p> <p>What you must not do is call the parent's function from an Effect that watches a value. Handlers run once per user action; Effects run once per dependency change, which includes renders the user never caused. There is also no <code class=highlight><span class=n>use_imperative_handle</span></code> for the reverse direction — pass data down as props and callbacks up as arguments (<a href=../sharing-state-between-components/ >Sharing State Between Components</a>).</p> <h3 id=chains-of-computations>Chains of computations<a class=headerlink href=#chains-of-computations title="Permanent link">&para;</a></h3> <p>When several values feed each other, keep the whole chain in render. Each intermediate is a local variable, not a state variable:</p> <div class=highlight><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>report</span><span class=p>(</span><span class=n>rows</span><span class=p>,</span> <span class=n>currency</span><span class=p>):</span>
+    <span class=n>priced</span> <span class=o>=</span> <span class=p>[(</span><span class=o>*</span><span class=n>row</span><span class=p>,</span> <span class=n>row</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span> <span class=o>*</span> <span class=n>RATES</span><span class=p>[</span><span class=n>currency</span><span class=p>])</span> <span class=k>for</span> <span class=n>row</span> <span class=ow>in</span> <span class=n>rows</span><span class=p>]</span>
+    <span class=n>total</span> <span class=o>=</span> <span class=nb>sum</span><span class=p>(</span><span class=n>item</span><span class=p>[</span><span class=o>-</span><span class=mi>1</span><span class=p>]</span> <span class=k>for</span> <span class=n>item</span> <span class=ow>in</span> <span class=n>priced</span><span class=p>)</span>
+    <span class=n>heading</span> <span class=o>=</span> <span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>currency</span><span class=o>.</span><span class=n>upper</span><span class=p>()</span><span class=si>}</span><span class=s2>: </span><span class=si>{</span><span class=n>total</span><span class=si>:</span><span class=s2>,.2f</span><span class=si>}</span><span class=s2>"</span>
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span><span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>heading</span><span class=p>))</span>
+</code></pre></div> <p>An Effect at any link in that chain means every upstream change costs an extra full render — and, as above, each of those renders is visible to the client. If one link is genuinely expensive, wrap <em>that one</em> in <code class=highlight><span class=n>use_memo</span></code> rather than putting the whole chain in state.</p> <h3 id=initializing-the-application>Initializing the application<a class=headerlink href=#initializing-the-application title="Permanent link">&para;</a></h3> <p>Code that should run once per process does not belong in a component at all — a component's Effect runs once <strong>per connection</strong>, and a server serves many connections:</p> <div class=highlight><pre><span></span><code><span class=c1># module level, or the ASGI app's startup: runs once</span>
+<span class=n>configure_logging</span><span class=p>()</span>
+<span class=n>POOL</span> <span class=o>=</span> <span class=n>create_pool</span><span class=p>()</span>
+</code></pre></div> <p>Keep a <code class=highlight><span class=n>dependencies</span><span class=o>=</span><span class=p>[]</span></code> Effect for work that is genuinely per-connection, such as a subscription or a session-scoped task. Never guard a process-level side effect with <code class=highlight><span class=n>my_component</span><span class=o>.</span><span class=n>started</span> <span class=o>=</span> <span class=kc>True</span></code>: the function object is module-scope, so the first visitor flips the flag for everyone (<a href=../vdom-mutations/ >VDOM Mutations</a>).</p> <h2 id=subscribing-to-an-external-store>Subscribing to an external store<a class=headerlink href=#subscribing-to-an-external-store title="Permanent link">&para;</a></h2> <p>Here is the case where the Effect is correct. The value does not live in ReactPy at all, so there is nothing to derive it from — ReactPy has to be told when it changes:</p> <div class="tabbed-set tabbed-alternate" data-tabs=9:2><input checked=checked id=__tabbed_9_1 name=__tabbed_9 type=radio><input id=__tabbed_9_2 name=__tabbed_9 type=radio><div class=tabbed-labels><label for=__tabbed_9_1>app.py</label><label for=__tabbed_9_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>clock_view</span><span class=p>():</span>
+    <span class=c1># The value is owned by `clock`, not by this component, so it cannot be</span>
+    <span class=c1># derived during render -- ReactPy has to be told when it changes.</span>
+    <span class=n>ticks</span><span class=p>,</span> <span class=n>set_ticks</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=n>clock</span><span class=o>.</span><span class=n>get</span><span class=p>())</span>
+
+    <span class=k>def</span><span class=w> </span><span class=nf>effect</span><span class=p>():</span>
+        <span class=c1># Subscribe, and hand back the unsubscribe. This is what an Effect</span>
+        <span class=c1># is for: the source of truth lives outside ReactPy.</span>
+        <span class=k>def</span><span class=w> </span><span class=nf>on_change</span><span class=p>():</span>
+            <span class=n>set_ticks</span><span class=p>(</span><span class=n>clock</span><span class=o>.</span><span class=n>get</span><span class=p>())</span>
+
+        <span class=k>return</span> <span class=n>clock</span><span class=o>.</span><span class=n>subscribe</span><span class=p>(</span><span class=n>on_change</span><span class=p>)</span>
+
+    <span class=n>use_effect</span><span class=p>(</span><span class=n>effect</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[])</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span><span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>ticks</span><span class=si>}</span><span class=s2> ticks"</span><span class=p>))</span>
+
+
+<span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
+    <span class=n>watching</span><span class=p>,</span> <span class=n>set_watching</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>clock</span><span class=o>.</span><span class=n>tick</span><span class=p>()</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_watching_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_watching</span><span class=p>(</span><span class=ow>not</span> <span class=n>watching</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span> <span class=s2>"Tick"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_watching_click</span><span class=p>},</span>
+            <span class=s2>"Stop watching"</span> <span class=k>if</span> <span class=n>watching</span> <span class=k>else</span> <span class=s2>"Watch"</span><span class=p>,</span>
+        <span class=p>),</span>
+        <span class=o>*</span><span class=p>([]</span> <span class=k>if</span> <span class=ow>not</span> <span class=n>watching</span> <span class=k>else</span> <span class=p>[</span><span class=n>clock_view</span><span class=p>()]),</span>
+    <span class=p>)</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: pressing <strong>Tick</strong> once shows <code class=highlight><span class=mi>1</span> <span class=n>ticks</span></code>; pressing <strong>Stop watching</strong> unmounts the view and leaves <code class=highlight><span class=mi>0</span></code> listeners registered on the store.</p> <p>Three things make this one legitimate where the others were not:</p> <ol> <li><strong>The source of truth is outside ReactPy.</strong> Deriving would mean reading <code class=highlight><span class=n>clock</span><span class=o>.</span><span class=n>get</span><span class=p>()</span></code> during render, which has no way to know when to run again.</li> <li><strong>The subscription needs a lifetime,</strong> and the clean-up is what returns the store to zero listeners.</li> <li><strong>The state exists to trigger a render</strong> — that is its whole purpose.</li> </ol> <p>This is also where <code class=highlight><span class=n>use_async_effect</span></code> earns its place, when the external system is an <code class=highlight><span class=k>async</span></code> stream rather than a callback. See <a href=../synchronizing-with-effects/ >Synchronizing with Effects</a> for cancellation and the four-way dependency table.</p> <h2 id=fetching-data-without-the-extra-effects>Fetching data, without the extra Effects<a class=headerlink href=#fetching-data-without-the-extra-effects title="Permanent link">&para;</a></h2> <p>Fetching genuinely needs an Effect — the network is external. Everything you would otherwise stack on top of it does not. Store the response, and shape it in render:</p> <div class="tabbed-set tabbed-alternate" data-tabs=10:2><input checked=checked id=__tabbed_10_1 name=__tabbed_10 type=radio><input id=__tabbed_10_2 name=__tabbed_10 type=radio><div class=tabbed-labels><label for=__tabbed_10_1>app.py</label><label for=__tabbed_10_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+<span class=normal> 2</span>
+<span class=normal> 3</span>
+<span class=normal> 4</span>
+<span class=normal> 5</span>
+<span class=normal> 6</span>
+<span class=normal> 7</span>
+<span class=normal> 8</span>
+<span class=normal> 9</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span>
+<span class=normal>14</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span>
+<span class=normal>41</span>
+<span class=normal>42</span>
+<span class=normal>43</span>
+<span class=normal>44</span>
+<span class=normal>45</span>
+<span class=normal>46</span>
+<span class=normal>47</span>
+<span class=normal>48</span>
+<span class=normal>49</span>
+<span class=normal>50</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>report_view</span><span class=p>(</span><span class=n>name</span><span class=p>):</span>
+    <span class=c1># Store the response *with the name it belongs to*, so a render for a new</span>
+    <span class=c1># report cannot display the old one's rows. The empty read is the</span>
+    <span class=c1># "loading" state -- derived, not a second state variable.</span>
+    <span class=n>loaded</span><span class=p>,</span> <span class=n>set_loaded</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>({</span><span class=s2>"name"</span><span class=p>:</span> <span class=kc>None</span><span class=p>,</span> <span class=s2>"data"</span><span class=p>:</span> <span class=p>{}})</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>load</span><span class=p>():</span>
+        <span class=n>data</span> <span class=o>=</span> <span class=k>await</span> <span class=n>catalog</span><span class=o>.</span><span class=n>fetch</span><span class=p>(</span><span class=n>name</span><span class=p>)</span>
+        <span class=n>set_loaded</span><span class=p>({</span><span class=s2>"name"</span><span class=p>:</span> <span class=n>name</span><span class=p>,</span> <span class=s2>"data"</span><span class=p>:</span> <span class=n>data</span><span class=p>})</span>
+
+    <span class=n>use_async_effect</span><span class=p>(</span><span class=n>load</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>name</span><span class=p>])</span>
+
+    <span class=n>raw</span> <span class=o>=</span> <span class=n>loaded</span><span class=p>[</span><span class=s2>"data"</span><span class=p>]</span> <span class=k>if</span> <span class=n>loaded</span><span class=p>[</span><span class=s2>"name"</span><span class=p>]</span> <span class=o>==</span> <span class=n>name</span> <span class=k>else</span> <span class=p>{}</span>
+
+    <span class=k>if</span> <span class=ow>not</span> <span class=n>raw</span><span class=p>:</span>
+        <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=s2>"loading..."</span><span class=p>)</span>
+
+    <span class=c1># Right: the shape the page needs is computed here, from the data that</span>
+    <span class=c1># arrived. There is no second state variable to keep in step, so there is</span>
+    <span class=c1># nothing for an Effect to synchronise.</span>
+    <span class=n>rows</span> <span class=o>=</span> <span class=p>[{</span><span class=s2>"label"</span><span class=p>:</span> <span class=n>key</span><span class=o>.</span><span class=n>title</span><span class=p>(),</span> <span class=s2>"value"</span><span class=p>:</span> <span class=n>value</span><span class=p>}</span> <span class=k>for</span> <span class=n>key</span><span class=p>,</span> <span class=n>value</span> <span class=ow>in</span> <span class=n>raw</span><span class=o>.</span><span class=n>items</span><span class=p>()]</span>
+    <span class=n>total</span> <span class=o>=</span> <span class=nb>sum</span><span class=p>(</span><span class=n>row</span><span class=p>[</span><span class=s2>"value"</span><span class=p>]</span> <span class=k>for</span> <span class=n>row</span> <span class=ow>in</span> <span class=n>rows</span><span class=p>)</span>
+    <span class=n>lines</span> <span class=o>=</span> <span class=p>[</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>({</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>row</span><span class=p>[</span><span class=s2>"label"</span><span class=p>]},</span> <span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>row</span><span class=p>[</span><span class=s1>'label'</span><span class=p>]</span><span class=si>}</span><span class=s2>: </span><span class=si>{</span><span class=n>row</span><span class=p>[</span><span class=s1>'value'</span><span class=p>]</span><span class=si>}</span><span class=s2>"</span><span class=p>)</span>
+        <span class=k>for</span> <span class=n>row</span> <span class=ow>in</span> <span class=n>rows</span>
+    <span class=p>]</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>name</span><span class=si>}</span><span class=s2>: </span><span class=si>{</span><span class=n>total</span><span class=si>}</span><span class=s2> total"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>(</span><span class=n>lines</span><span class=p>),</span>
+    <span class=p>)</span>
+
+
+<span class=nd>@component</span>
+<span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
+    <span class=n>name</span><span class=p>,</span> <span class=n>set_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"orders"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_name_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_name</span><span class=p>(</span><span class=s2>"users"</span> <span class=k>if</span> <span class=n>name</span> <span class=o>==</span> <span class=s2>"orders"</span> <span class=k>else</span> <span class=s2>"orders"</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_name_click</span><span class=p>},</span>
+            <span class=s2>"Toggle report"</span><span class=p>,</span>
+        <span class=p>),</span>
+        <span class=c1># No `key` here on purpose: the derived read in report_view is what</span>
+        <span class=c1># keeps the old report off the screen, so nothing has to be remounted.</span>
+        <span class=n>report_view</span><span class=p>(</span><span class=n>name</span><span class=p>),</span>
+    <span class=p>)</span>
+</code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: the Effect stores the raw response; the labels, the per-row formatting, and the total are computed during render. One request per report name (<code class=highlight><span class=p>[</span><span class=s1>'orders'</span><span class=p>,</span> <span class=s1>'users'</span><span class=p>]</span></code>), and no <code class=highlight><span class=n>rows</span></code> or <code class=highlight><span class=n>total</span></code> state variables that could fall out of step with the response.</p> <p>The example carries one more lesson in its state shape. It stores the response <strong>together with the name that produced it</strong> and derives the read:</p> <div class=highlight><pre><span></span><code><span class=n>raw</span> <span class=o>=</span> <span class=n>loaded</span><span class=p>[</span><span class=s2>"data"</span><span class=p>]</span> <span class=k>if</span> <span class=n>loaded</span><span class=p>[</span><span class=s2>"name"</span><span class=p>]</span> <span class=o>==</span> <span class=n>name</span> <span class=k>else</span> <span class=p>{}</span>
+</code></pre></div> <p>Storing the response alone looks fine and is wrong: switch from <code class=highlight><span class=n>orders</span></code> to <code class=highlight><span class=n>users</span></code> and the component re-renders immediately, before the new response arrives, so the client receives <code class=highlight><span class=n>users</span><span class=p>:</span> <span class=mi>55</span> <span class=n>total</span></code> above the <em>orders</em> rows — 55 being orders' total. Measured, and the derived read above is what fixes it, without remounting the component.</p> <p>The anti-pattern is a second Effect that watches the response and sets three more state variables from it. Each of those is a value you can calculate, and each adds a render in which the page is half-updated.</p> <p>Because ReactPy already runs on the server, there is usually a better option than fetching in the child at all: <strong>fetch in a parent during render, or at startup, and pass the result down as a prop.</strong> Then the child has no Effect and no loading state, and the response is shared rather than re-requested. Keep the Effect for data that depends on something only the connection knows, like <a href=../../reference/use-location/ ><code class=highlight><span class=n>use_location</span></code></a>.</p> <h2 id=how-to-tell-whether-an-effect-is-necessary>How to tell whether an Effect is necessary<a class=headerlink href=#how-to-tell-whether-an-effect-is-necessary title="Permanent link">&para;</a></h2> <table> <thead> <tr> <th>The Effect...</th> <th>Verdict</th> </tr> </thead> <tbody> <tr> <td>reads state or props and sets other state</td> <td>unnecessary — compute it during render</td> </tr> <tr> <td>caches a calculation</td> <td>unnecessary — <code class=highlight><span class=n>use_memo</span></code></td> </tr> <tr> <td>resets state when a prop changes</td> <td>unnecessary — pass a <code class=highlight><span class=n>key</span></code></td> </tr> <tr> <td>invalidates state when a prop changes</td> <td>unnecessary — derive the read from what it belonged to</td> </tr> <tr> <td>runs logic shared by two handlers</td> <td>unnecessary — call a function</td> </tr> <tr> <td>reacts to a user action</td> <td>unnecessary — put it in the event handler</td> </tr> <tr> <td>calls a parent's callback when a value changes</td> <td>unnecessary — call it from the handler</td> </tr> <tr> <td>subscribes to a queue, socket, or store</td> <td><strong>necessary</strong>, with a clean-up</td> </tr> <tr> <td>starts <code class=highlight><span class=k>async</span></code> work that outlives the render</td> <td><strong>necessary</strong>, with <code class=highlight><span class=n>use_async_effect</span></code></td> </tr> <tr> <td>starts per-connection work on mount</td> <td><strong>necessary</strong>, with <code class=highlight><span class=n>dependencies</span><span class=o>=</span><span class=p>[]</span></code></td> </tr> </tbody> </table> <p>If you cannot name what the Effect is synchronizing with, it is probably doing a render's job.</p> <div class="admonition warning"> <p class=admonition-title>Two failure modes that cost hours</p> <ul> <li><strong>An Effect that sets state it depends on loops silently.</strong> ReactPy has no loop detector. Measured: 86 renders and counting before the probe stopped.</li> <li><strong>Hooks do not work inside an effect body.</strong> <code class=highlight><span class=n>use_context</span></code>, <code class=highlight><span class=n>use_state</span></code>, and friends all raise <code class=highlight><span class=ne>RuntimeError</span><span class=p>:</span> <span class=n>No</span> <span class=n>life</span> <span class=n>cycle</span> <span class=n>hook</span> <span class=ow>is</span> <span class=n>active</span><span class=o>.</span> <span class=n>Are</span> <span class=n>you</span> <span class=n>rendering</span> <span class=ow>in</span> <span class=n>a</span> <span class=n>layout</span><span class=err>?</span></code> — effects run in their own task, with no hook on the stack. Read what you need <strong>during render</strong> and let the closure carry it in. The traceback appears only in the server log; the page just goes quiet.</li> </ul> </div> <h2 id=recap>Recap<a class=headerlink href=#recap title="Permanent link">&para;</a></h2> <ul> <li>An Effect runs after a render. If the work could happen <strong>during</strong> the render, it should.</li> <li>Values calculated from props or state are not state. Compute them; do not store and re-sync them. Measured: the Effect version costs twice the renders and ships a wrong first frame.</li> <li><code class=highlight><span class=n>use_memo</span></code> caches expensive calculations without adding a render — but it caches values, not component renders.</li> <li>Reset state with a <code class=highlight><span class=n>key</span></code>, not with an Effect.</li> <li>ReactPy cannot use React's render-phase setter trick: the stale patch reaches the client. Derive the value instead.</li> <li>Sharing logic between handlers, notifying a parent, and submitting a form are all handler work.</li> <li>Subscriptions and async streams are the real use for Effects — with a clean-up, always.</li> </ul> <h2 id=related>Related<a class=headerlink href=#related title="Permanent link">&para;</a></h2> <ul> <li><a href=../synchronizing-with-effects/ >Synchronizing with Effects</a> — how Effects work, and their four-way dependency table</li> <li><a href=../choosing-the-state-structure/ >Choosing the State Structure</a> — avoid redundant state in the first place</li> <li><a href=../preserving-and-resetting-state/ >Preserving and Resetting State</a> — resetting with <code class=highlight><span class=n>key</span></code></li> <li><a href=../../reference/use-memo/ >Use Memo</a> and <a href=../../reference/use-callback/ >Use Callback</a></li> <li><a href=../separating-events-from-effects/ >Separating Events from Effects</a> — the remaining case where reading fresh state matters</li> </ul> <aside class=md-source-file> <span class=md-source-file__fact> <span class=md-icon title="Last update"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg> </span> <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 10, 2026 00:12:33 UTC">October 10, 2026</span> </span> <span class=md-source-file__fact> <span class=md-icon title=Contributors> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M12 5.5A3.5 3.5 0 0 1 15.5 9a3.5 3.5 0 0 1-3.5 3.5A3.5 3.5 0 0 1 8.5 9 3.5 3.5 0 0 1 12 5.5M5 8c.56 0 1.08.15 1.53.42-.15 1.43.27 2.85 1.13 3.96C7.16 13.34 6.16 14 5 14a3 3 0 0 1-3-3 3 3 0 0 1 3-3m14 0a3 3 0 0 1 3 3 3 3 0 0 1-3 3c-1.16 0-2.16-.66-2.66-1.62a5.54 5.54 0 0 0 1.13-3.96c.45-.27.97-.42 1.53-.42M5.5 18.25c0-2.07 2.91-3.75 6.5-3.75s6.5 1.68 6.5 3.75V20h-13zM0 20v-1.5c0-1.39 1.89-2.56 4.45-2.9-.59.68-.95 1.62-.95 2.65V20zm24 0h-3.5v-1.75c0-1.03-.36-1.97-.95-2.65 2.56.34 4.45 1.51 4.45 2.9z"/></svg> </span> <nav> <a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a>, <a href=mailto:not.committed.yet>Not Committed Yet</a> </nav> </span> </aside> <div class=md-source-date> <small> Authors: <span class="git-page-authors git-authors"><a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a>, <a href=mailto:not.committed.yet>Not Committed Yet</a></span> </small> </div> </article> </div> <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script> </div> <button type=button class="md-top md-icon" data-md-component=top hidden> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg> Back to top </button> </main> <footer class=md-footer> <div class="md-footer-meta md-typeset"> <div class="md-footer-meta__inner md-grid"> <div class=md-copyright> <div class=md-copyright__highlight> &copy;<div id=year> </div> <script> document.getElementById("year").innerHTML = new Date().getFullYear(); </script>Reactive Python and affiliates.<div class=legal-footer-right>This project has no affiliation to ReactJS or Meta Platforms, Inc.</div> </div> </div> </div> </div> </footer> </div> <div class=md-dialog data-md-component=dialog> <div class="md-dialog__inner md-typeset"></div> </div> <script id=__config type=application/json>{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script> <script src=../../assets/javascripts/bundle.d7400e89.min.js></script> <script src=../../assets/js/main.js></script> </body> </html>

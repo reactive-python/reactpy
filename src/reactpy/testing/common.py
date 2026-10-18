@@ -1,0 +1,229 @@
+from __future__ import annotations
+
+import asyncio
+import inspect
+import os
+import time
+from collections.abc import Awaitable, Callable, Coroutine
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, cast
+from uuid import uuid4
+from weakref import ref
+
+if TYPE_CHECKING:
+    from reactpy.core._life_cycle_hook import LifeCycleHook
+    from reactpy.core.events import EventHandler
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+
+_DEFAULT_POLL_DELAY = 0.1
+GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "").lower() in {
+    "y",
+    "yes",
+    "t",
+    "true",
+    "on",
+    "1",
+}
+DEFAULT_TYPE_DELAY = 50 if GITHUB_ACTIONS else 25
+
+
+class poll(Generic[_R]):  # noqa: N801
+    """Wait until the result of an sync or async function meets some condition"""
+
+    def __init__(
+        self,
+        function: Callable[_P, Awaitable[_R] | _R],
+        *args: _P.args,
+        **kwargs: _P.kwargs,
+    ) -> None:
+        coro: Callable[_P, Awaitable[_R]]
+        if not inspect.iscoroutinefunction(function):
+
+            async def async_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+                return cast(_R, function(*args, **kwargs))
+
+            coro = async_func
+        else:
+            coro = cast(Callable[_P, Coroutine[Any, Any, _R]], function)
+        self._func = coro
+        self._args = args
+        self._kwargs = kwargs
+
+    async def until(
+        self,
+        condition: Callable[[_R], bool],
+        timeout: float | None = None,
+        delay: float = _DEFAULT_POLL_DELAY,
+        description: str = "condition to be true",
+    ) -> None:
+        """Check that the coroutines result meets a condition within the timeout"""
+        if timeout is None:
+            from reactpy.config import REACTPY_TESTS_DEFAULT_TIMEOUT
+
+            timeout = REACTPY_TESTS_DEFAULT_TIMEOUT.current
+
+        started_at = time.time()
+        while True:
+            await asyncio.sleep(delay)
+            result = await self._func(*self._args, **self._kwargs)
+            if condition(result):
+                break
+            elif (time.time() - started_at) > timeout:  # nocov
+                msg = f"Expected {description} after {timeout} seconds - last value was {result!r}"
+                raise TimeoutError(msg)
+
+    async def until_is(
+        self,
+        right: _R,
+        timeout: float | None = None,
+        delay: float = _DEFAULT_POLL_DELAY,
+    ) -> None:
+        """Wait until the result is identical to the given value"""
+        return await self.until(
+            lambda left: left is right,
+            timeout,
+            delay,
+            f"value to be identical to {right!r}",
+        )
+
+    async def until_equals(
+        self,
+        right: _R,
+        timeout: float | None = None,
+        delay: float = _DEFAULT_POLL_DELAY,
+    ) -> None:
+        """Wait until the result is equal to the given value"""
+        return await self.until(
+            lambda left: left == right,
+            timeout,
+            delay,
+            f"value to equal {right!r}",
+        )
+
+
+class HookCatcher:
+    """Utility for capturing a LifeCycleHook from a component
+
+    Example:
+        .. code-block::
+
+            hooks = HookCatcher(index_by_kwarg="thing")
+
+            @reactpy.component
+            @hooks.capture
+            def MyComponent(thing):
+                ...
+
+            ...  # render the component
+
+            # grab the last render of where MyComponent(thing='something')
+            hooks.index["something"]
+            # or grab the hook from the component's last render
+            hooks.latest
+
+        After the first render of ``MyComponent`` the ``HookCatcher`` will have
+        captured the component's ``LifeCycleHook``.
+    """
+
+    latest: LifeCycleHook
+
+    def __init__(self, index_by_kwarg: str | None = None):
+        self.index_by_kwarg = index_by_kwarg
+        self.index: dict[Any, LifeCycleHook] = {}
+
+    def capture(self, render_function: Callable[..., Any]) -> Callable[..., Any]:
+        """Decorator for capturing a ``LifeCycleHook`` on each render of a component"""
+
+        # The render function holds a reference to `self` and, via the `LifeCycleHook`,
+        # the component. Some tests check whether components are garbage collected, thus
+        # we must use a `ref` here to ensure these checks pass once the catcher itself
+        # has been collected.
+        self_ref = ref(self)
+
+        @wraps(render_function)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            from reactpy.core._life_cycle_hook import HOOK_STACK
+
+            self = self_ref()
+            if self is None:
+                raise RuntimeError("Hook catcher has been garbage collected")
+
+            hook = HOOK_STACK.current_hook()
+            if self.index_by_kwarg is not None:
+                self.index[kwargs[self.index_by_kwarg]] = hook
+            self.latest = hook
+            return render_function(*args, **kwargs)
+
+        return wrapper
+
+
+class StaticEventHandler:
+    """Utility for capturing the target of one event handler
+
+    Example:
+        .. code-block::
+
+            static_handler = StaticEventHandler()
+
+            @reactpy.component
+            def MyComponent():
+                state, set_state = reactpy.hooks.use_state(0)
+
+                async def on_click(event):
+                    set_state(state + 1)
+
+                handler = static_handler.use(on_click)
+                return reactpy.html.button({"onClick": handler}, "Click me!")
+
+            # gives the target ID for onClick where from the last render of MyComponent
+            static_handlers.target
+
+        If you need to capture event handlers from different instances of a component
+        the you should create multiple ``StaticEventHandler`` instances.
+
+        .. code-block::
+
+            static_handlers_by_key = {
+                "first": StaticEventHandler(),
+                "second": StaticEventHandler(),
+            }
+
+            @reactpy.component
+            def Parent():
+                return reactpy.html.div(Child(key="first"), Child(key="second"))
+
+            @reactpy.component
+            def Child(key):
+                state, set_state = reactpy.hooks.use_state(0)
+
+                async def on_click(event):
+                    set_state(state + 1)
+
+                handler = static_handlers_by_key[key].use(on_click)
+                return reactpy.html.button({"onClick": handler}, "Click me!")
+
+            # grab the individual targets for each instance above
+            first_target = static_handlers_by_key["first"].target
+            second_target = static_handlers_by_key["second"].target
+    """
+
+    def __init__(self) -> None:
+        self.target = uuid4().hex
+
+    def use(
+        self,
+        function: Callable[..., Awaitable[Any]],
+        stop_propagation: bool = False,
+        prevent_default: bool = False,
+    ) -> EventHandler:
+        from reactpy.core.events import EventHandler, to_event_handler_function
+
+        return EventHandler(
+            to_event_handler_function(function),
+            stop_propagation,
+            prevent_default,
+            self.target,
+        )
