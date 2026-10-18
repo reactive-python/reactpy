@@ -207,29 +207,18 @@ Verified: **Stop** runs `#!python unsubscribe news`; while stopped, switching to
 
 ## ReactPy will not verify your dependencies
 
-React's side of this is `eslint-plugin-react-hooks`, which reads the Effect and its dependency list and warns when they disagree. ReactPy's equivalent is `reactpy-flake8` — a real plugin, pinned in this repo's `pyproject.toml` — but it is far narrower than people expect. Every row below was produced by running the installed `reactpy_flake8.run.run_checks` over the snippet in question.
+React's side of this is `eslint-plugin-react-hooks`, which reads the Effect and its dependency list and warns when they disagree. ReactPy has nothing comparable: nothing reads your Effect, nothing compares it to the list, and a missing dependency is **completely silent** — no warning, no log record, no error. The value simply arrives from an older render, surfacing later, when something else finally re-runs the Effect.
 
-The rules-of-hooks half, always on:
+The shapes that go wrong are worth knowing, because the list is not a formality:
 
-| What you wrote | Reported? |
+| What you wrote | What actually happens |
 | --- | --- |
-| a hook called inside an `#!python if`, `#!python for`, `#!python while`, `#!python try`, `#!python match`, or a conditional expression | **yes** — `#!python REACTPY102` |
-| a hook used after an early `#!python return` | **yes** — `#!python REACTPY103` |
-| a hook used outside any component or hook | **yes** — `#!python REACTPY101` |
-| a hook *defined* as a closure inside another function | **yes** — `#!python REACTPY100` |
-
-The dependency half, which needs `#!python exhaustive_hook_deps=True` and is otherwise silent:
-
-| What you wrote | Reported? |
-| --- | --- |
-| an **inline lambda** Effect, `#!python use_memo`, or `#!python use_callback` missing a variable that is **assigned at the top of the component body** | **yes** — `#!python REACTPY202` |
-| the same, but the missing variable is a **component parameter** | **no** — parameters are not in the set of names it compares against |
-| a **named `def`** Effect missing a variable | **no** |
-| a `#!python @use_effect`-decorated function missing a variable | **no** |
-| a dependency written as `#!python obj.attr` rather than a bare name | **yes** — `#!python REACTPY200` |
-| a dependency list that is a variable or call rather than a literal list, tuple, or `#!python None` | **yes** — `#!python REACTPY201` |
-
-So the linter catches every call-site violation, and catches a missing dependency only for an inline lambda over a body-assigned variable — one shape among the several people actually write. The stale-value class of bug is largely on you.
+| a free variable missing from `#!python dependencies` | the Effect keeps the value from the render that created it; nothing warns |
+| `#!python dependencies=[]` on a body that reads state | the body, not just the schedule, is sealed at mount |
+| a dependency that is a rebuilt dict, list, or tuple | no re-run — those compare equal, see `#!python strictly_equal` below |
+| a dependency that is a plain class instance with no `#!python __eq__` | re-runs after **every** render — identity never holds |
+| a `#!python Ref` in the list | never triggers anything: `__eq__` compares `.current` against itself |
+| a bound method, `#!python functools.partial`, or callable object, with `#!python dependencies` omitted | inference gives up, the value becomes `#!python None`, and the Effect runs after **every** render |
 
 Two habits replace the missing dependency check:
 
@@ -244,7 +233,7 @@ Two habits replace the missing dependency check:
             assert server.log == ["connect lobby", "close lobby", "connect dev"]
     ```
 
-    A `#!python reactpy.core.layout.Layout` in pytest is enough — no browser, and it catches exactly the bugs the linter cannot see.
+    A `#!python reactpy.core.layout.Layout` in pytest is enough — no browser, and it catches exactly the bugs nothing else will surface.
 
 ## The order Effects run in
 
@@ -383,7 +372,7 @@ Contrast with the failure modes that *are* reported, so you can tell which one y
 -   An Effect reads the values of the render that **created** it. Not the latest, not necessarily the first.
 -   The dependency list, not the Effect's own text, decides re-synchronization. `#!python dependencies=[]` seals the body at mount.
 -   Dependencies compare with `#!python ==` via `#!python strictly_equal`, so local functions and rebuilt-but-equal containers never count as changed — and a frozen Effect is silent.
--   ReactPy will not check your dependency list: `reactpy-flake8` reports hooks in branches, and missing dependencies only for inline lambdas. Write the list yourself and test the re-synchronization.
+-   Nothing checks your dependency list — not the runtime, not a warning, not a log line. Write the list yourself and test the re-synchronization.
 -   Children's Effects run before the parent's, siblings in reverse, and within a component in declaration order. Only the last is safe to depend on.
 -   Async cancellation lands at the next `#!python await`: runs can overlap and a superseded run can still write. Guard the write; don't trust the cancel.
 -   A raising Effect shows nothing in the page, nothing in the browser, and nothing in the log until unmount. Verify Effects by asserting their effect on the world.

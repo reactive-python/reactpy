@@ -141,17 +141,19 @@ State is just one of those features, but you will meet the other Hooks later.
 
     **Hooks — functions starting with `#!python use` — can only be called at the top level of your components or [your own Hooks.](./reusing-logic-with-custom-hooks.md)** You can't call Hooks inside conditions, loops, or other nested functions. Hooks are functions, but it's helpful to think of them as unconditional declarations about your component's needs. You "use" ReactPy features at the top of your component similar to how you "import" modules at the top of your file.
 
-    The check is not just advice: the `#!python reactpy-flake8` plugin (the ReactPy analogue of `#!python eslint-plugin-react-hooks`, and part of this repo's own lint config) reports `#!python REACTPY102` for a Hook under a branch or in a loop:
+    Nothing enforces the rule, which is what makes it dangerous. Hook state is stored in a list read by *position*, so a Hook under a branch changes how many slots the component asks for:
 
     ```python linenums="0"
     @component
     def bad(flag):
         a, _ = use_state("A")
-        if flag:                      # REACTPY102 hook 'use_state' used inside if statement
+        if flag:
             b, _ = use_state("B")
             return html.p(b)
         return html.p(a)
     ```
+
+    When the branch stops taking that path, the component asks for fewer Hooks than it did on its first render — no error, the values simply shift into each other's slots. Asking for more raises `#!python IndexError` and blanks the region. Call every Hook at the top level and branch on what they return.
 
 ### Anatomy of `#!python use_state`
 
@@ -257,7 +259,7 @@ Because state belongs to the instance and not the function, two galleries can dr
 
     You might have noticed that the `#!python use_state` call does not receive any information about _which_ state variable it refers to. There is no "identifier" passed to `#!python use_state`, so how does it know which state to return? Does it rely on some magic like parsing your functions? The answer is no.
 
-    Instead, to enable their concise syntax, Hooks **rely on a stable call order on every render of the same component.** ReactPy appends each Hook's state to a list on the component's first render, then walks that list by position on every render after (`LifeCycleHook.use_state` in `core/_life_cycle_hook.py`). This works well in practice because if you follow the rule above ("only call Hooks at the top level"), Hooks are always called in the same order — and `#!python reactpy-flake8` catches most mistakes.
+    Instead, to enable their concise syntax, Hooks **rely on a stable call order on every render of the same component.** ReactPy appends each Hook's state to a list on the component's first render, then walks that list by position on every render after (`LifeCycleHook.use_state` in `core/_life_cycle_hook.py`). This works well in practice because if you follow the rule above ("only call Hooks at the top level"), Hooks are always called in the same order — and nothing has to check.
 
     What happens when the order does change is worth knowing, because one of the two outcomes fails *silently*:
 
@@ -271,5 +273,5 @@ Because state belongs to the instance and not the function, two galleries can dr
 -   Components need to "remember" things, and that memory is called _state_.
 -   A state variable is declared with `#!python use_state`, which returns the current value and a setter function.
 -   Updating a local variable doesn't re-render, and re-renders throw local variables away. State is what survives.
--   Hooks must be called at the top level, in the same order every render; `#!python reactpy-flake8` raises `#!python REACTPY102` otherwise.
+-   Hooks must be called at the top level, in the same order every render — state is read back by position, and nothing checks it for you.
 -   State is local to each invocation of a component, so two instances never share it.

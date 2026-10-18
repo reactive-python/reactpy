@@ -53,7 +53,7 @@ For a **custom hook** (`#!python use_*`): everything above, plus it must not ski
 
 ## What ReactPy cannot check for you
 
-`reactpy-flake8` covers the call-site rule at build time (see [Rules of Hooks](rules-of-hooks.md#catching-violations)), but there is no runtime assertion for hook *order*, and that is the one that bites silently. Two settings get you most of the way:
+Nothing checks the rules of Hooks for you. There is no runtime assertion for the call-site rule and none for hook *order*, and order is the one that bites silently (see [Rules of Hooks](rules-of-hooks.md#catching-violations)). Two settings get you most of the way:
 
 -   `#!bash REACTPY_DEBUG=1` turns a render failure into a visible error in the model instead of a blank region, and enables the VDOM checks described in [Common Props](common-props.md#invalid-dictionaries).
 -   Tests are cheap precisely *because* of the rules: a pure component is an ordinary function — call it inside `#!python reactpy.core.layout.Layout`, render it twice, assert the models are equal. No browser involved.

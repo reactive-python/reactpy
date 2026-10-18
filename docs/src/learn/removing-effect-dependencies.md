@@ -84,7 +84,7 @@ Consequences:
 -   **A plain class instance always counts as changed**, because it inherits `#!python object.__eq__` and identity never holds across renders. That is the shape that genuinely spins.
 -   **The type gate catches things `#!python ==` would not:** `#!python strictly_equal(1, True)` is `#!python False` even though `#!python 1 == True`, and a tuple swapped for a list is a change.
 
-Because ReactPy cannot check your list for you — `reactpy-flake8` reports a missing dependency only for an inline `#!python lambda`, never for a named `#!python def` or a decorated Effect — proving the list is yours to do. See [Separating Events from Effects](./separating-events-from-effects.md) and [Lifecycle of Reactive Effects](./lifecycle-of-reactive-effects.md) for the linter's exact coverage and for the `#!python Layout`-based test that catches what it cannot.
+Because ReactPy cannot check your list for you — a missing dependency produces no warning, no log record, and no error — proving the list is yours to do. See [Separating Events from Effects](./separating-events-from-effects.md) and [Lifecycle of Reactive Effects](./lifecycle-of-reactive-effects.md) for the `#!python Layout`-based test that catches what nothing else will.
 
 ## Removing unnecessary dependencies
 
@@ -253,7 +253,7 @@ The comment is the review surface. An unexplained missing name is indistinguisha
 -   A missing dependency is silent — no warning, no log. Make the staleness visible in the page, as the first example does, or assert it in a test.
 -   The six removals: hoist what cannot change, take an updater for next-state reads, keep latest-value reads in a ref, move interaction logic to handlers, split Effects that do two jobs, and stop values changing unintentionally.
 -   Listing state you only append to is the classic self-triggering loop: measured, 400 renders and no settle.
--   `reactpy-flake8` will not check the list for you, so an explanatory comment is the only reviewer you have.
+-   Nothing checks the list for you, so an explanatory comment is the only reviewer you have.
 
 ## Related
 

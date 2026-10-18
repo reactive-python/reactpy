@@ -2,7 +2,7 @@
 
 <p class="intro" markdown>
 
-A custom Hook is a plain Python function whose name starts with `use_` and which calls other Hooks. It lets you reuse stateful *logic* between components — each caller still gets its own state, and nothing about it is special to ReactPy beyond the naming rule that makes the linter work.
+A custom Hook is a plain Python function whose name starts with `use_` and which calls other Hooks. It lets you reuse stateful *logic* between components — each caller still gets its own state, and nothing about it is special to ReactPy beyond the naming convention that marks it as subject to the rules of Hooks.
 
 </p>
 
@@ -12,7 +12,7 @@ A custom Hook is a plain Python function whose name starts with `use_` and which
     -   Why each call site gets independent state
     -   Why passing a callback into a Hook silently freezes it
     -   What actually happens when a Hook is called conditionally
-    -   What `reactpy-flake8` can and cannot see inside a custom Hook
+    -   Why the `#!python use_` prefix is a contract rather than a style choice
 
 ## Custom Hooks: sharing logic between components
 
@@ -37,21 +37,14 @@ Two rules make it a Hook rather than a helper:
 -   Its name starts with `#!python use_`. This is not cosmetic; see below.
 -   It is called during rendering, at the top level of a component or another Hook — never in an `#!python if`, a loop, a callback, or after an early return.
 
-### Hook names must match `^_*use_\w+$`
+### The `#!python use_` prefix is a contract
 
-`reactpy_flake8` decides what counts as a Hook with a regex, `DEFAULT_HOOK_FUNCTION_PATTERN = r"^_*use_\w+$"` (`reactpy_flake8/run.py`). Measured against the same file with only the function name changed, calling it conditionally from a component:
+ReactPy never inspects the name. A function called `#!python get_form` that calls `#!python use_state` behaves exactly like one called `#!python use_form`, and neither gets special treatment at runtime. The prefix is how a **reader** knows the function is subject to the rules of Hooks: it must be called at the top level of a component or another Hook, on every render, in the same order. That is the whole payoff — and it is what stops a conditional call from quietly corrupting state two functions away, which no error would otherwise reveal.
 
-| Function name | Reported |
-| --- | --- |
-| `#!python use_form` | `#!python REACTPY102` — hook used inside `if` |
-| `#!python _use_form` | `#!python REACTPY102` |
-| `#!python useForm` | `#!python REACTPY101` — hook used outside component or hook |
-| `#!python get_form` | `#!python REACTPY101` |
-
-So the naming rule is what buys you the *good* diagnostic. A camelCase `#!python useForm` still gets flagged — but as `#!python REACTPY101` at every `#!python use_state` line inside it, which points at the wrong thing and reads like you called a Hook from the wrong place. Name them `#!python use_snake_case`, and the linter can tell control-flow violations apart from misplaced calls.
+Write them in `#!python use_snake_case`: `#!python use_form`, not `#!python useForm` (which reads like a class, not a render-time call) and not `#!python get_form` (which reads like a helper a caller might safely reach for inside an event handler).
 
 !!! info "Not every render-time function needs the prefix"
-    Add `#!python use_` when the function calls Hooks. Leave it off when it does not — a `#!python format_rows()` or `#!python total_price()` is an ordinary function, and prefixing it would make the linter police it as a Hook.
+    Add `#!python use_` when the function calls Hooks. Leave it off when it does not — a `#!python format_rows()` or `#!python total_price()` is an ordinary function, and prefixing it claims a contract it does not keep.
 
 ## Custom Hooks share logic, not state
 
@@ -169,15 +162,15 @@ The corrected version calls every Hook unconditionally and makes only the *retur
 
 Verified with the same script: `#!python bio=bio!!` before and after the toggle. The toggle now changes only what is displayed.
 
-### What the linter can see
+### What nothing will catch
 
-`#!python REACTPY102` does fire on the broken file above — `#!python hook 'use_state' used inside if statement` — provided the function is named as a Hook. That coverage is real and worth wiring into CI. So does `#!python REACTPY103`, which catches the early-return case: a hook after a `#!python return` reports `hook 'use_state' used after an early return on line N`. `#!python REACTPY101` catches hooks used outside any component or hook, and `#!python REACTPY100` hooks defined as closures. All four are in `reactpy-flake8`'s `RulesOfHooksVisitor`. What it does not extend to:
+ReactPy raises for neither of the two broken shapes above. A Hook under an `#!python if` inside a custom Hook is perfectly legal Python, and the layout simply walks the component's state list by position:
 
--   calling a Hook-conditionally *through* a wrapper that the linter does not recognise (see the name table above),
--   a Hook list in one branch matching the caller's expectation in another,
--   the *order* the hooks actually run in — that is a runtime property, and nothing checks it.
+-   a call that **disappears** on some renders shifts every later Hook into its neighbour's slot — silently, with nothing logged;
+-   a call that **appears** raises `#!python IndexError: list index out of range` and blanks the region unless `#!bash REACTPY_DEBUG=1` is on;
+-   the *order* Hooks actually run in is a runtime property, and there is no assertion for it anywhere.
 
-And it checks dependency lists only under `#!python exhaustive_hook_deps=True`, and even then only for a narrow set of shapes. See [Lifecycle of Reactive Effects](./lifecycle-of-reactive-effects.md#reactpy-will-not-verify-your-dependencies) for exactly which. Treat the linter as a partial net and the fix — Hooks at the top level, always — as the actual rule.
+So the rule is the fix, not a checker: Hooks at the top level, always, on every render. The dependency-list half of the rules is the same story — see [Lifecycle of Reactive Effects](./lifecycle-of-reactive-effects.md#reactpy-will-not-verify-your-dependencies).
 
 !!! danger "Do not branch to disable a Hook"
     ```python linenums="0"
@@ -224,10 +217,10 @@ Two things a custom Hook is not:
 
 -   A custom Hook is a function named `#!python use_*` that calls Hooks; extract one to reuse stateful logic.
 -   State is per call site, in call order: the same Hook called twice is two independent boxes (verified).
--   Name them `#!python use_snake_case` — the linter's regex is `^_*use_\w+$`, and camelCase versions get flagged as `#!python REACTPY101` instead of the accurate `#!python REACTPY102`.
+-   Name them `#!python use_snake_case`. ReactPy never reads the name — the prefix is the only signal to a reader that the function must be called at the top level of a render.
 -   Never list a callback you were handed as a dependency: it compares code-equal and freezes the Effect on the first render. Read it through a ref updated during render.
 -   Conditional Hook calls do not raise; state slots shift and values silently migrate between variables (verified: `#!python bio` became `#!python nickname`). Call every Hook unconditionally and branch on the return value.
--   `reactpy-flake8` sees control-flow violations inside recognised Hooks, and nothing else — no dependency checks, no wrapper coverage.
+-   Nothing checks the rules of Hooks for you — not the order, not the dependency list. Prove a Hook with a `#!python Layout` test, not with a glance.
 
 ## Related
 

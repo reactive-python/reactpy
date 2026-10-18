@@ -207,33 +207,15 @@ Because a hook's name is all a reviewer has, name custom hooks `#!python use_*` 
 
 ## Catching violations
 
-There is a linter: **`reactpy-flake8`**, the plugin this repository pins (`reactpy-flake8 >=0.7` in `pyproject.toml`, `select = ["RPY"]`). Its `RulesOfHooksVisitor` is the working equivalent of `eslint-plugin-react-hooks` for the call-site rule, and it reports:
+Nothing checks these rules for you. ReactPy has no runtime assertion for the call-site rule or for the order rule, and a component that breaks them usually renders and then misbehaves rather than failing:
 
-| Code | Catches |
-| --- | --- |
-| `REACTPY100` | a hook *defined* as a closure inside another function |
-| `REACTPY101` | a hook used outside any component or hook |
-| `REACTPY102` | a hook used inside an `#!python if` / `#!python if` expression / `#!python try` / `#!python match` / `#!python for` / `#!python while` |
-| `REACTPY103` | a hook used after an early `#!python return` |
+-   **Fewer hooks than the first render** → the state list is walked by position, so slots shift and values silently migrate between variables. Nothing is logged.
+-   **More hooks than the first render** → `#!python IndexError: list index out of range`, the render aborts, and with debugging off the region simply goes blank.
 
-Run it as part of `flake8` (the repo config selects only its `RPY` codes), or drive it directly:
+Run with `#!bash REACTPY_DEBUG=1` during development, so a render failure becomes a visible error in the model instead of an empty region, and keep the two habits that replace a checker:
 
-```python linenums="0"
-import ast
-from reactpy_flake8.run import run_checks
-
-for line, col, msg in run_checks(ast.parse(source), exhaustive_hook_deps=False):
-    print(line, col, msg)
-```
-
-Verified against a component with a hook after an early return and a hook inside an `#!python if`: it reports exactly `REACTPY103 hook 'use_state' used after an early return on line 7` and `REACTPY102 hook 'use_state' used inside if statement`. Pass `#!python exhaustive_hook_deps=True` to add the dependency-shape checks (`REACTPY200`–`REACTPY202`), which cover far less than people expect — see [Lifecycle of Reactive Effects](../learn/lifecycle-of-reactive-effects.md#reactpy-will-not-verify-your-dependencies).
-
-What the linter cannot do is check the *order* rule, because order is a runtime property. There is still no runtime check, so the two habits remain:
-
--   Run with `#!bash REACTPY_DEBUG=1` during development, so a hook-count *increase* becomes a visible error instead of an empty region.
--   Treat any `#!python use_` call that appears below the first non-hook statement of a component body, or inside an `#!python if` / `#!python for` / `#!python try` / nested `#!python def`, as a review defect — and wire `reactpy-flake8` into CI so you are not the only one who spots it.
-
-The linter also matches on *names*: it flags anything whose name fits `^_*use_\w+` and treats a function as a component only if decorated with something matching `^(component|[\w.]+\.component)$`. Rename the decorator or the hook and the checks silently stop applying; the patterns are configurable via `--component-decorator-pattern` and `--hook-function-pattern`.
+-   Treat any `#!python use_` call that appears below the first non-hook statement of a component body, or inside an `#!python if` / `#!python for` / `#!python try` / nested `#!python def`, as a review defect.
+-   Prove behaviour in a test instead of trusting a glance: a pure component is an ordinary function, so render it twice inside `#!python reactpy.core.layout.Layout` and assert. A hook called conditionally shows up as state that does not survive the render which flips the branch.
 
 ---
 
