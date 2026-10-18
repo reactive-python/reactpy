@@ -14,7 +14,7 @@ Some Python functions are _pure._ Pure functions only perform a calculation and 
 
 ## Purity: Components as formulas
 
-In computer science (and especially the world of functional programming), [a pure function](https://wikipedia.org/wiki/Pure_function) is a function with the following characteristics:
+In computer science (and especially the world of functional programming), [a pure function](https://en.wikipedia.org/wiki/Pure_function) is a function with the following characteristics:
 
 -   **It minds its own business.** It does not change any objects or variables that existed before it was called.
 -   **Same inputs, same output.** Given the same inputs, a pure function should always return the same result.

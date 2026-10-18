@@ -183,7 +183,7 @@ Here, `#!python toolbar()` renders a `#!python play_button()` and an `#!python u
 
 Finally, the `#!python button()` component accepts a prop called `#!python on_click` and passes it straight to the built-in browser button with `#!python {"onClick": on_click}`. This tells ReactPy to call the passed function on click.
 
-Notice the two levels of naming: the prop your own component accepts is an ordinary Python parameter (`#!python on_click`, snake_case), while the key handed to the browser tag is `#!python "onClick"`. A [design system](https://uxdesign.cc/everything-you-need-to-know-about-design-systems-54b109851969) commonly puts styling in components like buttons but leaves the behavior to callers, so `#!python play_button()` and `#!python upload_button()` pass handlers down.
+Notice the two levels of naming: the prop your own component accepts is an ordinary Python parameter (`#!python on_click`, snake_case), while the key handed to the browser tag is `#!python "onClick"`. A [design system](https://en.wikipedia.org/wiki/Design_system) commonly puts styling in components like buttons but leaves the behavior to callers, so `#!python play_button()` and `#!python upload_button()` pass handlers down.
 
 ### Naming event handler props
 

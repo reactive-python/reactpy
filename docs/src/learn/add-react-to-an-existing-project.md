@@ -34,7 +34,7 @@ The exact approach depends on your existing page setup, so let's walk through so
 
 ### Using ASGI Middleware
 
-ReactPy supports running as middleware for any existing ASGI application. ReactPy components are embedded into your existing HTML templates using Jinja2. You can use any ASGI framework, however for demonstration purposes we have selected [Starlette](https://www.starlette.io/) for the example below.
+ReactPy supports running as middleware for any existing ASGI application. ReactPy components are embedded into your existing HTML templates using Jinja2. You can use any ASGI framework, however for demonstration purposes we have selected [Starlette](https://starlette.dev/) for the example below.
 
 First, install ReactPy, Starlette, and your preferred ASGI webserver.
 
@@ -44,7 +44,7 @@ First, install ReactPy, Starlette, and your preferred ASGI webserver.
     pip install reactpy[asgi,jinja] starlette uvicorn[standard]
     ```
 
-Next, configure your ASGI framework to use ReactPy's Jinja2 template tag. The method for doing this will vary depending on the ASGI framework you are using. Below is an example that follow's [Starlette's documentation](https://www.starlette.io/templates/):
+Next, configure your ASGI framework to use ReactPy's Jinja2 template tag. The method for doing this will vary depending on the ASGI framework you are using. Below is an example that follow's [Starlette's documentation](https://starlette.dev/templates/):
 
 !!! abstract "Note"
 
@@ -132,4 +132,4 @@ Plotly Dash is a web application framework that is used to create interactive da
 
 If you're new to Plotly Dash, check out the [Plotly Dash tutorial](https://dash.plotly.com/installation).
 
-ReactPy has unique [configuration instructions](https://github.com/reactive-python/reactpy-dash#readme) to use Plotly Dash. -->
+ReactPy has unique `reactpy-dash` configuration instructions to use Plotly Dash. -->

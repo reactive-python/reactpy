@@ -36,7 +36,7 @@ Props are the information that you pass to a tag. For example, `#!python classNa
     # TODO
     ```
 
-The props you can pass to an `#!python html.img` tag are predefined (the browser conforms to [the HTML standard](https://www.w3.org/TR/html52/semantics-embedded-content.html#the-img-element)), and they keep their familiar camelCase spelling because they are handed straight to the DOM. But you can pass any props to _your own_ components, such as `#!python avatar()`, to customize them. Here's how!
+The props you can pass to an `#!python html.img` tag are predefined (the browser conforms to [the HTML standard](https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element)), and they keep their familiar camelCase spelling because they are handed straight to the DOM. But you can pass any props to _your own_ components, such as `#!python avatar()`, to customize them. Here's how!
 
 ## Passing props to a component
 

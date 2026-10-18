@@ -30,8 +30,6 @@ Discussions is the front door, not Issues. The repository's issue-template confi
 
 ## Code of conduct
 
-Participation is governed by the [Contributor Covenant code of conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md), which lives at the repository root. It applies everywhere the project is discussed — Discussions, Issues, pull requests, Discord, and any other space where ReactPy maintainers show up.
-
 The practical version: assume good faith, criticise code rather than people, and accept that "this is obvious" is rarely true of the person asking. The enforcement section of the document names the contact route for escalating a problem.
 
 ## Packages outside this repository
@@ -68,7 +66,6 @@ Most unanswered questions are unanswered because they cannot be reproduced. Four
 
 -   Ask in [Discussions](https://github.com/reactive-python/reactpy/discussions); open an issue only for a confirmed defect.
 -   Real-time chat is on [Discord](https://discord.gg/uNb5P4hA9X); follow up anything durable in Discussions so it stays searchable.
--   The [code of conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md) governs every one of those spaces.
 -   Integration packages live in sibling repos; file bugs against the repo that owns the behaviour.
 -   Reproducible reports get answers: versions, smallest failing snippet, and the server log.
 

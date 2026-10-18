@@ -187,9 +187,9 @@ For historical reasons, [`aria-*`](https://developer.mozilla.org/docs/Web/Access
 
 </Pitfall>
 
-### Pro-tip: Use a PSX Converter
+### Pro-tip: There Is No PSX Converter (Yet)
 
-Converting all these attributes in existing markup can be tedious! We recommend using a [converter](https://transform.tools/html-to-psx) to translate your existing HTML and SVG to PSX. Converters are very useful in practice, but it's still worth understanding what is going on so that you can comfortably write PSX on your own.
+Converting all these attributes in existing markup can be tedious! There is no converter that translates your existing HTML and SVG to PSX yet — PSX is still planned (see [this issue](https://github.com/reactive-python/reactpy/issues/918)). Until one exists, you will need to translate markup by hand, so it's worth understanding what is going on in order to comfortably write PSX on your own.
 
 Here is your final result:
 
@@ -224,7 +224,7 @@ img {
 Now you know why PSX exists and how to use it in components:
 
 -   React components group rendering logic together with markup because they are related.
--   PSX is similar to HTML, with a few differences. You can use a [converter](https://transform.tools/html-to-psx) if you need to.
+-   PSX is similar to HTML, with a few differences.
 -   Error messages will often point you in the right direction to fixing your markup.
 
 </Recap>

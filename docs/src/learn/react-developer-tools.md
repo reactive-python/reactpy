@@ -32,7 +32,7 @@ Now, if you visit a website **built with React,** you will see the _Components_ 
 
 ### Safari and other browsers
 
-For other browsers (for example, Safari), install the [`react-devtools`](https://www.npmjs.com/package/react-devtools) npm package:
+For other browsers (for example, Safari), install the [`react-devtools`](https://github.com/facebook/react/tree/main/packages/react-devtools) npm package:
 
 ```bash
 # Yarn
