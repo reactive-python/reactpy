@@ -144,10 +144,17 @@ dependencies = [
   "mkdocs-minify-plugin",
   "mike",
   "linkcheckmd",
+  "pyright",
+  "starlette",
+  "orjson",
+  "asgi_tools",
+  "servestatic",
+  "websockets"
 ]
 
 [tool.hatch.envs.docs.scripts]
 serve = ["cd docs && mkdocs serve"]
+check = ["hatch check code docs/ && hatch check fmt docs/ && pyright docs/"]
 build = ["cd docs && mkdocs build --strict"]
 linkcheck = [
   "linkcheckMarkdown docs/ -v -r",
@@ -337,6 +344,17 @@ known-third-party = ["js"]
   "S102",
   # Allow print
   "T201",
+  # Docs render these files as teaching snippets, not importable modules.
+  # Relative imports (`from .my_button import my_button`) are what the docs
+  # deliberately teach, snippets unpack both halves of `use_state()` to show
+  # the full signature even when one half is unused, and each snippet file is
+  # standalone rather than part of a package.
+  "TID252",
+  "RUF059",
+  "INP001",
+  # "Keeping Components Pure" has to mutate a module-level variable with
+  # `global` in order to demonstrate why that is wrong.
+  "PLW0603",
 ]
 "scripts/**/*.py" = [
   # Allow print

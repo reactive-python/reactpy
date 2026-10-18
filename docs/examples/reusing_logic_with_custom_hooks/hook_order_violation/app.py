@@ -24,7 +24,7 @@ def profile(show_nickname):
     name, nickname, bio, set_bio = use_profile(show_nickname)
 
     async def extend_bio(event):
-        set_bio(bio + "!")
+        set_bio(f"{bio}!")
 
     return html.div(
         html.button({"onClick": extend_bio}, f"bio={bio}"),

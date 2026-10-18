@@ -9,7 +9,7 @@ from reactpy import component, html, use_state
 def use_profile(show_nickname):
     name, set_name = use_state("name")
     # the hook is called unconditionally; only the returned value is conditional
-    nickname, set_nickname = use_state("nickname")
+    nickname, _set_nickname = use_state("nickname")
     bio, set_bio = use_state("bio")
     return name, (nickname if show_nickname else "-"), bio, set_bio
 
@@ -19,7 +19,7 @@ def profile(show_nickname):
     name, nickname, bio, set_bio = use_profile(show_nickname)
 
     async def extend_bio(event):
-        set_bio(bio + "!")
+        set_bio(f"{bio}!")
 
     return html.div(
         html.button({"onClick": extend_bio}, f"bio={bio}"),

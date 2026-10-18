@@ -67,4 +67,4 @@ jobs:
             - name: Check docs build
               run: hatch run docs:build
             - name: Check docs examples
-              run: hatch fmt docs --check
+              run: hatch run docs:check

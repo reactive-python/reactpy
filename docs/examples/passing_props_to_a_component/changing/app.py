@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from reactpy import component, html, use_async_effect, use_state
 
@@ -14,12 +14,12 @@ def clock(color, time):
 @component
 def app():
     color, set_color = use_state("lightcoral")
-    now, set_now = use_state(datetime.now(timezone.utc))
+    now, set_now = use_state(datetime.now(UTC))
 
     async def tick():
         while True:
             await asyncio.sleep(1)
-            set_now(datetime.now(timezone.utc))
+            set_now(datetime.now(UTC))
 
     use_async_effect(tick, dependencies=[])
 
