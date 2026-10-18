@@ -12,7 +12,7 @@ root_dir = pathlib.Path(__file__).parent.parent.parent
 
 # Copy LICENSE file
 shutil.copyfile(
-    root_dir / "LICENSE", root_dir / "src/js/packages/@reactpy/client/LICENSE"
+    root_dir / "LICENSE.md", root_dir / "src/js/packages/@reactpy/client/LICENSE"
 )
 
 build_commands = [

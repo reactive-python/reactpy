@@ -7,7 +7,7 @@
     <a href="https://pypi.org/project/reactpy/">
         <img src="https://img.shields.io/pypi/v/reactpy.svg?label=PyPI">
     </a>
-    <a href="https://github.com/reactive-python/reactpy/blob/main/LICENSE">
+    <a href="https://github.com/reactive-python/reactpy/blob/main/LICENSE.md">
         <img src="https://img.shields.io/badge/License-MIT-purple.svg">
     </a>
     <a href="https://reactpy.dev/">
