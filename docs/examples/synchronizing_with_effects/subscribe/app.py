@@ -32,19 +32,24 @@ def app():
     topic, set_topic = use_state("news")
     watching, set_watching = use_state(True)
 
+    async def handle_topic_click(event):
+        set_topic("sports" if topic == "news" else "news")
+
+    async def handle_watching_click(event):
+        set_watching(not watching)
+
+    async def handle_click(event):
+        ticker.publish(topic, "ping")
+
     return html.div(
         html.button(
-            {
-                "onClick": lambda event: set_topic(
-                    "sports" if topic == "news" else "news"
-                )
-            },
+            {"onClick": handle_topic_click},
             "Switch topic",
         ),
         html.button(
-            {"onClick": lambda event: set_watching(not watching)},
+            {"onClick": handle_watching_click},
             "Stop watching" if watching else "Watch",
         ),
-        html.button({"onClick": lambda event: ticker.publish(topic, "ping")}, "Ping"),
+        html.button({"onClick": handle_click}, "Ping"),
         *([] if not watching else [scroll_log(topic)]),
     )

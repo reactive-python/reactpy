@@ -12,13 +12,16 @@ def todo_list():
     )
     text, set_text = use_state("")
 
-    def handle_insert(event):
+    async def handle_insert(event):
         event.preventDefault()
         if not text:
             return
         # Slicing builds the new list; list.insert() would mutate in place.
         set_items([*items[:1], {"id": 3, "text": text}, *items[1:]])
         set_text("")
+
+    async def handle_text_change(event):
+        set_text(await event.target.value)
 
     return html.div(
         html.form(
@@ -27,7 +30,7 @@ def todo_list():
                 {
                     "value": text,
                     "placeholder": "Insert at index 1",
-                    "onChange": lambda event: set_text(event["target"]["value"]),
+                    "onChange": handle_text_change,
                 }
             ),
             html.button({"type": "submit"}, "Insert"),

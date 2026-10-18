@@ -6,16 +6,22 @@ from reactpy import component, html, use_state
 def counter():
     score, set_score = use_state(0)
 
+    async def handle_score_click(event):
+        set_score(score + 1)
+
     return html.div(
         {"className": "counter"},
         html.h1(score),
-        html.button({"onClick": lambda event: set_score(score + 1)}, "Add one"),
+        html.button({"onClick": handle_score_click}, "Add one"),
     )
 
 
 @component
 def app():
     is_paused, set_is_paused = use_state(False)
+
+    async def handle_is_paused_change(event):
+        set_is_paused(await event.target.checked)
 
     return html.div(
         # Switching between a counter() and an html.p() puts a *different* kind
@@ -27,7 +33,7 @@ def app():
                 {
                     "type": "checkbox",
                     "checked": is_paused,
-                    "onChange": lambda event: set_is_paused(event["target"]["checked"]),
+                    "onChange": handle_is_paused_change,
                 }
             ),
             "Take a break",

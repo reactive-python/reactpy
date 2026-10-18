@@ -10,27 +10,36 @@ def form():
 
     # One handler for every field. ReactPy always calls a handler with the
     # event as its single positional argument, so the field name is bound by
-    # the lambdas below rather than delivered by the client.
-    def handle_change(field, event):
-        set_person({**person, field: event["target"]["value"]})
+    # the thin handlers below rather than delivered by the client.
+    async def handle_change(field, event):
+        set_person({**person, field: await event.target.value})
+
+    async def handle_first_name_change(event):
+        await handle_change("firstName", event)
+
+    async def handle_last_name_change(event):
+        await handle_change("lastName", event)
+
+    async def handle_email_change(event):
+        await handle_change("email", event)
 
     return html.div(
         html.input(
             {
                 "value": person["firstName"],
-                "onChange": lambda event: handle_change("firstName", event),
+                "onChange": handle_first_name_change,
             }
         ),
         html.input(
             {
                 "value": person["lastName"],
-                "onChange": lambda event: handle_change("lastName", event),
+                "onChange": handle_last_name_change,
             }
         ),
         html.input(
             {
                 "value": person["email"],
-                "onChange": lambda event: handle_change("email", event),
+                "onChange": handle_email_change,
             }
         ),
         html.hr(),

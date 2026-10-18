@@ -6,7 +6,7 @@ from reactpy import component, html, use_state
 def counter():
     count, set_count = use_state(0)
 
-    def handle_add_three(event):
+    async def handle_add_three(event):
         # Updaters receive the current value, so all three increments land.
         set_count(lambda previous: previous + 1)
         set_count(lambda previous: previous + 1)

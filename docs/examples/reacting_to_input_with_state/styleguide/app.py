@@ -19,9 +19,13 @@ def form(status="empty"):
                 {"disabled": status in {"empty", "submitting"}},
                 "Submit",
             ),
-            html.p({"className": "Error"}, "Good guess but a wrong answer. Try again!")
-            if status == "error"
-            else None,
+            (
+                html.p(
+                    {"className": "Error"}, "Good guess but a wrong answer. Try again!"
+                )
+                if status == "error"
+                else None
+            ),
         ),
     )
 

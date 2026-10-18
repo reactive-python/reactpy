@@ -17,10 +17,16 @@ def logger():
 
     use_effect(effect)
 
+    async def handle_count_click(event):
+        set_count(count + 1)
+
+    async def handle_label_click(event):
+        set_label(label + "!")
+
     return html.div(
         html.h1(count),
-        html.button({"onClick": lambda event: set_count(count + 1)}, "Add 1"),
-        html.button({"onClick": lambda event: set_label(label + "!")}, "Rename"),
+        html.button({"onClick": handle_count_click}, "Add 1"),
+        html.button({"onClick": handle_label_click}, "Rename"),
         html.p(f"Label: {label}"),
         html.ul([html.li({"key": i}, line) for i, line in enumerate(runs)]),
     )

@@ -8,10 +8,13 @@ from reactpy import component, html, use_state
 def search_box(on_search):
     query, set_query = use_state("")
 
-    def handle_submit(event):
+    async def handle_submit(event):
         event.preventDefault()
         # Not an Effect: the search happens because the user submitted.
         on_search(query)
+
+    async def handle_query_change(event):
+        set_query(await event.target.value)
 
     return html.form(
         {"onSubmit": handle_submit},
@@ -19,7 +22,7 @@ def search_box(on_search):
             {
                 "value": query,
                 "placeholder": "search",
-                "onChange": lambda event: set_query(event["target"]["value"]),
+                "onChange": handle_query_change,
             }
         ),
         html.button({"type": "submit"}, "Search"),

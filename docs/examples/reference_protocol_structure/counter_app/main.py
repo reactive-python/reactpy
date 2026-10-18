@@ -13,7 +13,7 @@ from reactpy.executors.utils import server_side_component_html
 def counter():
     count, set_count = use_state(0)
 
-    def increment(_event):
+    async def increment(_event):
         set_count(count + 1)
 
     return html.div(

@@ -22,11 +22,17 @@ def counter():
 
     use_effect(effect, dependencies=[count])
 
+    async def handle_count_click(event):
+        set_count(count + 1)
+
+    async def handle_show_error_click(event):
+        set_show_error(not show_error)
+
     return html.div(
         html.h1(count),
-        html.button({"onClick": lambda event: set_count(count + 1)}, "Add 1"),
+        html.button({"onClick": handle_count_click}, "Add 1"),
         html.button(
-            {"onClick": lambda event: set_show_error(not show_error)},
+            {"onClick": handle_show_error_click},
             f"Toggle error (currently {show_error})",
         ),
         html.p("Effect reports:"),

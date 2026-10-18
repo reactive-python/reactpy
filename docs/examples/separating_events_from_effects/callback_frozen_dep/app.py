@@ -14,7 +14,7 @@ def search():
     def describe():
         return f"query={query!r}"
 
-    def run(event):
+    async def run(event):
         # `describe` is re-created every render but compares code-equal, so this
         # callback is still the one from the very first render. The functional
         # updater keeps the counter honest; only `describe()` is frozen.
@@ -23,10 +23,11 @@ def search():
 
     on_click = use_callback(run, dependencies=[describe])
 
+    async def handle_query_change(e):
+        set_query(await e.target.value)
+
     return html.div(
-        html.input(
-            {"value": query, "onChange": lambda e: set_query(e["target"]["value"])}
-        ),
+        html.input({"value": query, "onChange": handle_query_change}),
         html.button({"onClick": on_click}, f"Run ({runs})"),
         html.p(f"page shows query={query!r} — compare with the console"),
     )

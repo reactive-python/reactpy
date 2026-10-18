@@ -8,16 +8,27 @@ from reactpy import component, html, use_state
 def chat(contact):
     draft, set_draft = use_state("")
 
+    async def handle_draft_click(event):
+        set_draft("")
+
     return html.section(
         {"className": "chat"},
         html.h3(f"To: {contact['name']} <{contact['email']}>"),
         html.textarea({"placeholder": "Write a message", "value": draft}),
-        html.button({"onClick": lambda event: set_draft("")}, "Clear"),
+        html.button({"onClick": handle_draft_click}, "Clear"),
     )
 
 
 @component
 def contact_list(selected_contact, on_select):
+    def make_select(contact):
+        # A factory, not a lambda: a handler must be a coroutine, and the
+        # contact it acts on is bound by the closure.
+        async def choose(event):
+            on_select(contact)
+
+        return choose
+
     return html.section(
         {"className": "contact-list"},
         html.ul(
@@ -25,7 +36,7 @@ def contact_list(selected_contact, on_select):
                 html.li(
                     {"key": contact["id"]},
                     html.button(
-                        {"onClick": lambda event, c=contact: on_select(c)},
+                        {"onClick": make_select(contact)},
                         contact["name"],
                     ),
                 )

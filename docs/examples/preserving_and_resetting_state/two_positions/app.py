@@ -6,10 +6,13 @@ from reactpy import component, html, use_state
 def counter():
     score, set_score = use_state(0)
 
+    async def handle_score_click(event):
+        set_score(score + 1)
+
     return html.div(
         {"className": "counter"},
         html.h1(score),
-        html.button({"onClick": lambda event: set_score(score + 1)}, "Add one"),
+        html.button({"onClick": handle_score_click}, "Add one"),
     )
 
 

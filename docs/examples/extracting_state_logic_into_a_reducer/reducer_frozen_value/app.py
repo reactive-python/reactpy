@@ -20,7 +20,7 @@ def cart(item_price):
 
     state, dispatch = use_reducer(reducer, INITIAL)
 
-    def handle_add(event):
+    async def handle_add(event):
         dispatch({"type": "add"})
 
     return html.div(
@@ -36,7 +36,7 @@ def cart(item_price):
 def price_control():
     price, set_price = use_state(10)
 
-    def raise_price(event):
+    async def raise_price(event):
         set_price(50)
 
     return html.div(

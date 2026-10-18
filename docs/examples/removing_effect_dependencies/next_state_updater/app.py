@@ -22,8 +22,11 @@ def log_viewer(topic):
 
     use_effect(record, dependencies=[topic])
 
+    async def handle_visible_click(e):
+        set_visible(visible + 1)
+
     return html.div(
-        html.button({"onClick": lambda e: set_visible(visible + 1)}, f"Show {visible}"),
+        html.button({"onClick": handle_visible_click}, f"Show {visible}"),
         html.ul([html.li({"key": i}, line) for i, line in enumerate(lines[-visible:])]),
     )
 
@@ -31,7 +34,11 @@ def log_viewer(topic):
 @component
 def app():
     topic, set_topic = use_state("news")
+
+    async def handle_topic_click(e):
+        set_topic(topic + "x")
+
     return html.div(
-        html.button({"onClick": lambda e: set_topic(topic + "x")}, f"Topic {topic}"),
+        html.button({"onClick": handle_topic_click}, f"Topic {topic}"),
         log_viewer(topic),
     )

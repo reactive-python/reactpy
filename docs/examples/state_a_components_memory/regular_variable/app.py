@@ -8,7 +8,7 @@ from reactpy import component, html
 def gallery():
     index = 0
 
-    def handle_next(event):
+    async def handle_next(event):
         # `nonlocal` is what makes this assignment legal Python at all; without
         # it the nested function gets its own `index` and the read on the right
         # hand side raises UnboundLocalError. JS closures need no such keyword.

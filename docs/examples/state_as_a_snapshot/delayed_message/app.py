@@ -16,13 +16,19 @@ def form():
         await asyncio.sleep(5)
         set_status(f"You said {message} to {to}")
 
+    async def handle_to_change(event):
+        set_to(await event.target.value)
+
+    async def handle_message_change(event):
+        set_message(await event.target.value)
+
     return html.div(
         html.label(
             "To: ",
             html.input(
                 {
                     "value": to,
-                    "onChange": lambda event: set_to(event["target"]["value"]),
+                    "onChange": handle_to_change,
                 }
             ),
         ),
@@ -31,7 +37,7 @@ def form():
             html.input(
                 {
                     "value": message,
-                    "onChange": lambda event: set_message(event["target"]["value"]),
+                    "onChange": handle_message_change,
                 }
             ),
         ),

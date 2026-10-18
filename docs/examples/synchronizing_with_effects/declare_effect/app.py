@@ -15,11 +15,14 @@ def status_page():
 
     use_effect(effect, dependencies=[])
 
+    async def handle_visit_count_click(event):
+        set_visit_count(visit_count + 1)
+
     return html.div(
         html.h1("Service status"),
         html.p(f"This page has been opened {visit_count} times."),
         html.button(
-            {"onClick": lambda event: set_visit_count(visit_count + 1)},
+            {"onClick": handle_visit_count_click},
             "Re-check",
         ),
     )

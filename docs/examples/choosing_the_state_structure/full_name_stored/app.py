@@ -10,19 +10,19 @@ def check_in():
     last_name, set_last_name = use_state("Lovelace")
     full_name, set_full_name = use_state("Ada Lovelace")
 
-    def handle_first_name_change(event):
-        set_first_name(event["target"]["value"])
-        set_full_name(event["target"]["value"] + " " + last_name)
+    async def handle_first_name_change(event):
+        set_first_name(await event.target.value)
+        set_full_name(await event.target.value + " " + last_name)
 
-    def handle_last_name_change(event):
-        set_last_name(event["target"]["value"])
-        set_full_name(first_name + " " + event["target"]["value"])
+    async def handle_last_name_change(event):
+        set_last_name(await event.target.value)
+        set_full_name(first_name + " " + await event.target.value)
 
-    def rename_only_first(event):
+    async def rename_only_first(event):
         # The bug the extra state variable invites: one writer, one update.
         set_first_name("Grace")
 
-    def rename_only_last(event):
+    async def rename_only_last(event):
         # This one does not touch full_name either.
         set_last_name("Hopper")
 

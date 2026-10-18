@@ -24,10 +24,16 @@ def listener():
 
     use_effect(subscribe, dependencies=None)
 
+    async def handle_renders_click(event):
+        set_renders(renders + 1)
+
+    async def handle_click(event):
+        bus.publish("ping")
+
     return html.div(
         html.p(f"renders: {renders}"),
         html.p(f"handlers registered: {len(bus.handlers)}"),
         html.p(f"this component heard: {heard}"),
-        html.button({"onClick": lambda event: set_renders(renders + 1)}, "Re-render"),
-        html.button({"onClick": lambda event: bus.publish("ping")}, "Publish"),
+        html.button({"onClick": handle_renders_click}, "Re-render"),
+        html.button({"onClick": handle_click}, "Publish"),
     )

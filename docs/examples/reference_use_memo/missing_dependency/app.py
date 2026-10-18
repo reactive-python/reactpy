@@ -18,14 +18,18 @@ def totals():
 
     total = use_memo(grand_total, dependencies=[items])
 
+    async def handle_tax_rate_click(event):
+        set_tax_rate(tax_rate + 0.1)
+
+    async def handle_items_click(event):
+        set_items([*items, len(items) + 1])
+
     return html.div(
         html.h1(f"total: {total:.2f}"),
         html.p(f"tax rate: {tax_rate:.0%}"),
+        html.button({"onClick": handle_tax_rate_click}, "Add 10% tax"),
         html.button(
-            {"onClick": lambda event: set_tax_rate(tax_rate + 0.1)}, "Add 10% tax"
-        ),
-        html.button(
-            {"onClick": lambda event: set_items([*items, len(items) + 1])},
+            {"onClick": handle_items_click},
             "Add an item",
         ),
     )

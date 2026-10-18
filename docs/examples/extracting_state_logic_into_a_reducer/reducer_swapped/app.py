@@ -21,10 +21,10 @@ def counter():
     reducer = add_by_one if version == 1 else add_by_hundred
     state, dispatch = use_reducer(reducer, {"n": 0, "by": "-"})
 
-    def handle_add(event):
+    async def handle_add(event):
         dispatch({"type": "add"})
 
-    def handle_switch(event):
+    async def handle_switch(event):
         set_version(2)
 
     return html.div(

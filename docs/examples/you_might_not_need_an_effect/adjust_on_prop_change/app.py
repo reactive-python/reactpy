@@ -16,13 +16,17 @@ def list_box(items):
 
     shown = items[::-1] if is_reverse else items
 
+    async def handle_is_reverse_click(event):
+        set_is_reverse(not is_reverse)
+
+    async def handle_chosen_click(event):
+        set_chosen({"items": items, "value": shown[0]})
+
     return html.div(
         html.p(f"items: {shown}  selected: {selection}"),
+        html.button({"onClick": handle_is_reverse_click}, "Reverse"),
         html.button(
-            {"onClick": lambda event: set_is_reverse(not is_reverse)}, "Reverse"
-        ),
-        html.button(
-            {"onClick": lambda event: set_chosen({"items": items, "value": shown[0]})},
+            {"onClick": handle_chosen_click},
             "Select",
         ),
     )
@@ -32,9 +36,12 @@ def list_box(items):
 def app():
     items, set_items = use_state(["a", "b", "c"])
 
+    async def handle_items_click(event):
+        set_items([*items, f"item {len(items) + 1}"])
+
     return html.div(
         html.button(
-            {"onClick": lambda event: set_items([*items, f"item {len(items) + 1}"])},
+            {"onClick": handle_items_click},
             "Add item",
         ),
         list_box(items),

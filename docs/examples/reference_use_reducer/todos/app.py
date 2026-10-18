@@ -33,6 +33,20 @@ def todos_reducer(state, action):
 def todo_list():
     state, dispatch = use_reducer(todos_reducer, {"items": []})
 
+    async def handle_add_click(event):
+        dispatch({"type": "add", "text": f"task {len(state['items']) + 1}"})
+
+    async def handle_clear_done_click(event):
+        dispatch({"type": "clear_done"})
+
+    def make_toggle(index):
+        # A factory rather than a bound-argument lambda: a handler must be a
+        # coroutine, and a coroutine cannot be a lambda.
+        async def toggle(event):
+            dispatch({"type": "toggle", "index": index})
+
+        return toggle
+
     return html.div(
         html.h1(f"To-do ({sum(1 for i in state['items'] if not i['done'])} left)"),
         html.ul(
@@ -40,11 +54,7 @@ def todo_list():
                 html.li(
                     {"key": i},
                     html.button(
-                        {
-                            "onClick": lambda event, i=i: dispatch(
-                                {"type": "toggle", "index": i}
-                            )
-                        },
+                        {"onClick": make_toggle(i)},
                         state["items"][i]["text"],
                     ),
                 )
@@ -52,14 +62,8 @@ def todo_list():
             ]
         ),
         html.button(
-            {
-                "onClick": lambda event: dispatch(
-                    {"type": "add", "text": f"task {len(state['items']) + 1}"}
-                )
-            },
+            {"onClick": handle_add_click},
             "Add task",
         ),
-        html.button(
-            {"onClick": lambda event: dispatch({"type": "clear_done"})}, "Clear done"
-        ),
+        html.button({"onClick": handle_clear_done_click}, "Clear done"),
     )

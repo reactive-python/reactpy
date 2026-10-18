@@ -17,13 +17,16 @@ def page_view(path):
 
     use_effect(effect, dependencies=[path])
 
+    async def handle_draft_change(event):
+        set_draft(await event.target.value)
+
     return html.div(
         html.h2(path),
         html.p(f"total reports sent: {len(analytics.sent)}"),
         html.input(
             {
                 "placeholder": "notes",
-                "onChange": lambda event: set_draft(event["target"]["value"]),
+                "onChange": handle_draft_change,
             }
         ),
     )
@@ -33,13 +36,12 @@ def page_view(path):
 def app():
     path, set_path = use_state("/home")
 
+    async def handle_path_click(event):
+        set_path("/about" if path == "/home" else "/home")
+
     return html.div(
         html.button(
-            {
-                "onClick": lambda event: set_path(
-                    "/about" if path == "/home" else "/home"
-                )
-            },
+            {"onClick": handle_path_click},
             "Navigate",
         ),
         page_view(path),

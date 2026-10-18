@@ -4,7 +4,7 @@ from reactpy import component, html
 # start
 @component
 def my_button():
-    def handle_click(event):
+    async def handle_click(event):
         print("You clicked me!")
 
     return html.button(

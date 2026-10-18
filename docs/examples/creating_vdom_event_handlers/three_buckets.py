@@ -4,8 +4,8 @@ from reactpy import html
 # start
 # ReactPy sorts each value in the attribute dict into one of three buckets
 # by *kind*, not by name (core/vdom.py, separate_attributes_handlers_and_inline_javascript).
-def save(event):
-    print("saved", event["target"]["value"])
+async def save(event):
+    print("saved", await event.target.value)
 
 
 element = html.button(

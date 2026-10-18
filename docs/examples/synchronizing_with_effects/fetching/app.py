@@ -27,13 +27,12 @@ def report_view(name):
 def app():
     name, set_name = use_state("orders")
 
+    async def handle_name_click(event):
+        set_name("users" if name == "orders" else "orders")
+
     return html.div(
         html.button(
-            {
-                "onClick": lambda event: set_name(
-                    "users" if name == "orders" else "orders"
-                )
-            },
+            {"onClick": handle_name_click},
             "Toggle report",
         ),
         report_view(name),

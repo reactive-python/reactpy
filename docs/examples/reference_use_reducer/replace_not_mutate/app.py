@@ -15,7 +15,11 @@ def counter_reducer(state, action):
 @component
 def counter():
     state, dispatch = use_reducer(counter_reducer, {"count": 0})
+
+    async def handle_click(event):
+        dispatch({"type": "inc"})
+
     return html.div(
         html.h1(state["count"]),
-        html.button({"onClick": lambda event: dispatch({"type": "inc"})}, "Add 1"),
+        html.button({"onClick": handle_click}, "Add 1"),
     )

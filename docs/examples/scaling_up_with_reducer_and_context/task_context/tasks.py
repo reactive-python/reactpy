@@ -36,9 +36,11 @@ def tasks_reducer(state: TaskState, action: dict[str, Any]) -> TaskState:
         return {
             **state,
             "tasks": [
-                {**task, "done": not task["done"]}
-                if task["id"] == action["id"]
-                else task
+                (
+                    {**task, "done": not task["done"]}
+                    if task["id"] == action["id"]
+                    else task
+                )
                 for task in state["tasks"]
             ],
         }

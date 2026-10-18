@@ -6,12 +6,17 @@ from reactpy import component, html, use_state
 def panel(title, *children):
     is_active, set_is_active = use_state(False)
 
+    async def handle_is_active_click(event):
+        set_is_active(True)
+
     return html.section(
         {"className": "panel"},
         html.h3(title),
-        html.p(*children)
-        if is_active
-        else html.button({"onClick": lambda event: set_is_active(True)}, "Show"),
+        (
+            html.p(*children)
+            if is_active
+            else html.button({"onClick": handle_is_active_click}, "Show")
+        ),
     )
 
 

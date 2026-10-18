@@ -21,9 +21,11 @@ def tasks_reducer(state, action):
         return {
             **state,
             "tasks": [
-                {**task, "done": not task["done"]}
-                if task["id"] == action["id"]
-                else task
+                (
+                    {**task, "done": not task["done"]}
+                    if task["id"] == action["id"]
+                    else task
+                )
                 for task in state["tasks"]
             ],
         }
@@ -39,7 +41,7 @@ def tasks_reducer(state, action):
 @component
 def task_form(state, dispatch, task):
     # The only component that actually wants dispatch...
-    def handle_toggle(event):
+    async def handle_toggle(event):
         dispatch({"type": "toggled", "id": task["id"]})
 
     return html.div(
@@ -52,7 +54,7 @@ def task_form(state, dispatch, task):
 @component
 def task(state, dispatch, task):
     # ...but must receive it and hand it on, unchanged.
-    def handle_delete(event):
+    async def handle_delete(event):
         dispatch({"type": "deleted", "id": task["id"]})
 
     return html.li(
@@ -74,7 +76,7 @@ def task_list(state, dispatch):
 def task_app():
     state, dispatch = use_reducer(tasks_reducer, {"tasks": INITIAL_TASKS, "next_id": 2})
 
-    def handle_add(event):
+    async def handle_add(event):
         dispatch({"type": "added"})
 
     return html.div(

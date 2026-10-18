@@ -17,22 +17,27 @@ def todo_list():
         set_items(next_items)
         set_log([*log, f"{label}: {', '.join(i['text'] for i in next_items)}"])
 
+    async def handle_reversed_click(event):
+        record("reversed", list(reversed(items)))
+
+    async def handle_sorted_click(event):
+        record("sorted", sorted(items, key=lambda i: i["text"]))
+
+    async def handle_filtered_click(event):
+        record("filtered", items[:2])
+
     return html.div(
         html.div(
             html.button(
-                {"onClick": lambda event: record("reversed", list(reversed(items)))},
+                {"onClick": handle_reversed_click},
                 "Reverse",
             ),
             html.button(
-                {
-                    "onClick": lambda event: record(
-                        "sorted", sorted(items, key=lambda i: i["text"])
-                    )
-                },
+                {"onClick": handle_sorted_click},
                 "Sort",
             ),
             html.button(
-                {"onClick": lambda event: record("filtered", items[:2])},
+                {"onClick": handle_filtered_click},
                 "Keep first two",
             ),
         ),

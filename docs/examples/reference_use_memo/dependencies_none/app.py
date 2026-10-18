@@ -22,9 +22,15 @@ def counter():
         calls.append(1)
         return f"{config['prefix']}: {count}{suffix}"
 
+    async def handle_count_click(event):
+        set_count(count + 1)
+
+    async def handle_suffix_click(event):
+        set_suffix("!")
+
     return html.div(
         html.h1(use_memo(label, dependencies=None)),
         html.p(f"label() ran {len(calls)} time(s)"),
-        html.button({"onClick": lambda event: set_count(count + 1)}, "Count +1"),
-        html.button({"onClick": lambda event: set_suffix("!")}, "Set suffix"),
+        html.button({"onClick": handle_count_click}, "Count +1"),
+        html.button({"onClick": handle_suffix_click}, "Set suffix"),
     )

@@ -20,15 +20,15 @@ def marker():
     x, set_x = use_state(20)
     y, set_y = use_state(20)
 
-    def move_diagonally(event):
+    async def move_diagonally(event):
         # The classic mistake: this handler remembers x and forgets y.
         set_x(x + STEP)
 
-    def move_correctly(event):
+    async def move_correctly(event):
         set_x(x + STEP)
         set_y(y + STEP)
 
-    def reset(event):
+    async def reset(event):
         set_x(20)
         set_y(20)
 

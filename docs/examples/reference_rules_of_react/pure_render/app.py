@@ -11,7 +11,10 @@ def counter():
     # which ReactPy keeps per component instance -- so two connections to this
     # same component each have their own number, and re-running the render
     # changes nothing but the value returned.
+    async def handle_count_click(event):
+        set_count(count + 1)
+
     return html.div(
         html.h1(count),
-        html.button({"onClick": lambda event: set_count(count + 1)}, "Add 1"),
+        html.button({"onClick": handle_count_click}, "Add 1"),
     )

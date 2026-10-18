@@ -6,7 +6,7 @@ from reactpy import component, html, use_state
 def tea_counter():
     sips, set_sips = use_state(0)
 
-    def take_a_sip(event):
+    async def take_a_sip(event):
         # Side effects belong here: this runs on click, not during rendering.
         set_sips(sips + 1)
 

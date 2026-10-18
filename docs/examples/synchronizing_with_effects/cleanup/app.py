@@ -33,13 +33,19 @@ def app():
     room, set_room = use_state("lobby")
     connected, set_connected = use_state(True)
 
+    async def handle_room_click(event):
+        set_room("dev" if room == "lobby" else "lobby")
+
+    async def handle_connected_click(event):
+        set_connected(not connected)
+
     return html.div(
         html.button(
-            {"onClick": lambda event: set_room("dev" if room == "lobby" else "lobby")},
+            {"onClick": handle_room_click},
             f"Switch room (now {room})",
         ),
         html.button(
-            {"onClick": lambda event: set_connected(not connected)},
+            {"onClick": handle_connected_click},
             "Leave" if connected else "Join",
         ),
         *([] if not connected else [chat_room(room)]),

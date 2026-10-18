@@ -16,7 +16,7 @@ def board():
         # Mutating in place and handing back the same object: ReactPy compares
         # the new value with the old one, sees the same object, and schedules no
         # render at all. The button looks fine and never responds.
-        def inner(event):
+        async def inner(event):
             squares[i] = "X"
             set_squares(squares)
 

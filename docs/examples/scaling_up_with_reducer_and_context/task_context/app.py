@@ -11,7 +11,7 @@ def task_form(task):
     # Reads dispatch from context; no prop arrived.
     _, dispatch = use_context(TaskContext)
 
-    def handle_toggle(event):
+    async def handle_toggle(event):
         dispatch({"type": "toggled", "id": task["id"]})
 
     return html.div(
@@ -25,7 +25,7 @@ def task_form(task):
 def task(task):
     _, dispatch = use_context(TaskContext)
 
-    def handle_delete(event):
+    async def handle_delete(event):
         dispatch({"type": "deleted", "id": task["id"]})
 
     return html.li(
@@ -46,7 +46,7 @@ def task_list():
 def task_app():
     state, dispatch = use_reducer(tasks_reducer, INITIAL_STATE)
 
-    def handle_add(event):
+    async def handle_add(event):
         dispatch({"type": "added"})
 
     return html.div(

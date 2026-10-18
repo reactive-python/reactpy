@@ -18,7 +18,7 @@ def use_profile(show_nickname):
 def profile(show_nickname):
     name, nickname, bio, set_bio = use_profile(show_nickname)
 
-    def extend_bio(event):
+    async def extend_bio(event):
         set_bio(bio + "!")
 
     return html.div(
@@ -30,7 +30,11 @@ def profile(show_nickname):
 @component
 def app():
     show, set_show = use_state(True)
+
+    async def handle_show_click(e):
+        set_show(not show)
+
     return html.div(
-        html.button({"onClick": lambda e: set_show(not show)}, "toggle nickname"),
+        html.button({"onClick": handle_show_click}, "toggle nickname"),
         profile(show),
     )

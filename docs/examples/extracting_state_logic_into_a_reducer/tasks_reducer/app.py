@@ -24,9 +24,11 @@ def tasks_reducer(state, action):
         return {
             **state,
             "tasks": [
-                {**task, "done": not task["done"]}
-                if task["id"] == action["id"]
-                else task
+                (
+                    {**task, "done": not task["done"]}
+                    if task["id"] == action["id"]
+                    else task
+                )
                 for task in state["tasks"]
             ],
         }
@@ -42,17 +44,17 @@ def tasks_reducer(state, action):
 def task_app():
     state, dispatch = use_reducer(tasks_reducer, {"tasks": INITIAL_TASKS, "next_id": 3})
 
-    def handle_add_task(event):
+    async def handle_add_task(event):
         dispatch({"type": "added"})
 
     def handle_toggle(task_id):
-        def handle_click(event):
+        async def handle_click(event):
             dispatch({"type": "toggled", "id": task_id})
 
         return handle_click
 
     def handle_delete(task_id):
-        def handle_click(event):
+        async def handle_click(event):
             dispatch({"type": "deleted", "id": task_id})
 
         return handle_click
@@ -67,9 +69,9 @@ def task_app():
                     html.span(
                         {
                             "style": {
-                                "textDecoration": "line-through"
-                                if task["done"]
-                                else "none"
+                                "textDecoration": (
+                                    "line-through" if task["done"] else "none"
+                                )
                             }
                         },
                         task["text"],

@@ -11,7 +11,7 @@ def task_form(task):
     # No props. The dispatch comes from the wiring file.
     _, dispatch = use_tasks()
 
-    def handle_toggle(event):
+    async def handle_toggle(event):
         dispatch({"type": "toggled", "id": task["id"]})
 
     return html.div(
@@ -25,7 +25,7 @@ def task_form(task):
 def task(task):
     _, dispatch = use_tasks()
 
-    def handle_delete(event):
+    async def handle_delete(event):
         dispatch({"type": "deleted", "id": task["id"]})
 
     return html.li(
@@ -45,7 +45,7 @@ def task_list():
 def task_app():
     state, dispatch = use_tasks()
 
-    def handle_add(event):
+    async def handle_add(event):
         dispatch({"type": "added"})
 
     return html.div(

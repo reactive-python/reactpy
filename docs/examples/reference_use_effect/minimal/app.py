@@ -16,10 +16,13 @@ def live_feed():
 
     use_effect(effect, dependencies=[])
 
+    async def handle_click(event):
+        ticker.publish("news", "Hello!")
+
     return html.div(
         html.h1(latest),
         html.button(
-            {"onClick": lambda event: ticker.publish("news", "Hello!")},
+            {"onClick": handle_click},
             "Publish",
         ),
     )

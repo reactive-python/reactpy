@@ -10,10 +10,10 @@ def counter():
     state_count, set_state_count = use_state(0)
     ref_count = use_ref(0)
 
-    def bump_state(event=None):
+    async def bump_state(event=None):
         set_state_count(state_count + 1)
 
-    def bump_ref(event=None):
+    async def bump_ref(event=None):
         ref_count.current += 1  # writes in place: no render is scheduled
 
     return html.div(

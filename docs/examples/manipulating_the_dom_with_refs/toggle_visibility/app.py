@@ -6,6 +6,9 @@ from reactpy import component, html, use_state
 def todo_list():
     shown, set_shown = use_state(True)
 
+    async def handle_shown_click(event):
+        set_shown(not shown)
+
     return html(
         html.div(
             {"id": "todo", "hidden": not shown},
@@ -13,7 +16,7 @@ def todo_list():
             html.p("Build something"),
         ),
         html.button(
-            {"onClick": lambda event: set_shown(not shown)},
+            {"onClick": handle_shown_click},
             "Hide" if shown else "Show",
         ),
     )

@@ -19,15 +19,21 @@ def word_count():
 
     total = use_memo(count)
 
+    async def handle_upper_click(event):
+        set_upper(not upper)
+
+    async def handle_text_change(event):
+        set_text(await event.target.value)
+
     return html.div(
         html.h1(f"{total} words"),
         html.p(text.upper() if upper else text),
         html.p(f"counted {len(counts)} time(s)"),
-        html.button({"onClick": lambda event: set_upper(not upper)}, "Toggle case"),
+        html.button({"onClick": handle_upper_click}, "Toggle case"),
         html.input(
             {
                 "value": text,
-                "onChange": lambda event: set_text(event["target"]["value"]),
+                "onChange": handle_text_change,
             }
         ),
     )

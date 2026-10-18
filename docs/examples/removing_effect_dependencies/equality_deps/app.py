@@ -21,8 +21,11 @@ def feed(topic):
 
     use_effect(load, dependencies=[options, page])
 
+    async def handle_page_click(e):
+        set_page(page + 1)
+
     return html.div(
-        html.button({"onClick": lambda e: set_page(page + 1)}, f"Page {page}"),
+        html.button({"onClick": handle_page_click}, f"Page {page}"),
         html.ul([html.li({"key": row}, row) for row in rows]),
     )
 
@@ -31,9 +34,13 @@ def feed(topic):
 def app():
     topic, set_topic = use_state("news")
     refreshes, set_refreshes = use_state(0)
+
+    async def handle_refreshes_click(e):
+        set_refreshes(refreshes + 1)
+
     return html.div(
         html.button(
-            {"onClick": lambda e: set_refreshes(refreshes + 1)},
+            {"onClick": handle_refreshes_click},
             f"Re-render ({refreshes})",
         ),
         feed(topic),

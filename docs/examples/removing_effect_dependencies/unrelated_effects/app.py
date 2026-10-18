@@ -28,9 +28,15 @@ def feed(topic):
 
     use_effect(subscribe, dependencies=[topic, page, online])
 
+    async def handle_page_click(e):
+        set_page(page + 1)
+
+    async def handle_online_click(e):
+        set_online(not online)
+
     return html.div(
-        html.button({"onClick": lambda e: set_page(page + 1)}, f"Page {page}"),
-        html.button({"onClick": lambda e: set_online(not online)}, "Toggle online"),
+        html.button({"onClick": handle_page_click}, f"Page {page}"),
+        html.button({"onClick": handle_online_click}, "Toggle online"),
         html.ul([html.li({"key": row}, row) for row in rows]),
     )
 
@@ -38,7 +44,11 @@ def feed(topic):
 @component
 def app():
     topic, set_topic = use_state("news")
+
+    async def handle_topic_click(e):
+        set_topic(topic + "x")
+
     return html.div(
-        html.button({"onClick": lambda e: set_topic(topic + "x")}, f"Topic {topic}"),
+        html.button({"onClick": handle_topic_click}, f"Topic {topic}"),
         feed(topic),
     )

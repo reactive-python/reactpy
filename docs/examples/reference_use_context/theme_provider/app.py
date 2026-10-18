@@ -29,14 +29,14 @@ def toolbar():
 @component
 def app():
     theme, set_theme = use_state("light")
+
+    async def handle_theme_click(event):
+        set_theme("dark" if theme == "light" else "light")
+
     return html.div(
         Theme(toolbar(), value=theme),
         html.button(
-            {
-                "onClick": lambda event: set_theme(
-                    "dark" if theme == "light" else "light"
-                )
-            },
+            {"onClick": handle_theme_click},
             f"Switch to {'dark' if theme == 'light' else 'light'}",
         ),
     )

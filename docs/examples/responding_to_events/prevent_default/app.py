@@ -8,10 +8,10 @@ def signup():
     signed_up, set_signed_up = use_state(0)
     name, set_name = use_state("")
 
-    def handle_name_change(event):
-        set_name(event["target"]["value"])
+    async def handle_name_change(event):
+        set_name(await event.target.value)
 
-    def handle_submit(event):
+    async def handle_submit(event):
         # Without this line the browser would navigate away from the page.
         event.preventDefault()
         set_signed_up(signed_up + 1)

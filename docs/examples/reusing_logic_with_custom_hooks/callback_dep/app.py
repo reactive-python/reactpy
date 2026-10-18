@@ -32,8 +32,11 @@ def dashboard():
 
     use_polling(on_result)
 
+    async def handle_topic_click(e):
+        set_topic(topic + "x")
+
     return html.div(
-        html.button({"onClick": lambda e: set_topic(topic + "x")}, f"Topic {topic}"),
+        html.button({"onClick": handle_topic_click}, f"Topic {topic}"),
         html.p(last),
     )
 

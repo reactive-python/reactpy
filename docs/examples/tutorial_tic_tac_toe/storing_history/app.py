@@ -9,7 +9,7 @@ def square(value, on_click):
 @component
 def board(x_is_next, squares, on_play):
     def handle_click(i):
-        def inner(event):
+        async def inner(event):
             if calculate_winner(squares) or squares[i]:
                 return
             next_squares = squares.copy()

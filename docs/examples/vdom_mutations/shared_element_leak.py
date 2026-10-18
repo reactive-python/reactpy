@@ -9,12 +9,12 @@ STATUS = html.p({"id": "status"}, "idle")
 def panel():
     n, set_n = use_state(0)
 
-    def mark_dirty(event):
+    async def mark_dirty(event):
         # Mutates the shared element and asks for no render: nothing changes
         # on screen, and the server's model now disagrees with every client.
         STATUS["children"] = [f"mutated by visitor {n}"]
 
-    def bump(event):
+    async def bump(event):
         # The next render of ANY state in this component re-sends STATUS --
         # including the mutation, whoever made it.
         set_n(n + 1)

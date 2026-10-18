@@ -29,13 +29,12 @@ def poller(topic):
 def app():
     topic, set_topic = use_state("news")
 
+    async def handle_topic_click(event):
+        set_topic("sports" if topic == "news" else "news")
+
     return html.div(
         html.button(
-            {
-                "onClick": lambda event: set_topic(
-                    "sports" if topic == "news" else "news"
-                )
-            },
+            {"onClick": handle_topic_click},
             "Switch topic",
         ),
         poller(topic),

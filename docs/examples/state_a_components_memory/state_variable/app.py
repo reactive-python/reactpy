@@ -8,7 +8,7 @@ from reactpy import component, html, use_state
 def gallery():
     index, set_index = use_state(0)
 
-    def handle_next(event):
+    async def handle_next(event):
         set_index(index + 1)
 
     sculpture = sculptures[index]

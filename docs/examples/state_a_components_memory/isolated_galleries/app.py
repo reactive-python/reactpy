@@ -8,9 +8,13 @@ from reactpy import component, html, use_state
 def gallery():
     index, set_index = use_state(0)
     sculpture = sculptures[index]
+
+    async def handle_index_click(event):
+        set_index(index + 1)
+
     return html.section(
         html.button(
-            {"onClick": lambda event: set_index(index + 1)},
+            {"onClick": handle_index_click},
             "Next",
         ),
         html.h3(f"({index + 1} of {len(sculptures)})"),

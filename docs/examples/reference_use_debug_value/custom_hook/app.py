@@ -12,7 +12,7 @@ def use_cart():
     # built on every render; reading state makes it change only when it should.
     use_debug_value(f"{len(items)} item(s): {', '.join(items) or '-'}")
 
-    def add(event=None):
+    async def add(event=None):
         set_items([*items, f"item {len(items) + 1}"])
 
     return items, add

@@ -24,16 +24,15 @@ def report():
     # render and throw every result but the first away.
     state, dispatch = use_reducer(reducer, load_config)
 
+    async def handle_click(event):
+        dispatch({"type": "select", "name": state["rows"][0]["name"]})
+
     return html.div(
         html.h1(f"{len(state['rows'])} rows"),
         html.p(f"selected: {state['selected'] or '-'}"),
         html.p(f"initializer ran {len(loads)} time(s)"),
         html.button(
-            {
-                "onClick": lambda event: dispatch(
-                    {"type": "select", "name": state["rows"][0]["name"]}
-                )
-            },
+            {"onClick": handle_click},
             "Select first",
         ),
     )

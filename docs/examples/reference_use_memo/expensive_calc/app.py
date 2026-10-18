@@ -31,25 +31,23 @@ def leaderboard():
 
     ranked = use_memo(rank, dependencies=[players])
 
+    async def handle_highlight_click(event):
+        set_highlight("grace" if highlight == "ada" else "ada")
+
+    async def handle_players_click(event):
+        set_players([{**player, "score": player["score"] + 1} for player in players])
+
     return html.div(
         html.h1("Leaderboard"),
         html.ol([html.li(f"{player['name']}: {player['score']}") for player in ranked]),
         html.p(f"sorted {len(sorts)} time(s)"),
         html.p(f"highlighted: {highlight}"),
         html.button(
-            {
-                "onClick": lambda event: set_highlight(
-                    "grace" if highlight == "ada" else "ada"
-                )
-            },
+            {"onClick": handle_highlight_click},
             "Change highlight",
         ),
         html.button(
-            {
-                "onClick": lambda event: set_players(
-                    [{**player, "score": player["score"] + 1} for player in players]
-                )
-            },
+            {"onClick": handle_players_click},
             "Everyone scores +1",
         ),
     )

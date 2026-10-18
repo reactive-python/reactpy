@@ -12,12 +12,12 @@ def basket():
     items, set_items = use_state([])
     discount, set_discount = use_state(0)
 
-    def add_naive(event):
+    async def add_naive(event):
         # reads `items` and `discount` from whichever render created this handler
         print(f"naive: {len(items)} items, discount={discount}")
         set_items([*items, f"item-{len(items) + 1}@{discount}"])
 
-    def add_safe(event):
+    async def add_safe(event):
         # the updater receives the *current* state at the moment it is applied
         def append(current):
             print(f"safe: {len(current)} items, discount={discount}")
@@ -25,12 +25,13 @@ def basket():
 
         set_items(append)
 
+    async def handle_discount_click(e):
+        set_discount(discount + 10)
+
     return html.div(
         html.button({"onClick": add_naive}, "Add (naive)"),
         html.button({"onClick": add_safe}, "Add (safe)"),
-        html.button(
-            {"onClick": lambda e: set_discount(discount + 10)}, f"Coupon {discount}%"
-        ),
+        html.button({"onClick": handle_discount_click}, f"Coupon {discount}%"),
         html.p(", ".join(items) or "empty basket"),
     )
 

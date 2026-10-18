@@ -31,18 +31,23 @@ def poller(topic):
     # `delay` is deliberately absent: adjusting it must not reconnect
     use_async_effect(loop, dependencies=[topic])
 
+    async def handle_delay_click(e):
+        set_delay(delay + 0.2)
+
     return html.div(
         html.p(f"{topic}: {polls} polls"),
-        html.button(
-            {"onClick": lambda e: set_delay(delay + 0.2)}, f"Delay {delay:.1f}s"
-        ),
+        html.button({"onClick": handle_delay_click}, f"Delay {delay:.1f}s"),
     )
 
 
 @component
 def app():
     topic, set_topic = use_state("news")
+
+    async def handle_topic_click(e):
+        set_topic(topic + "x")
+
     return html.div(
-        html.button({"onClick": lambda e: set_topic(topic + "x")}, f"Topic {topic}"),
+        html.button({"onClick": handle_topic_click}, f"Topic {topic}"),
         poller(topic),
     )

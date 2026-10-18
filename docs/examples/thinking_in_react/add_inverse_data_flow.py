@@ -69,13 +69,19 @@ def product_table(products, filter_text, in_stock_only):
 
 @component
 def search_bar(filter_text, in_stock_only, set_filter_text, set_in_stock_only):
+    async def handle_filter_text_change(event):
+        set_filter_text(await event.target.value)
+
+    async def handle_in_stock_only_change(event):
+        set_in_stock_only(await event.target.checked)
+
     return html.form(
         html.input(
             {
                 "type": "text",
                 "value": filter_text,
                 "placeholder": "Search...",
-                "onChange": lambda event: set_filter_text(event["target"]["value"]),
+                "onChange": handle_filter_text_change,
             }
         ),
         html.label(
@@ -83,9 +89,7 @@ def search_bar(filter_text, in_stock_only, set_filter_text, set_in_stock_only):
                 {
                     "type": "checkbox",
                     "checked": in_stock_only,
-                    "onChange": lambda event: set_in_stock_only(
-                        event["target"]["checked"]
-                    ),
+                    "onChange": handle_in_stock_only_change,
                 }
             ),
             "Only show products in stock",

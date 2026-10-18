@@ -29,9 +29,12 @@ def room_view(room):
 def app():
     room, set_room = use_state("lobby")
 
+    async def handle_room_click(event):
+        set_room("dev" if room == "lobby" else "lobby")
+
     return html.div(
         html.button(
-            {"onClick": lambda event: set_room("dev" if room == "lobby" else "lobby")},
+            {"onClick": handle_room_click},
             f"Leave {room}",
         ),
         html.p("(server log is printed on the server console)"),

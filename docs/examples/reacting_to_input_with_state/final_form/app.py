@@ -37,8 +37,8 @@ def form():
         else:
             set_status("success")
 
-    def handle_textarea_change(event):
-        set_answer(event["target"]["value"])
+    async def handle_textarea_change(event):
+        set_answer(await event.target.value)
 
     return html.div(
         html.h2("City quiz"),

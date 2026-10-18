@@ -12,7 +12,7 @@ def todo_list():
     )
     text, set_text = use_state("")
 
-    def handle_replace(event):
+    async def handle_replace(event):
         event.preventDefault()
         if not text:
             return
@@ -21,6 +21,9 @@ def todo_list():
         set_items([{"id": 0, "text": text}, *items[1:]])
         set_text("")
 
+    async def handle_text_change(event):
+        set_text(await event.target.value)
+
     return html.div(
         html.form(
             {"onSubmit": handle_replace},
@@ -28,7 +31,7 @@ def todo_list():
                 {
                     "value": text,
                     "placeholder": "Replace the first item",
-                    "onChange": lambda event: set_text(event["target"]["value"]),
+                    "onChange": handle_text_change,
                 }
             ),
             html.button({"type": "submit"}, "Replace"),

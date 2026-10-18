@@ -21,7 +21,7 @@ def cart(item_price):
     # Defined at module level, so there is no enclosing scope to freeze.
     state, dispatch = use_reducer(cart_reducer, INITIAL)
 
-    def handle_add(event):
+    async def handle_add(event):
         # The handler closes over the *current* price, and hands it over.
         dispatch({"type": "add", "price": item_price})
 
@@ -38,7 +38,7 @@ def cart(item_price):
 def price_control():
     price, set_price = use_state(10)
 
-    def raise_price(event):
+    async def raise_price(event):
         set_price(50)
 
     return html.div(

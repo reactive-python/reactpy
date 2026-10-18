@@ -15,10 +15,12 @@ READ_FILE = (
 def text_upload():
     received, set_received = use_state("Choose a file, then send.")
 
-    def handle_submit(event):
+    async def handle_submit(event):
         event.preventDefault()
-        # On submit, target is the list of *named* controls in the form.
-        controls = event["target"]
+        # Ask for the collection which exists for this purpose: an
+        # HTMLFormControlsCollection is iterable, so the client hands it
+        # over as a list - one dict per control, named or not.
+        controls = await event.target.elements
         payload = next(
             (c["value"] for c in controls if c.get("name") == "payload"),
             "",

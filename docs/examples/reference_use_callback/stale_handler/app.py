@@ -12,10 +12,13 @@ def notes():
     # changes -- so ReactPy keeps handing back the *first* function, which
     # closed over an empty `draft`. Each click adds a blank note no matter what
     # you typed. Listing what the handler reads is what fixes it.
-    add_note = use_callback(
-        lambda event=None: set_notes_list([*notes_list, draft]),
-        dependencies=[],
-    )
+    async def add_note_handler(event):
+        set_notes_list([*notes_list, draft])
+
+    add_note = use_callback(add_note_handler, dependencies=[])
+
+    async def handle_draft_change(event):
+        set_draft(await event.target.value)
 
     return html.div(
         html.h1("Notes"),
@@ -28,7 +31,7 @@ def notes():
         html.input(
             {
                 "value": draft,
-                "onChange": lambda event: set_draft(event["target"]["value"]),
+                "onChange": handle_draft_change,
             }
         ),
         html.button({"onClick": add_note}, "Add note"),

@@ -11,8 +11,14 @@ def button(on_smash, *children):
 def app():
     status, set_status = use_state("Nothing selected")
 
+    async def handle_play(event):
+        set_status("Playing!")
+
+    async def handle_upload(event):
+        set_status("Uploading!")
+
     return html.div(
         html.p(status),
-        button(lambda event: set_status("Playing!"), "Play Movie"),
-        button(lambda event: set_status("Uploading!"), "Upload Image"),
+        button(handle_play, "Play Movie"),
+        button(handle_upload, "Upload Image"),
     )

@@ -13,7 +13,7 @@ def board():
     squares, set_squares = use_state(initial_board)
 
     def handle_click(i):
-        def inner(event):
+        async def inner(event):
             if squares[i]:
                 return
             next_squares = squares.copy()

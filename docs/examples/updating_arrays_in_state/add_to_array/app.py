@@ -7,7 +7,7 @@ def todo_list():
     items, set_items = use_state([{"id": 0, "text": "Walk the dog"}])
     text, set_text = use_state("")
 
-    def handle_add(event):
+    async def handle_add(event):
         event.preventDefault()
         if not text:
             return
@@ -16,6 +16,9 @@ def todo_list():
         set_items([*items, {"id": next_id, "text": text}])
         set_text("")
 
+    async def handle_text_change(event):
+        set_text(await event.target.value)
+
     return html.div(
         html.form(
             {"onSubmit": handle_add},
@@ -23,7 +26,7 @@ def todo_list():
                 {
                     "value": text,
                     "placeholder": "To do...",
-                    "onChange": lambda event: set_text(event["target"]["value"]),
+                    "onChange": handle_text_change,
                 }
             ),
             html.button({"type": "submit"}, "Add"),

@@ -20,7 +20,10 @@ def dashboard():
 
     use_effect(effect, dependencies=[refreshes])
 
+    async def handle_refreshes_click(event):
+        set_refreshes(refreshes + 1)
+
     return html.div(
         html.h1("Dashboard looks fine"),
-        html.button({"onClick": lambda event: set_refreshes(refreshes + 1)}, "Refresh"),
+        html.button({"onClick": handle_refreshes_click}, "Refresh"),
     )

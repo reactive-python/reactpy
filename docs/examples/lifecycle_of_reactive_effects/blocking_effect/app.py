@@ -21,7 +21,10 @@ def preview():
 
     use_effect(effect, dependencies=[width])
 
+    async def handle_width_click(event):
+        set_width(width + 1)
+
     return html.div(
         html.h1(f"width {width}"),
-        html.button({"onClick": lambda event: set_width(width + 1)}, "Wider"),
+        html.button({"onClick": handle_width_click}, "Wider"),
     )

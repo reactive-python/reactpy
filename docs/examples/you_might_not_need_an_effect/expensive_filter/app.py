@@ -23,24 +23,26 @@ def todo_list():
 
     shown = use_memo(visible_todos)
 
+    async def handle_filter_name_click(event):
+        set_filter_name(
+            {"all": "active", "active": "completed", "completed": "all"}[filter_name]
+        )
+
+    async def handle_new_todo_change(event):
+        set_new_todo(await event.target.value)
+
     return html.div(
         html.p(f"{len(shown)} of {len(todos)} shown (filter: {filter_name})"),
         html.ul([html.li({"key": todo["id"]}, todo["text"]) for todo in shown]),
         html.button(
-            {
-                "onClick": lambda event: set_filter_name(
-                    {"all": "active", "active": "completed", "completed": "all"}[
-                        filter_name
-                    ]
-                )
-            },
+            {"onClick": handle_filter_name_click},
             "Change filter",
         ),
         html.input(
             {
                 "placeholder": "new todo",
                 "value": new_todo,
-                "onChange": lambda event: set_new_todo(event["target"]["value"]),
+                "onChange": handle_new_todo_change,
             }
         ),
     )

@@ -3,19 +3,21 @@ from reactpy.core.events import EventHandler
 
 
 # start
-# A plain callable gets the browser's argument list UNPACKED.
-def plain_handler(event):
-    print(event["target"]["value"])  # the event dict
+# A plain coroutine gets the browser's argument list UNPACKED.
+async def plain_handler(event):
+    print(await event.target.value)  # the event itself
 
 
-# An EventHandler gets the LIST ITSELF.
+# An EventHandler gets the LIST ITSELF: an EventArguments, a list subclass.
 async def list_handler(data):
-    print(data[0]["target"]["value"])  # index first
+    print(await data[0].target.value)  # index first, then read as usual
 
 
 html.button({"onClick": plain_handler}, "a")
 html.button({"onClick": EventHandler(list_handler, prevent_default=True)}, "b")
 
-# Converting one to the other without changing the body breaks it:
-# TypeError: list indices must be integers or slices, not str
+# Hand the list to a body written for the event and the first read fails:
+# AttributeError: 'EventArguments' object has no attribute 'target'
+# Hand the event to a body written for the list and subscripting it fails:
+# TypeError: 'Event' object is not subscriptable
 # end

@@ -27,7 +27,7 @@ def task_app():
         mutating_reducer, {"tasks": [*INITIAL_TASKS], "next_id": 2}
     )
 
-    def handle_add_task(event):
+    async def handle_add_task(event):
         dispatch({"type": "added"})
 
     return html.div(

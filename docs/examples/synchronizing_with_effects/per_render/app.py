@@ -26,11 +26,17 @@ def app():
     room, set_room = use_state("lobby")
     message, set_message = use_state("hello")
 
+    async def handle_message_click(event):
+        set_message(message + "!")
+
+    async def handle_room_click(event):
+        set_room("dev" if room == "lobby" else "lobby")
+
     return html.div(
         html.p(f"room={room} message={message!r}"),
-        html.button({"onClick": lambda event: set_message(message + "!")}, "Type !"),
+        html.button({"onClick": handle_message_click}, "Type !"),
         html.button(
-            {"onClick": lambda event: set_room("dev" if room == "lobby" else "lobby")},
+            {"onClick": handle_room_click},
             "Switch room",
         ),
         audit_log(room, message),

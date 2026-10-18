@@ -7,7 +7,7 @@ def counter():
     count, set_count = use_state(0)
     history, set_history = use_state([])
 
-    def handle_add(event):
+    async def handle_add(event):
         # Read history through an updater: `history` in this closure is the
         # value from the render that created the handler, not the latest.
         set_history(lambda previous: [*previous, count])

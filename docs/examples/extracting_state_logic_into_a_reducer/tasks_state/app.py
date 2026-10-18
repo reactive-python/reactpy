@@ -15,17 +15,19 @@ def task_app():
     next_id, set_next_id = use_state(3)
     tasks, set_tasks = use_state(INITIAL_TASKS)
 
-    def handle_add_task(event):
+    async def handle_add_task(event):
         set_tasks([*tasks, {"id": next_id, "text": "New task", "done": False}])
         set_next_id(next_id + 1)
 
     def handle_toggle(task_id):
-        def handle_click(event):
+        async def handle_click(event):
             set_tasks(
                 [
-                    {**task, "done": not task["done"]}
-                    if task["id"] == task_id
-                    else task
+                    (
+                        {**task, "done": not task["done"]}
+                        if task["id"] == task_id
+                        else task
+                    )
                     for task in tasks
                 ]
             )
@@ -33,7 +35,7 @@ def task_app():
         return handle_click
 
     def handle_delete(task_id):
-        def handle_click(event):
+        async def handle_click(event):
             set_tasks([task for task in tasks if task["id"] != task_id])
 
         return handle_click
@@ -48,9 +50,9 @@ def task_app():
                     html.span(
                         {
                             "style": {
-                                "textDecoration": "line-through"
-                                if task["done"]
-                                else "none"
+                                "textDecoration": (
+                                    "line-through" if task["done"] else "none"
+                                )
                             }
                         },
                         task["text"],

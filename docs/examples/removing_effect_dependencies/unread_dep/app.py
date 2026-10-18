@@ -19,10 +19,16 @@ def reporter(topic):
 
     use_effect(report, dependencies=[topic])
 
+    async def handle_count_click(e):
+        set_count(count + 1)
+
+    async def handle_theme_click(e):
+        set_theme("dark" if theme == "light" else "light")
+
     return html.div(
-        html.button({"onClick": lambda e: set_count(count + 1)}, f"Count {count}"),
+        html.button({"onClick": handle_count_click}, f"Count {count}"),
         html.button(
-            {"onClick": lambda e: set_theme("dark" if theme == "light" else "light")},
+            {"onClick": handle_theme_click},
             f"Theme {theme}",
         ),
         html.p(f"live: count={count} theme={theme}"),
@@ -33,7 +39,11 @@ def reporter(topic):
 @component
 def app():
     topic, set_topic = use_state("news")
+
+    async def handle_topic_click(e):
+        set_topic(topic + "x")
+
     return html.div(
-        html.button({"onClick": lambda e: set_topic(topic + "x")}, f"Topic {topic}"),
+        html.button({"onClick": handle_topic_click}, f"Topic {topic}"),
         reporter(topic),
     )

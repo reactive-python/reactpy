@@ -19,11 +19,17 @@ def broken_toggle():
 
     count, set_count = use_state(0)  # slot 1 when `show` is False
 
+    async def handle_show_click(event):
+        set_show(not show)
+
+    async def handle_count_click(event):
+        set_count(count + 1)
+
     return html.div(
         html.h1(count),
         html.p(f"show={show}"),
-        html.button({"onClick": lambda event: set_show(not show)}, "Toggle"),
-        html.button({"onClick": lambda event: set_count(count + 1)}, "Add 1"),
+        html.button({"onClick": handle_show_click}, "Toggle"),
+        html.button({"onClick": handle_count_click}, "Add 1"),
     )
 
 
@@ -39,9 +45,15 @@ def fixed_toggle():
     hidden, set_hidden = use_state("NOT-A-NUMBER")
     count, set_count = use_state(0)
 
+    async def handle_show_click(event):
+        set_show(not show)
+
+    async def handle_count_click(event):
+        set_count(count + 1)
+
     return html.div(
         html.h1(count),
         html.p(f"show={show} hidden={hidden}"),
-        html.button({"onClick": lambda event: set_show(not show)}, "Toggle"),
-        html.button({"onClick": lambda event: set_count(count + 1)}, "Add 1"),
+        html.button({"onClick": handle_show_click}, "Toggle"),
+        html.button({"onClick": handle_count_click}, "Add 1"),
     )

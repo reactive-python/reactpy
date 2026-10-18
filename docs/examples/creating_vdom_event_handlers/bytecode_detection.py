@@ -3,7 +3,7 @@ from reactpy import html
 
 # start
 # Same behaviour, discovered by reading your bytecode instead of a decorator.
-def submit(event):
+async def submit(event):
     event.preventDefault()
     event.stopPropagation()
     event.debounce = 250

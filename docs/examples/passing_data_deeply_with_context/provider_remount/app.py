@@ -12,11 +12,15 @@ def draft():
     text, set_text = use_state("")
     body = use_ref(0)
     body.current += 1
+
+    async def handle_text_change(event):
+        set_text(await event.target.value)
+
     return html.div(
         html.input(
             {
                 "value": text,
-                "onChange": lambda event: set_text(event["target"]["value"]),
+                "onChange": handle_text_change,
                 "placeholder": "type something",
             }
         ),
@@ -32,12 +36,12 @@ def panel():
     wrap, set_wrap = use_state(True)
     theme, set_theme = use_state("dark")
 
-    def toggle_wrap(event):
+    async def toggle_wrap(event):
         # Adding or removing the provider changes the shape of the tree, so the
         # subtree below is unmounted and rebuilt: the draft text is lost.
         set_wrap(not wrap)
 
-    def toggle_theme(event):
+    async def toggle_theme(event):
         # Changing only the value keeps the same tree: the draft survives.
         set_theme("light" if theme == "dark" else "dark")
 

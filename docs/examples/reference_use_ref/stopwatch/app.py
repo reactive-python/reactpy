@@ -24,11 +24,11 @@ def stopwatch():
 
     use_async_effect(tick, dependencies=[running])
 
-    def start(event=None):
+    async def start(event=None):
         started_at.current = time.monotonic()
         set_running(True)
 
-    def stop(event=None):
+    async def stop(event=None):
         if started_at.current is not None:
             # Write the exact final value; the ticking effect only samples
             # every 0.1s, so relying on it alone would leave the display
@@ -37,7 +37,7 @@ def stopwatch():
             started_at.current = None
         set_running(False)
 
-    def reset(event=None):
+    async def reset(event=None):
         started_at.current = None
         set_running(False)
         set_elapsed(0.0)

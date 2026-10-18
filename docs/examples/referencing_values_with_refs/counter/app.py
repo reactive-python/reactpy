@@ -6,7 +6,7 @@ from reactpy import component, html, use_ref
 def counter():
     clicks = use_ref(0)
 
-    def handle_click(event):
+    async def handle_click(event):
         clicks.current += 1
         # Nothing on screen changes, but the server console proves the ref is
         # really incrementing between clicks.

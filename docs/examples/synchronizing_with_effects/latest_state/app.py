@@ -35,14 +35,13 @@ def connection_monitor():
     # Reading `threshold` directly here would freeze it at its first value.
     use_async_effect(watch, dependencies=[])
 
+    async def handle_threshold_click(event):
+        set_threshold(LOW_THRESHOLD if threshold == HIGH_THRESHOLD else HIGH_THRESHOLD)
+
     return html.div(
         html.p(f"threshold: {threshold}"),
         html.button(
-            {
-                "onClick": lambda event: set_threshold(
-                    LOW_THRESHOLD if threshold == HIGH_THRESHOLD else HIGH_THRESHOLD
-                )
-            },
+            {"onClick": handle_threshold_click},
             "Toggle threshold",
         ),
         html.p(f"alerts: {len(alerts)}"),

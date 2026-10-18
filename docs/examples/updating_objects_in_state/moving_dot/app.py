@@ -6,9 +6,9 @@ from reactpy import component, html, use_state
 def moving_dot():
     position, set_position = use_state({"x": 0, "y": 0})
 
-    def handle_move(event):
+    async def handle_move(event):
         # Replace the whole object: ReactPy never merges a partial update.
-        set_position({"x": event["clientX"], "y": event["clientY"]})
+        set_position({"x": await event.clientX, "y": await event.clientY})
 
     return html.div(
         {

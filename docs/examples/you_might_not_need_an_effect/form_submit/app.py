@@ -22,6 +22,9 @@ def signup():
         await send_email(email)
         set_status(f"sent to {email}")
 
+    async def handle_email_change(event):
+        set_email(await event.target.value)
+
     return html.div(
         html.p(status),
         html.form(
@@ -30,7 +33,7 @@ def signup():
                 {
                     "value": email,
                     "placeholder": "you@example.com",
-                    "onChange": lambda event: set_email(event["target"]["value"]),
+                    "onChange": handle_email_change,
                 }
             ),
             html.button({"type": "submit"}, "Sign up"),

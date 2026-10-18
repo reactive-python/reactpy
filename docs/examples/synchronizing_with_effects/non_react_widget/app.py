@@ -31,15 +31,14 @@ def report(name):
 
     use_effect(apply_page_size, dependencies=[page_size])
 
+    async def handle_page_size_click(event):
+        set_page_size("a4" if page_size == "letter" else "letter")
+
     return html.div(
         html.h2(name),
         html.p(f"page size: {page_size}"),
         html.button(
-            {
-                "onClick": lambda event: set_page_size(
-                    "a4" if page_size == "letter" else "letter"
-                )
-            },
+            {"onClick": handle_page_size_click},
             "Toggle page size",
         ),
     )

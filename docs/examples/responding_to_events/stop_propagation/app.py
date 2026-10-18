@@ -4,7 +4,7 @@ from reactpy import component, html, use_state
 # start
 @component
 def button(on_click, *children):
-    def handle_click(event):
+    async def handle_click(event):
         # Detected from this line, so the client stops the event before
         # it reaches the parent's handler.
         event.stopPropagation()
@@ -17,7 +17,7 @@ def button(on_click, *children):
 def toolbar():
     messages, set_messages = use_state([])
 
-    def handle_toolbar_click(event):
+    async def handle_toolbar_click(event):
         set_messages([*messages, "You clicked on the toolbar!"])
 
     def handle_play_click():

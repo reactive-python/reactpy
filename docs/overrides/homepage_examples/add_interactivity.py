@@ -16,9 +16,12 @@ def searchable_video_list(videos):
     search_text, set_search_text = use_state("")
     found_videos = filter_videos(videos, search_text)
 
+    async def handle_search_change(event):
+        set_search_text(await event.target.value)
+
     return html.fragment(
         search_input(
-            {"onChange": lambda event: set_search_text(event["target"]["value"])},
+            {"onChange": handle_search_change},
             value=search_text,
         ),
         video_list(

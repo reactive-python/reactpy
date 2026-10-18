@@ -6,7 +6,7 @@ from reactpy import component, html, use_state
 def alert_button(message, *children):
     shown, set_shown = use_state("")
 
-    def handle_click(event):
+    async def handle_click(event):
         set_shown(message)
 
     return html.div(

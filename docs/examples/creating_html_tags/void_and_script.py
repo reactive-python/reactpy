@@ -17,8 +17,13 @@ print(html.script("var answered = 42;"))
 print(html.script({"src": "/chart.js"}))
 # {'tagName': 'script', 'attributes': {'src': '/chart.js', 'key': '/chart.js'}}
 
+
+async def handle_load(event):
+    pass
+
+
 try:
-    html.script({"onLoad": lambda event: None}, "var x = 1;")
+    html.script({"onLoad": handle_load}, "var x = 1;")
 except ValueError as error:
     print(error)  # 'script' elements do not support event handlers
 # end

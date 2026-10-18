@@ -9,10 +9,10 @@ def gallery():
     index, set_index = use_state(0)
     show_more, set_show_more = use_state(False)
 
-    def handle_next(event):
+    async def handle_next(event):
         set_index(index + 1)
 
-    def handle_more(event):
+    async def handle_more(event):
         set_show_more(not show_more)
 
     sculpture = sculptures[index]

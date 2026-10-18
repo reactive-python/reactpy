@@ -26,9 +26,12 @@ def connection():
 def app():
     connected, set_connected = use_state(False)
 
+    async def handle_connected_click(event):
+        set_connected(not connected)
+
     return html.div(
         html.button(
-            {"onClick": lambda event: set_connected(not connected)},
+            {"onClick": handle_connected_click},
             "Connect" if not connected else "Disconnect",
         ),
         *([] if not connected else [connection()]),

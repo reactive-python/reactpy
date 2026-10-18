@@ -6,7 +6,7 @@ from reactpy import component, html, use_ref
 def counter():
     count = use_ref(0)
 
-    def handle_click(event):
+    async def handle_click(event):
         # This doesn't re-render the component!
         count.current += 1
 

@@ -27,11 +27,14 @@ def directory(topic):
     # neither PAGE_SIZE, HEADERS, nor format_rows belongs in this list
     use_effect(load, dependencies=[topic])
 
+    async def handle_query_change(e):
+        set_query(await e.target.value)
+
     return html.div(
         html.input(
             {
                 "value": query,
-                "onChange": lambda e: set_query(e["target"]["value"]),
+                "onChange": handle_query_change,
             }
         ),
         html.p(f"query={query!r} rows={len(rows)}"),
@@ -42,7 +45,11 @@ def directory(topic):
 @component
 def app():
     topic, set_topic = use_state("news")
+
+    async def handle_topic_click(e):
+        set_topic(topic + "x")
+
     return html.div(
-        html.button({"onClick": lambda e: set_topic(topic + "x")}, f"Topic {topic}"),
+        html.button({"onClick": handle_topic_click}, f"Topic {topic}"),
         directory(topic),
     )

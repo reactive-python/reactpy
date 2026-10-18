@@ -8,7 +8,11 @@ from reactpy import component, html, use_state
 # start
 def use_toggle(initial=False):
     on, set_on = use_state(initial)
-    return on, (lambda event: set_on(not on))
+
+    async def flip(event):
+        set_on(not on)
+
+    return on, flip
 
 
 @component

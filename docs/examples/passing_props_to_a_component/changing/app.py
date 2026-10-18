@@ -23,8 +23,8 @@ def app():
 
     use_async_effect(tick, dependencies=[])
 
-    def handle_change(event):
-        set_color(event["target"]["value"])
+    async def handle_change(event):
+        set_color(await event.target.value)
 
     return html.div(
         html.p(

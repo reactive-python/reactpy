@@ -15,9 +15,15 @@ def stepper():
 
     state, dispatch = use_reducer(reducer, {"total": 0})
 
+    async def handle_click(event):
+        dispatch({"type": "add"})
+
+    async def handle_step_click(event):
+        set_step(step + 1)
+
     return html.div(
         html.p(f"total: {state['total']}"),
         html.p(f"step: {step}"),
-        html.button({"onClick": lambda event: dispatch({"type": "add"})}, "Add step"),
-        html.button({"onClick": lambda event: set_step(step + 1)}, "Bump step"),
+        html.button({"onClick": handle_click}, "Add step"),
+        html.button({"onClick": handle_step_click}, "Bump step"),
     )

@@ -12,11 +12,17 @@ def check_in():
     # Not state. Every render recomputes it from whatever the two fields hold.
     full_name = f"{first_name} {last_name}"
 
-    def rename_only_first(event):
+    async def rename_only_first(event):
         set_first_name("Grace")
 
-    def rename_only_last(event):
+    async def rename_only_last(event):
         set_last_name("Hopper")
+
+    async def handle_first_name_change(event):
+        set_first_name(await event.target.value)
+
+    async def handle_last_name_change(event):
+        set_last_name(await event.target.value)
 
     return html.div(
         html.h2("Let's check you in"),
@@ -25,7 +31,7 @@ def check_in():
             html.input(
                 {
                     "value": first_name,
-                    "onChange": lambda event: set_first_name(event["target"]["value"]),
+                    "onChange": handle_first_name_change,
                 }
             ),
         ),
@@ -35,7 +41,7 @@ def check_in():
             html.input(
                 {
                     "value": last_name,
-                    "onChange": lambda event: set_last_name(event["target"]["value"]),
+                    "onChange": handle_last_name_change,
                 }
             ),
         ),

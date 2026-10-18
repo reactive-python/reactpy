@@ -12,15 +12,15 @@ def form():
         }
     )
 
-    def handle_first_name(event):
+    async def handle_first_name(event):
         # Copy everything, then override just this one field.
-        set_person({**person, "firstName": event["target"]["value"]})
+        set_person({**person, "firstName": await event.target.value})
 
-    def handle_last_name(event):
-        set_person({**person, "lastName": event["target"]["value"]})
+    async def handle_last_name(event):
+        set_person({**person, "lastName": await event.target.value})
 
-    def handle_email(event):
-        set_person({**person, "email": event["target"]["value"]})
+    async def handle_email(event):
+        set_person({**person, "email": await event.target.value})
 
     return html.div(
         html.input({"value": person["firstName"], "onChange": handle_first_name}),

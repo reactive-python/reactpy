@@ -14,7 +14,7 @@ PATH_PREFIX = "/reactpy/"
 def counter():
     count, set_count = use_state(0)
 
-    def increment(_event):
+    async def increment(_event):
         set_count(count + 1)
 
     return html.div(
@@ -26,8 +26,7 @@ def counter():
 async def home(request):
     # pathPrefix and the bundle's URL both have to agree with the server's,
     # so both are interpolated from one value rather than typed twice.
-    return HTMLResponse(
-        f"""<!doctype html>
+    return HTMLResponse(f"""<!doctype html>
         <html>
           <body>
             <div id="app"></div>
@@ -41,8 +40,7 @@ async def home(request):
               }});
             </script>
           </body>
-        </html>"""
-    )
+        </html>""")
 
 
 my_app = ReactPyMiddleware(

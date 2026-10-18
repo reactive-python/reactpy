@@ -18,18 +18,18 @@ def live_feed():
 
     use_effect(effect, dependencies=[topic])
 
+    async def handle_topic_click(event):
+        set_topic("sports" if topic == "news" else "news")
+
+    async def handle_click(event):
+        ticker.publish(topic, "ping")
+
     return html.div(
         html.p(f"Subscribed to: {topic}"),
         html.p(latest or "(nothing yet)"),
         html.button(
-            {
-                "onClick": lambda event: set_topic(
-                    "sports" if topic == "news" else "news"
-                )
-            },
+            {"onClick": handle_topic_click},
             "Switch topic",
         ),
-        html.button(
-            {"onClick": lambda event: ticker.publish(topic, "ping")}, "Publish"
-        ),
+        html.button({"onClick": handle_click}, "Publish"),
     )

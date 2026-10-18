@@ -13,7 +13,7 @@ def todo_list():
     )
 
     def handle_delete(id_to_keep):
-        def handler(event):
+        async def handler(event):
             # filter() gives a new list; items.remove(...) would mutate it.
             set_items([item for item in items if item["id"] != id_to_keep])
 

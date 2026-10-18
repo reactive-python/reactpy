@@ -18,14 +18,26 @@ def menu():
     # Derived: there is exactly one copy of the title, and it lives in items.
     selected_item = next(item for item in items if item["id"] == selected_id)
 
-    def handle_item_change(item_id, event):
-        new_title = event["target"]["value"]
+    async def handle_item_change(item_id, event):
+        new_title = await event.target.value
         set_items(
             [
                 {**item, "title": new_title} if item["id"] == item_id else item
                 for item in items
             ]
         )
+
+    def make_change(item_id):
+        async def change(event):
+            await handle_item_change(item_id, event)
+
+        return change
+
+    def make_choose(item_id):
+        async def choose(event):
+            set_selected_id(item_id)
+
+        return choose
 
     return html.div(
         html.h2("What's your travel snack?"),
@@ -36,13 +48,11 @@ def menu():
                     html.input(
                         {
                             "value": item["title"],
-                            "onChange": lambda event, i=item: handle_item_change(
-                                i["id"], event
-                            ),
+                            "onChange": make_change(item["id"]),
                         }
                     ),
                     html.button(
-                        {"onClick": lambda event, i=item: set_selected_id(i["id"])},
+                        {"onClick": make_choose(item["id"])},
                         "Choose",
                     ),
                 )

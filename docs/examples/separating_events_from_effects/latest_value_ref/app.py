@@ -15,20 +15,29 @@ def checkout():
     coupon_ref.current = coupon
 
     # pinned to nothing: the identity never changes, yet it reads `coupon_ref`
-    apply_coupon = use_callback(
-        lambda event: print(f"applying coupon={coupon_ref.current!r}"),
-        dependencies=[],
-    )
+    async def apply_coupon_handler(event):
+        print(f"applying coupon={coupon_ref.current!r}")
+
+    apply_coupon = use_callback(apply_coupon_handler, dependencies=[])
+
+    async def handle_coupon_change(e):
+        # The await comes first: `.upper()` runs on the string which comes back,
+        # not on the proxy. Without the parens you would call `.upper()` on the
+        # proxy itself and silently get the un-uppercased value.
+        set_coupon((await e.target.value).upper())
+
+    async def handle_total_click(e):
+        set_total(total + 10)
 
     return html.div(
         html.input(
             {
                 "value": coupon,
-                "onChange": lambda e: set_coupon(e["target"]["value"].upper()),
+                "onChange": handle_coupon_change,
             }
         ),
         html.button({"onClick": apply_coupon}, "Apply coupon"),
-        html.button({"onClick": lambda e: set_total(total + 10)}, f"Total {total}"),
+        html.button({"onClick": handle_total_click}, f"Total {total}"),
         html.p(f"page shows coupon={coupon!r} — compare with the console"),
     )
 

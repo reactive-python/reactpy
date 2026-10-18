@@ -11,7 +11,7 @@ def square(value, on_click):
 @component
 def board(x_is_next, squares, on_play):
     def handle_click(i):
-        def inner(event):
+        async def inner(event):
             if calculate_winner(squares) or squares[i]:
                 return
             next_squares = squares.copy()
@@ -61,7 +61,7 @@ def game():
         set_current_move(len(next_history) - 1)
 
     def jump_to(move):
-        def inner(event):
+        async def inner(event):
             # TODO: make the board show move
             pass
 

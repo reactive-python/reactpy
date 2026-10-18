@@ -6,9 +6,9 @@ from reactpy import component, html, use_state
 def checkbox():
     enabled, set_enabled = use_state(False)
 
-    def handle_change(event):
-        # `checked` is delivered by the client for checkbox inputs.
-        set_enabled(event["target"]["checked"])
+    async def handle_change(event):
+        # `checked` is read from the live element, like any other property.
+        set_enabled(await event.target.checked)
 
     return html.div(
         html.label(

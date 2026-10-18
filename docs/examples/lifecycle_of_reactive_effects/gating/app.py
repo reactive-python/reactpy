@@ -29,17 +29,19 @@ def app():
     topic, set_topic = use_state("news")
     enabled, set_enabled = use_state(True)
 
+    async def handle_enabled_click(event):
+        set_enabled(not enabled)
+
+    async def handle_topic_click(event):
+        set_topic("sports" if topic == "news" else "news")
+
     return html.div(
         html.button(
-            {"onClick": lambda event: set_enabled(not enabled)},
+            {"onClick": handle_enabled_click},
             "Stop" if enabled else "Start",
         ),
         html.button(
-            {
-                "onClick": lambda event: set_topic(
-                    "sports" if topic == "news" else "news"
-                )
-            },
+            {"onClick": handle_topic_click},
             "Switch topic",
         ),
         feed(topic, enabled),

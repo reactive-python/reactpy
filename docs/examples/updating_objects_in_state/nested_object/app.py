@@ -16,8 +16,8 @@ def form():
         }
     )
 
-    def handle_city(event):
-        address = {**person["shippingAddress"], "city": event["target"]["value"]}
+    async def handle_city(event):
+        address = {**person["shippingAddress"], "city": await event.target.value}
         set_person({**person, "shippingAddress": address})
 
     return html.div(

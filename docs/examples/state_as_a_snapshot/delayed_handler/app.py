@@ -9,7 +9,7 @@ def counter():
     number, set_number = use_state(0)
     seen, set_seen = use_state([])
 
-    def handle_click(event):
+    async def handle_click(event):
         set_number(number + 5)
 
         def delayed():

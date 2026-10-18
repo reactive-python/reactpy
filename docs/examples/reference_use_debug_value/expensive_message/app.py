@@ -16,7 +16,7 @@ def report():
 
     use_debug_value(describe)
 
-    def add_row(event=None):
+    async def add_row(event=None):
         set_rows([*rows, {"name": f"row {len(rows)}", "score": len(rows) * 7}])
 
     return html.div(

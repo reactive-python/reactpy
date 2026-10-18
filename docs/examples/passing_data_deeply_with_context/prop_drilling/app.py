@@ -35,7 +35,7 @@ def section(places, theme):
 def app():
     theme, set_theme = use_state("dark")
 
-    def toggle(event):
+    async def toggle(event):
         set_theme("light" if theme == "dark" else "dark")
 
     return html.div(

@@ -11,7 +11,7 @@ def button(on_click, *children):
 def play_button(movie_name):
     shown, set_shown = use_state("")
 
-    def handle_play_click(event):
+    async def handle_play_click(event):
         set_shown(f"Playing {movie_name}!")
 
     return html.div(
@@ -24,7 +24,7 @@ def play_button(movie_name):
 def upload_button():
     shown, set_shown = use_state("")
 
-    def handle_upload_click(event):
+    async def handle_upload_click(event):
         set_shown("Uploading!")
 
     return html.div(

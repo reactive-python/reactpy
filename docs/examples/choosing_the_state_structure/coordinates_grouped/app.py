@@ -19,11 +19,11 @@ STYLE = {
 def marker():
     position, set_position = use_state({"x": 20, "y": 20})
 
-    def move_diagonally(event):
+    async def move_diagonally(event):
         # One setter, one object: there is no second call left to forget.
         set_position({"x": position["x"] + STEP, "y": position["y"] + STEP})
 
-    def reset(event):
+    async def reset(event):
         set_position({"x": 20, "y": 20})
 
     return html.div(

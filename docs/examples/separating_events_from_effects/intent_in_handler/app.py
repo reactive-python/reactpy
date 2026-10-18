@@ -20,26 +20,30 @@ def shipping_form():
     shipping_info, set_shipping_info = use_state("")
     clicks, set_clicks = use_state(0)
 
-    def submit(event):
+    async def submit(event):
         set_clicks(clicks + 1)
         result = calculate_shipping(city, country)
         set_shipping_info(result)
         if result:
             print(f"quoted {result}")
 
+    async def handle_city_change(e):
+        set_city(await e.target.value)
+
+    async def handle_country_change(e):
+        set_country(await e.target.value)
+
     return html.div(
         html.label(
             "City: ",
-            html.input(
-                {"value": city, "onChange": lambda e: set_city(e["target"]["value"])}
-            ),
+            html.input({"value": city, "onChange": handle_city_change}),
         ),
         html.label(
             "Country: ",
             html.input(
                 {
                     "value": country,
-                    "onChange": lambda e: set_country(e["target"]["value"]),
+                    "onChange": handle_country_change,
                 }
             ),
         ),

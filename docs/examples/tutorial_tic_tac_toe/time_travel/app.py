@@ -12,7 +12,7 @@ def square(value, on_click):
 @component
 def board(x_is_next, squares, on_play):
     def handle_click(i):
-        def inner(event):
+        async def inner(event):
             """
             Due to a quirk of Python, if your event handler needs args other than
             `event`, you will need to create a wrapper function as seen above.
@@ -69,7 +69,10 @@ def game():
         set_current_move(len(next_history) - 1)
 
     def jump_to(next_move):
-        return lambda _event: set_current_move(next_move)
+        async def go_to_move(event):
+            set_current_move(next_move)
+
+        return go_to_move
 
     moves = []
     for move, _squares in enumerate(history):

@@ -11,7 +11,7 @@ def use_cart(items):
     selected, set_selected = use_state([])
 
     def handler_for(item):
-        def toggle(event):
+        async def toggle(event):
             if item in selected:
                 set_selected([name for name in selected if name != item])
             else:

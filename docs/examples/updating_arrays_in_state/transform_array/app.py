@@ -11,7 +11,7 @@ def todo_list():
         ]
     )
 
-    def handle_click(event):
+    async def handle_click(event):
         # map() becomes a comprehension; the old items stay untouched.
         set_items([{"id": item["id"], "text": item["text"] + "!"} for item in items])
 

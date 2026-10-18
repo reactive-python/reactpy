@@ -6,7 +6,7 @@ from reactpy import event, html
 # the event.preventDefault() inside it: the bytecode inspector reads the
 # *first* parameter as the event, and for a method that is `self`.
 class SearchForm:
-    def on_submit(self, event):
+    async def on_submit(self, event):
         event.preventDefault()
 
 

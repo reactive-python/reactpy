@@ -6,7 +6,7 @@ from reactpy import component, html, use_state
 def counter():
     step, set_step = use_state(1)
 
-    def handle_add(event):
+    async def handle_add(event):
         set_step(step + 1)
 
     return html.div(

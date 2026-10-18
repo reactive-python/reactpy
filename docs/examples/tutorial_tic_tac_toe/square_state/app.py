@@ -9,7 +9,7 @@ EMPTY_SQUARE: str | None = None
 def square():
     value, set_value = use_state(EMPTY_SQUARE)
 
-    def handle_click(event):
+    async def handle_click(event):
         set_value("X")
 
     return html.button({"className": "square", "onClick": handle_click}, value)

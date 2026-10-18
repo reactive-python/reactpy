@@ -13,11 +13,15 @@ def draft():
     text, set_text = use_state("")
     body = use_ref(0)
     body.current += 1
+
+    async def handle_text_change(event):
+        set_text(await event.target.value)
+
     return html.div(
         html.input(
             {
                 "value": text,
-                "onChange": lambda event: set_text(event["target"]["value"]),
+                "onChange": handle_text_change,
                 "placeholder": "type something",
             }
         ),
@@ -33,10 +37,10 @@ def panel():
     provide, set_provide = use_state(True)
     theme, set_theme = use_state("dark")
 
-    def toggle_wrap(event):
+    async def toggle_wrap(event):
         set_provide(not provide)
 
-    def toggle_theme(event):
+    async def toggle_theme(event):
         set_theme("light" if theme == "dark" else "dark")
 
     return html.div(

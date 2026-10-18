@@ -10,10 +10,13 @@ def form():
     if is_sent:
         return html.h1("Your message is on its way!")
 
-    def handle_submit(event):
+    async def handle_submit(event):
         event.preventDefault()
         set_is_sent(True)
         send_message(message)
+
+    async def handle_message_change(event):
+        set_message(await event.target.value)
 
     return html.form(
         {"onSubmit": handle_submit},
@@ -21,7 +24,7 @@ def form():
             {
                 "placeholder": "Message",
                 "value": message,
-                "onChange": lambda event: set_message(event["target"]["value"]),
+                "onChange": handle_message_change,
             }
         ),
         html.button({"type": "submit"}, "Send"),

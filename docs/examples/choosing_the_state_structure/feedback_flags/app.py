@@ -36,12 +36,15 @@ def feedback():
             html.p({"id": "flags"}, f"is_sending={is_sending}  is_sent={is_sent}"),
         )
 
+    async def handle_text_change(event):
+        set_text(await event.target.value)
+
     return html.div(
         html.p("How was your stay at The Prancing Pony?"),
         html.textarea(
             {
                 "value": text,
-                "onChange": lambda event: set_text(event["target"]["value"]),
+                "onChange": handle_text_change,
                 "disabled": is_sending,
             }
         ),
