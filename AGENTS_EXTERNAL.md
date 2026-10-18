@@ -133,8 +133,7 @@ def my_button():
   constructor swallows it).
 - **Define components at module level.** A component defined inside a function is a new
   function object each render, so `old.type is not new.type` and ReactPy unmounts and rebuilds
-  its subtree every render (`core/layout.py`). State is lost. The `reactpy-flake8` code for
-  this is `REACTPY100`.
+  its subtree every render (`core/layout.py`). State is lost, and nothing warns you.
 - Calling `my_component().render()` outside a layout raises
   `RuntimeError: No life cycle hook is active. Are you rendering in a layout?`
   To inspect output, render inside a `Layout` (see §25).
@@ -431,9 +430,10 @@ A handler is an `async def name(event)` whose body runs **on the server**. Three
   (only `_reactpy*` and dunders raise `AttributeError`), so `if event.persist:` and
   `hasattr(event, "nativeEvent")` both answer **yes** and only the `await` fails. Test the read,
   not the attribute.
-- **A typo raises; a `None` is a real answer.** `await event.target.vallue` →
-  `EventProxyNotFound`; a property that exists and holds `null` legitimately gives `None`. Do not
-  write `or None` fallbacks, and do not silence `EventProxyNotFound` — it almost always means a
+- **A typo raises; a `None` is a real answer.** A property name the element does not have —
+  `await event.target.valuee` — raises `EventProxyNotFound`; a property that exists and holds
+  `null` legitimately gives `None`. Do not write `or None` fallbacks, and do not silence
+  `EventProxyNotFound` — it almost always means a
   misspelling or a path that does not exist on that element.
 - **A read belongs to the moment you await it**, not to the event. `await event.target.value`
   returns what the element holds *now*, so a handler queued behind another one can read an
@@ -491,7 +491,8 @@ use_connection() -> Connection;  use_scope() -> scope;  use_location() -> Locati
   **unhashable** (`__hash__ = None`) and compares **by content** (`.current`).
 - `use_context` on a non-context raises `TypeError: <x> is not a Context` or
   `TypeError: <x> has no 'value' kwarg`; passing the *provider* instead of the context is the
-  usual cause.
+  usual cause. An **unhashable** argument (a `dict`) raises `TypeError: unhashable type: 'dict'`
+  from the provider lookup before either check runs.
 - All three connection hooks raise `RuntimeError: No backend established a connection.` under
   `ReactPyCsr` (there is no server connection at all in a client-side app).
 
@@ -505,8 +506,7 @@ use_connection() -> Connection;  use_scope() -> scope;  use_location() -> Locati
     active. Are you rendering in a layout?`, swallowed into a server-side log line. The UI just
     stops responding.
 - Do not call hooks conditionally, in a loop, after an early `return`, or from a plain function.
-  Branch on hook *results*, never around hook calls. There is no runtime order check and no lint
-  that catches ordering.
+  Branch on hook *results*, never around hook calls. Nothing checks the order for you.
 - **Dependency comparison is `strictly_equal` (`core/hooks.py`), not React's `Object.is`:**
   1. `type(x) is not type(y)` → changed (`1` vs `1.0`, `True` vs `1`, tuple vs list are changes);
   2. two callables compare **code** only when *both* have a `__qualname__` containing
@@ -638,9 +638,12 @@ use_connection() -> Connection;  use_scope() -> scope;  use_location() -> Locati
 - `use_async_effect(function, dependencies=..., shield=False)` does **not** validate `async def`;
   a plain `def` fails inside the task (`a coroutine was expected`) with only a server-log trace.
 - The effect takes **no arguments**; its cleanup takes **no arguments**.
-- A bare `@use_effect` / `@use_async_effect` decorator **cannot infer dependencies** — at call
-  time the function does not exist yet, so deps become `None` and the effect re-runs **after
-  every render**, parking an extra task each time. The decorator form is only correct as
+- The bare `@use_effect` / `@use_async_effect` decorator **is not** `dependencies=[]`: with no
+  argument list it infers from the effect's closure, exactly like `use_effect(effect)`. An effect
+  that reads state re-runs whenever that state changes. Two shapes do silently re-run after **every
+  render** — `@use_effect()` (with empty parentheses; the function never reaches the inference, so
+  deps become `None`) and passing a bound method, `functools.partial`, or callable object without
+  `dependencies`. Measured: 3 renders → 3 runs, against 1 run for `dependencies=[...]`. Write
   `@use_effect(dependencies=[...])`.
 
 **Timing and clean-up**
@@ -742,11 +745,12 @@ use_connection() -> Connection;  use_scope() -> scope;  use_location() -> Locati
 
 ## 15. Custom hooks
 
-- Legal and ordinary: a function that calls other hooks. Nothing to register or export.
-  Name it `use_snake_case` (the linter's pattern is `^_*use_\w+$`) and define it at module
-  level — a nested `use_*` is a closure (REACTPY100).
-- Add `use_` **only** when the function calls hooks; prefixing `format_rows()` makes the linter
-  police an ordinary function as a hook.
+- Legal and ordinary: a function that calls other hooks. Nothing to register or export. Name it
+  `use_snake_case` — the prefix is what tells a reader (and every rule about hooks) that the
+  function must be called at the top level — and define it at module level, because a `use_*`
+  defined inside a function is a fresh closure each render.
+- Add `use_` **only** when the function calls hooks. Prefixing `format_rows()` claims a contract
+  it does not keep and drags an ordinary function into hook rules.
 - They share **logic, never state**: state is per call site, in call order. Two calls in one
   component = two independent boxes. Not a state container (use props or context).
 - Never list a callback you were handed as an effect dependency: it freezes the effect on the
@@ -1166,20 +1170,13 @@ render_model(my_button())        # a call, not the function
 
 ## 26. Tooling and ecosystem
 
-- The docs' toolchain is **Ruff** (lint + format) and **Pyright**.
-- `reactpy-flake8` (separate package, v0.7, **not** installed with reactpy and not a dependency)
-  implements eslint-plugin-react-hooks-style checks: `REACTPY100` hook defined as a closure,
-  `REACTPY101` used outside a component/hook, `REACTPY102` used inside `if`/`try`/`for`/`while`/
-  `match`, `REACTPY103` used after an early return (`hook 'use_state' used on line N`). It matches
-  **names** (hooks `^_*use_\w+$`, components = decorated with `component`), so renaming the
-  decorator disables it, and a camelCase `useForm` degrades to a less useful message. The
-  dependency half is opt-in (`exhaustive_hook_deps=True`) and narrow: `REACTPY200` a dependency
-  written as `obj.attr`, `REACTPY201` the dependencies value is not a literal list/tuple/`None`,
-  `REACTPY202` an **inline lambda** effect missing a name assigned at the top of the component
-  body — it stays silent for a named `def` body and for the decorator form, and it keys off a
-  keyword ReactPy does not use (`args=` rather than `dependencies=`), so it false-positives on
-  correct code. Do not trust the `REACTPY20x` family; nothing at all checks hook *order*, and
-  nothing warns about a missing dependency. Runtime has no guard either — you are the lint.
+- The docs' toolchain is **Ruff** (lint + format) and **Pyright** — neither knows anything about
+  hooks.
+- **Nothing guards the hook rules for you.** The runtime does not check call order, does not warn
+  about a missing dependency, and does not notice a hook defined as a closure: a broken component
+  usually renders and then misbehaves. Write the dependency list yourself, keep hook calls
+  unconditional and at top level, define components and hooks at module level, and prove the
+  behaviour with a `Layout` test (§25) instead of trusting a checker to tell you.
 - First-party packages that are **not** part of `reactpy`: `reactpy-router` (SPA URL routing —
   don't hand-roll a router) and `reactpy-django`. `reactpy-jupyter` and `reactpy-dash` exist but
   are documented as broken; don't promise them.
