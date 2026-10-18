@@ -170,4 +170,4 @@ Re-raising matters: swallowing `#!python CancelledError` leaves the task in a st
 | A repeating timer, polling, a subscription stream | `use_async_effect` with a loop |
 | Work that must block the render | neither — do it during render, or raise |
 
-Passing an `#!python async def` to `use_effect` fails loudly, which is the one mismatch ReactPy *does* report: `TypeError: use_effect does not support async functions. Use use_async_effect instead.`
+Passing an `#!python async def` to `use_effect` fails loudly, which is the one direction of this mismatch ReactPy *does* report: ``TypeError: `use_effect` does not support async functions. Use `use_async_effect` instead.`` The other direction is not checked — a plain `#!python def` passed to `use_async_effect` is accepted and fails later, inside the effect task, with `TypeError: a coroutine was expected` in the server log and nothing in the page.

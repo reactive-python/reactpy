@@ -62,13 +62,15 @@ def my_component():
     ...
 ```
 
-Or use it as a decorator, which is equivalent:
+Or use it as a decorator. Because this particular Effect reads nothing from the component, that behaves the same way:
 
 ```python linenums="0"
 @use_effect
 def effect():
     print("on screen")
 ```
+
+The decorator does **not** pin the dependency list, though. Written this way ReactPy infers the dependencies from the Effect's closure, exactly as it does when you call `#!python use_effect(effect)` without a `#!python dependencies` argument — so an Effect that reads a state variable re-runs whenever that value changes. `#!python @use_effect` means "infer", not "never again"; say `#!python @use_effect(dependencies=[])` when you want mount-only. And `#!python @use_effect()` with empty parentheses is worse than either: the function never reaches the inference, the dependencies become `#!python None`, and the Effect re-runs after **every** render (verified: three renders, three runs, against one run for the same Effect with `#!python dependencies=[]`).
 
 Here is a working component. Open the server console and press **Re-check**: the log line appears once, on mount, and never again — the Effect does not depend on `#!python visit_count`:
 
@@ -96,7 +98,7 @@ Two things about timing are worth stating precisely, because they differ from wh
 !!! warning "`#!python use_effect` rejects `#!python async def`"
 
     ```text linenums="0"
-    TypeError: `use_effect` does not support async functions. Use use_async_effect instead.
+    TypeError: `use_effect` does not support async functions. Use `use_async_effect` instead.
     ```
 
     The failure is loud with `#!python REACTPY_DEBUG` on: the model comes back as `#!python {"tagName": "", "error": "TypeError: ..."}` and the region renders empty (with debug off you get the empty region and a traceback in the server log only). Anything `#!python await`-based belongs in [`#!python use_async_effect`](../reference/use-async-effect.md), whose effect takes **zero** arguments — the 1.x `#!python async def effect(stop)` shape fails silently there instead.

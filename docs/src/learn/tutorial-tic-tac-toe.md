@@ -663,7 +663,7 @@ That is the pattern this tutorial was built around. State belongs to the compone
 
 ### Wrapping up
 
--   A component is a `#!python @component` function returning one thing; several children go inside `#!python html.fragment(...)` or a list.
+-   A component returns **exactly one thing** — an element, another component, a `#!python str`, or `#!python None`. Several children go inside `#!python html.fragment(...)` or a real element: `#!python return [a, b]` does not render two nodes, it renders the list's `#!python repr` as text.
 -   Props are ordinary Python parameters, and they are read-only.
 -   `#!python use_state` gives a component memory; calling the setter re-renders it.
 -   Handlers take exactly one argument, the event. Extra context is bound on the Python side, usually with a factory function.

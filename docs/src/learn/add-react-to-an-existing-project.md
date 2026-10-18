@@ -15,7 +15,7 @@ Let's say you have an existing web app at `example.com` built with another serve
 Here's how we recommend to set it up:
 
 1. **Build the React part of your app** using one of the [ReactPy executors](./creating-a-react-app.md).
-2. **Specify `/some-app/` as the _base path_** in your executor's kwargs (`#!python path_prefix="/some-app/"`). The trailing slash is load-bearing: `executors/asgi/middleware.py` validates the value and a missing slash raises `ValueError` from the constructor — `Invalid path_prefix of "/some-app". URL path must end with a forward slash.` — so the app never starts.
+2. **Specify `/some-app/` as the _base path_** in your executor's kwargs (`#!python path_prefix="/some-app/"`). The trailing slash is load-bearing: `executors/asgi/middleware.py` validates the value and a missing slash raises `ValueError` from the constructor — ``Invalid `path_prefix` of "/some-app". URL path must end with a forward slash.`` — so the app never starts.
 3. **Configure your server or a proxy** so that all requests under `/some-app/` are handled by your React app.
 
 This ensures the React part of your app can [benefit from the best practices](./creating-a-react-app.md) baked into those frameworks.
