@@ -48,15 +48,15 @@
     <span class=n>x</span><span class=p>,</span> <span class=n>set_x</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>20</span><span class=p>)</span>
     <span class=n>y</span><span class=p>,</span> <span class=n>set_y</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>20</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>move_diagonally</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>move_diagonally</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># The classic mistake: this handler remembers x and forgets y.</span>
         <span class=n>set_x</span><span class=p>(</span><span class=n>x</span> <span class=o>+</span> <span class=n>STEP</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>move_correctly</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>move_correctly</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_x</span><span class=p>(</span><span class=n>x</span> <span class=o>+</span> <span class=n>STEP</span><span class=p>)</span>
         <span class=n>set_y</span><span class=p>(</span><span class=n>y</span> <span class=o>+</span> <span class=n>STEP</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>reset</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>reset</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_x</span><span class=p>(</span><span class=mi>20</span><span class=p>)</span>
         <span class=n>set_y</span><span class=p>(</span><span class=mi>20</span><span class=p>)</span>
 
@@ -128,11 +128,11 @@
 <span class=k>def</span><span class=w> </span><span class=nf>marker</span><span class=p>():</span>
     <span class=n>position</span><span class=p>,</span> <span class=n>set_position</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>({</span><span class=s2>"x"</span><span class=p>:</span> <span class=mi>20</span><span class=p>,</span> <span class=s2>"y"</span><span class=p>:</span> <span class=mi>20</span><span class=p>})</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>move_diagonally</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>move_diagonally</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># One setter, one object: there is no second call left to forget.</span>
         <span class=n>set_position</span><span class=p>({</span><span class=s2>"x"</span><span class=p>:</span> <span class=n>position</span><span class=p>[</span><span class=s2>"x"</span><span class=p>]</span> <span class=o>+</span> <span class=n>STEP</span><span class=p>,</span> <span class=s2>"y"</span><span class=p>:</span> <span class=n>position</span><span class=p>[</span><span class=s2>"y"</span><span class=p>]</span> <span class=o>+</span> <span class=n>STEP</span><span class=p>})</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>reset</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>reset</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_position</span><span class=p>({</span><span class=s2>"x"</span><span class=p>:</span> <span class=mi>20</span><span class=p>,</span> <span class=s2>"y"</span><span class=p>:</span> <span class=mi>20</span><span class=p>})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -207,7 +207,10 @@
 <span class=normal>43</span>
 <span class=normal>44</span>
 <span class=normal>45</span>
-<span class=normal>46</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>46</span>
+<span class=normal>47</span>
+<span class=normal>48</span>
+<span class=normal>49</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>feedback</span><span class=p>():</span>
     <span class=n>text</span><span class=p>,</span> <span class=n>set_text</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
     <span class=n>is_sending</span><span class=p>,</span> <span class=n>set_is_sending</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>False</span><span class=p>)</span>
@@ -231,12 +234,15 @@
             <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>({</span><span class=s2>"id"</span><span class=p>:</span> <span class=s2>"flags"</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"is_sending=</span><span class=si>{</span><span class=n>is_sending</span><span class=si>}</span><span class=s2>  is_sent=</span><span class=si>{</span><span class=n>is_sent</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_text_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_text</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=s2>"How was your stay at The Prancing Pony?"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>textarea</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>text</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_text</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_text_change</span><span class=p>,</span>
                 <span class=s2>"disabled"</span><span class=p>:</span> <span class=n>is_sending</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
@@ -290,7 +296,10 @@
 <span class=normal>33</span>
 <span class=normal>34</span>
 <span class=normal>35</span>
-<span class=normal>36</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>36</span>
+<span class=normal>37</span>
+<span class=normal>38</span>
+<span class=normal>39</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>feedback</span><span class=p>(</span><span class=n>speed</span><span class=o>=</span><span class=s2>"slow"</span><span class=p>):</span>
     <span class=n>text</span><span class=p>,</span> <span class=n>set_text</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
     <span class=n>status</span><span class=p>,</span> <span class=n>set_status</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"typing"</span><span class=p>)</span>
@@ -307,12 +316,15 @@
     <span class=k>if</span> <span class=n>is_sent</span><span class=p>:</span>
         <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span><span class=n>html</span><span class=o>.</span><span class=n>h3</span><span class=p>(</span><span class=s2>"Thanks for your feedback!"</span><span class=p>))</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_text_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_text</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=s2>"How was your stay at The Prancing Pony?"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>textarea</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>text</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_text</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_text_change</span><span class=p>,</span>
                 <span class=s2>"disabled"</span><span class=p>:</span> <span class=n>is_sending</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
@@ -379,19 +391,19 @@
     <span class=n>last_name</span><span class=p>,</span> <span class=n>set_last_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Lovelace"</span><span class=p>)</span>
     <span class=n>full_name</span><span class=p>,</span> <span class=n>set_full_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Ada Lovelace"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_first_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
-        <span class=n>set_first_name</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>])</span>
-        <span class=n>set_full_name</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]</span> <span class=o>+</span> <span class=s2>" "</span> <span class=o>+</span> <span class=n>last_name</span><span class=p>)</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_first_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_first_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+        <span class=n>set_full_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span> <span class=o>+</span> <span class=s2>" "</span> <span class=o>+</span> <span class=n>last_name</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_last_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
-        <span class=n>set_last_name</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>])</span>
-        <span class=n>set_full_name</span><span class=p>(</span><span class=n>first_name</span> <span class=o>+</span> <span class=s2>" "</span> <span class=o>+</span> <span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>])</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_last_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_last_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+        <span class=n>set_full_name</span><span class=p>(</span><span class=n>first_name</span> <span class=o>+</span> <span class=s2>" "</span> <span class=o>+</span> <span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>rename_only_first</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>rename_only_first</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># The bug the extra state variable invites: one writer, one update.</span>
         <span class=n>set_first_name</span><span class=p>(</span><span class=s2>"Grace"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>rename_only_last</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>rename_only_last</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># This one does not touch full_name either.</span>
         <span class=n>set_last_name</span><span class=p>(</span><span class=s2>"Hopper"</span><span class=p>)</span>
 
@@ -463,7 +475,13 @@
 <span class=normal>42</span>
 <span class=normal>43</span>
 <span class=normal>44</span>
-<span class=normal>45</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>45</span>
+<span class=normal>46</span>
+<span class=normal>47</span>
+<span class=normal>48</span>
+<span class=normal>49</span>
+<span class=normal>50</span>
+<span class=normal>51</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>check_in</span><span class=p>():</span>
     <span class=n>first_name</span><span class=p>,</span> <span class=n>set_first_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Ada"</span><span class=p>)</span>
     <span class=n>last_name</span><span class=p>,</span> <span class=n>set_last_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Lovelace"</span><span class=p>)</span>
@@ -471,11 +489,17 @@
     <span class=c1># Not state. Every render recomputes it from whatever the two fields hold.</span>
     <span class=n>full_name</span> <span class=o>=</span> <span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>first_name</span><span class=si>}</span><span class=s2> </span><span class=si>{</span><span class=n>last_name</span><span class=si>}</span><span class=s2>"</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>rename_only_first</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>rename_only_first</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_first_name</span><span class=p>(</span><span class=s2>"Grace"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>rename_only_last</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>rename_only_last</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_last_name</span><span class=p>(</span><span class=s2>"Hopper"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_first_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_first_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_last_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_last_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=s2>"Let's check you in"</span><span class=p>),</span>
@@ -484,7 +508,7 @@
             <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
                 <span class=p>{</span>
                     <span class=s2>"value"</span><span class=p>:</span> <span class=n>first_name</span><span class=p>,</span>
-                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_first_name</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_first_name_change</span><span class=p>,</span>
                 <span class=p>}</span>
             <span class=p>),</span>
         <span class=p>),</span>
@@ -494,7 +518,7 @@
             <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
                 <span class=p>{</span>
                     <span class=s2>"value"</span><span class=p>:</span> <span class=n>last_name</span><span class=p>,</span>
-                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_last_name</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_last_name_change</span><span class=p>,</span>
                 <span class=p>}</span>
             <span class=p>),</span>
         <span class=p>),</span>
@@ -551,19 +575,41 @@
 <span class=normal>40</span>
 <span class=normal>41</span>
 <span class=normal>42</span>
-<span class=normal>43</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>43</span>
+<span class=normal>44</span>
+<span class=normal>45</span>
+<span class=normal>46</span>
+<span class=normal>47</span>
+<span class=normal>48</span>
+<span class=normal>49</span>
+<span class=normal>50</span>
+<span class=normal>51</span>
+<span class=normal>52</span>
+<span class=normal>53</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>menu</span><span class=p>():</span>
     <span class=n>items</span><span class=p>,</span> <span class=n>set_items</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=n>INITIAL_ITEMS</span><span class=p>)</span>
     <span class=n>selected_item</span><span class=p>,</span> <span class=n>set_selected_item</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=n>INITIAL_ITEMS</span><span class=p>[</span><span class=mi>0</span><span class=p>])</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_item_change</span><span class=p>(</span><span class=n>item_id</span><span class=p>,</span> <span class=n>event</span><span class=p>):</span>
-        <span class=n>new_title</span> <span class=o>=</span> <span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_item_change</span><span class=p>(</span><span class=n>item_id</span><span class=p>,</span> <span class=n>event</span><span class=p>):</span>
+        <span class=n>new_title</span> <span class=o>=</span> <span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span>
         <span class=n>set_items</span><span class=p>(</span>
             <span class=p>[</span>
                 <span class=p>{</span><span class=o>**</span><span class=n>item</span><span class=p>,</span> <span class=s2>"title"</span><span class=p>:</span> <span class=n>new_title</span><span class=p>}</span> <span class=k>if</span> <span class=n>item</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>item_id</span> <span class=k>else</span> <span class=n>item</span>
                 <span class=k>for</span> <span class=n>item</span> <span class=ow>in</span> <span class=n>items</span>
             <span class=p>]</span>
         <span class=p>)</span>
+
+    <span class=k>def</span><span class=w> </span><span class=nf>make_change</span><span class=p>(</span><span class=n>item</span><span class=p>):</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+            <span class=k>await</span> <span class=n>handle_item_change</span><span class=p>(</span><span class=n>item</span><span class=p>[</span><span class=s2>"id"</span><span class=p>],</span> <span class=n>event</span><span class=p>)</span>
+
+        <span class=k>return</span> <span class=n>change</span>
+
+    <span class=k>def</span><span class=w> </span><span class=nf>make_choose</span><span class=p>(</span><span class=n>item</span><span class=p>):</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>choose</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+            <span class=n>set_selected_item</span><span class=p>(</span><span class=n>item</span><span class=p>)</span>
+
+        <span class=k>return</span> <span class=n>choose</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=s2>"What's your travel snack?"</span><span class=p>),</span>
@@ -574,13 +620,11 @@
                     <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
                         <span class=p>{</span>
                             <span class=s2>"value"</span><span class=p>:</span> <span class=n>item</span><span class=p>[</span><span class=s2>"title"</span><span class=p>],</span>
-                            <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>,</span> <span class=n>i</span><span class=o>=</span><span class=n>item</span><span class=p>:</span> <span class=n>handle_item_change</span><span class=p>(</span>
-                                <span class=n>i</span><span class=p>[</span><span class=s2>"id"</span><span class=p>],</span> <span class=n>event</span>
-                            <span class=p>),</span>
+                            <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>make_change</span><span class=p>(</span><span class=n>item</span><span class=p>),</span>
                         <span class=p>}</span>
                     <span class=p>),</span>
                     <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-                        <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>,</span> <span class=n>i</span><span class=o>=</span><span class=n>item</span><span class=p>:</span> <span class=n>set_selected_item</span><span class=p>(</span><span class=n>i</span><span class=p>)},</span>
+                        <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>make_choose</span><span class=p>(</span><span class=n>item</span><span class=p>)},</span>
                         <span class=s2>"Choose"</span><span class=p>,</span>
                     <span class=p>),</span>
                 <span class=p>)</span>
@@ -641,7 +685,17 @@
 <span class=normal>43</span>
 <span class=normal>44</span>
 <span class=normal>45</span>
-<span class=normal>46</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>46</span>
+<span class=normal>47</span>
+<span class=normal>48</span>
+<span class=normal>49</span>
+<span class=normal>50</span>
+<span class=normal>51</span>
+<span class=normal>52</span>
+<span class=normal>53</span>
+<span class=normal>54</span>
+<span class=normal>55</span>
+<span class=normal>56</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>menu</span><span class=p>():</span>
     <span class=n>items</span><span class=p>,</span> <span class=n>set_items</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=n>INITIAL_ITEMS</span><span class=p>)</span>
     <span class=n>selected_id</span><span class=p>,</span> <span class=n>set_selected_id</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
@@ -649,14 +703,26 @@
     <span class=c1># Derived: there is exactly one copy of the title, and it lives in items.</span>
     <span class=n>selected_item</span> <span class=o>=</span> <span class=nb>next</span><span class=p>(</span><span class=n>item</span> <span class=k>for</span> <span class=n>item</span> <span class=ow>in</span> <span class=n>items</span> <span class=k>if</span> <span class=n>item</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>selected_id</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_item_change</span><span class=p>(</span><span class=n>item_id</span><span class=p>,</span> <span class=n>event</span><span class=p>):</span>
-        <span class=n>new_title</span> <span class=o>=</span> <span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_item_change</span><span class=p>(</span><span class=n>item_id</span><span class=p>,</span> <span class=n>event</span><span class=p>):</span>
+        <span class=n>new_title</span> <span class=o>=</span> <span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span>
         <span class=n>set_items</span><span class=p>(</span>
             <span class=p>[</span>
                 <span class=p>{</span><span class=o>**</span><span class=n>item</span><span class=p>,</span> <span class=s2>"title"</span><span class=p>:</span> <span class=n>new_title</span><span class=p>}</span> <span class=k>if</span> <span class=n>item</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>item_id</span> <span class=k>else</span> <span class=n>item</span>
                 <span class=k>for</span> <span class=n>item</span> <span class=ow>in</span> <span class=n>items</span>
             <span class=p>]</span>
         <span class=p>)</span>
+
+    <span class=k>def</span><span class=w> </span><span class=nf>make_change</span><span class=p>(</span><span class=n>item_id</span><span class=p>):</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+            <span class=k>await</span> <span class=n>handle_item_change</span><span class=p>(</span><span class=n>item_id</span><span class=p>,</span> <span class=n>event</span><span class=p>)</span>
+
+        <span class=k>return</span> <span class=n>change</span>
+
+    <span class=k>def</span><span class=w> </span><span class=nf>make_choose</span><span class=p>(</span><span class=n>item_id</span><span class=p>):</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>choose</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+            <span class=n>set_selected_id</span><span class=p>(</span><span class=n>item_id</span><span class=p>)</span>
+
+        <span class=k>return</span> <span class=n>choose</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=s2>"What's your travel snack?"</span><span class=p>),</span>
@@ -667,13 +733,11 @@
                     <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
                         <span class=p>{</span>
                             <span class=s2>"value"</span><span class=p>:</span> <span class=n>item</span><span class=p>[</span><span class=s2>"title"</span><span class=p>],</span>
-                            <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>,</span> <span class=n>i</span><span class=o>=</span><span class=n>item</span><span class=p>:</span> <span class=n>handle_item_change</span><span class=p>(</span>
-                                <span class=n>i</span><span class=p>[</span><span class=s2>"id"</span><span class=p>],</span> <span class=n>event</span>
-                            <span class=p>),</span>
+                            <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>make_change</span><span class=p>(</span><span class=n>item</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]),</span>
                         <span class=p>}</span>
                     <span class=p>),</span>
                     <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-                        <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>,</span> <span class=n>i</span><span class=o>=</span><span class=n>item</span><span class=p>:</span> <span class=n>set_selected_id</span><span class=p>(</span><span class=n>i</span><span class=p>[</span><span class=s2>"id"</span><span class=p>])},</span>
+                        <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>make_choose</span><span class=p>(</span><span class=n>item</span><span class=p>[</span><span class=s2>"id"</span><span class=p>])},</span>
                         <span class=s2>"Choose"</span><span class=p>,</span>
                     <span class=p>),</span>
                 <span class=p>)</span>
@@ -735,7 +799,14 @@
 <span class=normal>45</span>
 <span class=normal>46</span>
 <span class=normal>47</span>
-<span class=normal>48</span></pre></div></td><td class=code><div><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>mark_visited</span><span class=p>(</span><span class=n>node</span><span class=p>,</span> <span class=n>target_id</span><span class=p>):</span>
+<span class=normal>48</span>
+<span class=normal>49</span>
+<span class=normal>50</span>
+<span class=normal>51</span>
+<span class=normal>52</span>
+<span class=normal>53</span>
+<span class=normal>54</span>
+<span class=normal>55</span></pre></div></td><td class=code><div><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>mark_visited</span><span class=p>(</span><span class=n>node</span><span class=p>,</span> <span class=n>target_id</span><span class=p>):</span>
 <span class=w>    </span><span class=sd>"""Copy this node, and recurse — the whole tree is rebuilt top-down."""</span>
     <span class=k>if</span> <span class=n>node</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>target_id</span><span class=p>:</span>
         <span class=k>return</span> <span class=p>{</span><span class=o>**</span><span class=n>node</span><span class=p>,</span> <span class=s2>"visited"</span><span class=p>:</span> <span class=kc>True</span><span class=p>}</span>
@@ -756,9 +827,11 @@
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
             <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>on_visit</span><span class=p>},</span> <span class=s2>"Visited"</span> <span class=k>if</span> <span class=n>place</span><span class=o>.</span><span class=n>get</span><span class=p>(</span><span class=s2>"visited"</span><span class=p>)</span> <span class=k>else</span> <span class=s2>"Visit"</span>
         <span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>ol</span><span class=p>([</span><span class=n>place_tree</span><span class=p>(</span><span class=n>child</span><span class=p>,</span> <span class=n>on_visit</span><span class=p>)</span> <span class=k>for</span> <span class=n>child</span> <span class=ow>in</span> <span class=n>children</span><span class=p>])</span>
-        <span class=k>if</span> <span class=n>children</span>
-        <span class=k>else</span> <span class=kc>None</span><span class=p>,</span>
+        <span class=p>(</span>
+            <span class=n>html</span><span class=o>.</span><span class=n>ol</span><span class=p>([</span><span class=n>place_tree</span><span class=p>(</span><span class=n>child</span><span class=p>,</span> <span class=n>on_visit</span><span class=p>)</span> <span class=k>for</span> <span class=n>child</span> <span class=ow>in</span> <span class=n>children</span><span class=p>])</span>
+            <span class=k>if</span> <span class=n>children</span>
+            <span class=k>else</span> <span class=kc>None</span>
+        <span class=p>),</span>
     <span class=p>)</span>
 
 
@@ -766,14 +839,19 @@
 <span class=k>def</span><span class=w> </span><span class=nf>travel_plan</span><span class=p>():</span>
     <span class=n>plan</span><span class=p>,</span> <span class=n>set_plan</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=n>INITIAL_PLAN</span><span class=p>)</span>
 
+    <span class=k>def</span><span class=w> </span><span class=nf>make_visit</span><span class=p>(</span><span class=n>place_id</span><span class=p>):</span>
+        <span class=c1># A factory, because a handler has to be a coroutine and a coroutine</span>
+        <span class=c1># cannot be a lambda — this is how the id gets bound instead.</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>visit</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+            <span class=n>set_plan</span><span class=p>(</span><span class=n>mark_visited</span><span class=p>(</span><span class=n>plan</span><span class=p>,</span> <span class=n>place_id</span><span class=p>))</span>
+
+        <span class=k>return</span> <span class=n>visit</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=s2>"Places to visit"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ol</span><span class=p>(</span>
             <span class=p>[</span>
-                <span class=n>place_tree</span><span class=p>(</span>
-                    <span class=n>place</span><span class=p>,</span>
-                    <span class=k>lambda</span> <span class=n>event</span><span class=p>,</span> <span class=n>pid</span><span class=o>=</span><span class=n>place</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]:</span> <span class=n>set_plan</span><span class=p>(</span><span class=n>mark_visited</span><span class=p>(</span><span class=n>plan</span><span class=p>,</span> <span class=n>pid</span><span class=p>)),</span>
-                <span class=p>)</span>
+                <span class=n>place_tree</span><span class=p>(</span><span class=n>place</span><span class=p>,</span> <span class=n>make_visit</span><span class=p>(</span><span class=n>place</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]))</span>
                 <span class=k>for</span> <span class=n>place</span> <span class=ow>in</span> <span class=n>plan</span><span class=p>[</span><span class=s2>"childPlaces"</span><span class=p>]</span>
             <span class=p>]</span>
         <span class=p>),</span>
@@ -917,7 +995,21 @@
 <span class=normal>52</span>
 <span class=normal>53</span>
 <span class=normal>54</span>
-<span class=normal>55</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>55</span>
+<span class=normal>56</span>
+<span class=normal>57</span>
+<span class=normal>58</span></pre></div></td><td class=code><div><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>bind_visit</span><span class=p>(</span><span class=n>on_visit</span><span class=p>,</span> <span class=n>place_id</span><span class=p>):</span>
+    <span class=c1># Handlers are called with the event alone, so the id is bound by a closure</span>
+    <span class=c1># rather than a lambda default — a handler has to be a coroutine, and a</span>
+    <span class=c1># coroutine cannot be a lambda. The default stays overridable so a parent's</span>
+    <span class=c1># bound handler can be re-bound for a deeper child.</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>visit</span><span class=p>(</span><span class=n>event</span><span class=p>,</span> <span class=n>target_id</span><span class=o>=</span><span class=n>place_id</span><span class=p>):</span>
+        <span class=k>await</span> <span class=n>on_visit</span><span class=p>(</span><span class=n>event</span><span class=p>,</span> <span class=n>target_id</span><span class=p>)</span>
+
+    <span class=k>return</span> <span class=n>visit</span>
+
+
+<span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>place_tree</span><span class=p>(</span><span class=n>place_id</span><span class=p>,</span> <span class=n>on_visit</span><span class=p>,</span> <span class=n>visited</span><span class=p>):</span>
     <span class=n>place</span> <span class=o>=</span> <span class=n>PLACES</span><span class=p>[</span><span class=n>place_id</span><span class=p>]</span>
     <span class=n>children</span> <span class=o>=</span> <span class=n>place</span><span class=p>[</span><span class=s2>"childIds"</span><span class=p>]</span>
@@ -930,11 +1022,7 @@
         <span class=p>(</span>
             <span class=n>html</span><span class=o>.</span><span class=n>ol</span><span class=p>(</span>
                 <span class=p>[</span>
-                    <span class=n>place_tree</span><span class=p>(</span>
-                        <span class=n>child_id</span><span class=p>,</span>
-                        <span class=k>lambda</span> <span class=n>event</span><span class=p>,</span> <span class=n>cid</span><span class=o>=</span><span class=n>child_id</span><span class=p>:</span> <span class=n>on_visit</span><span class=p>(</span><span class=n>event</span><span class=p>,</span> <span class=n>cid</span><span class=p>),</span>
-                        <span class=n>visited</span><span class=p>,</span>
-                    <span class=p>)</span>
+                    <span class=n>place_tree</span><span class=p>(</span><span class=n>child_id</span><span class=p>,</span> <span class=n>bind_visit</span><span class=p>(</span><span class=n>on_visit</span><span class=p>,</span> <span class=n>child_id</span><span class=p>),</span> <span class=n>visited</span><span class=p>)</span>
                     <span class=k>for</span> <span class=n>child_id</span> <span class=ow>in</span> <span class=n>children</span>
                 <span class=p>]</span>
             <span class=p>)</span>
@@ -950,7 +1038,7 @@
     <span class=c1># touches exactly one entry — there is no enclosing object to rebuild.</span>
     <span class=n>visited</span><span class=p>,</span> <span class=n>set_visited</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=nb>set</span><span class=p>())</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>,</span> <span class=n>place_id</span><span class=o>=</span><span class=mi>0</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>,</span> <span class=n>place_id</span><span class=o>=</span><span class=mi>0</span><span class=p>):</span>
         <span class=k>if</span> <span class=n>place_id</span> <span class=ow>not</span> <span class=ow>in</span> <span class=n>visited</span><span class=p>:</span>
             <span class=n>set_visited</span><span class=p>({</span><span class=o>*</span><span class=n>visited</span><span class=p>,</span> <span class=n>place_id</span><span class=p>})</span>
 
@@ -958,11 +1046,7 @@
         <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=s2>"Places to visit"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ol</span><span class=p>(</span>
             <span class=p>[</span>
-                <span class=n>place_tree</span><span class=p>(</span>
-                    <span class=n>place_id</span><span class=p>,</span>
-                    <span class=k>lambda</span> <span class=n>event</span><span class=p>,</span> <span class=n>pid</span><span class=o>=</span><span class=n>place_id</span><span class=p>:</span> <span class=n>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>,</span> <span class=n>pid</span><span class=p>),</span>
-                    <span class=n>visited</span><span class=p>,</span>
-                <span class=p>)</span>
+                <span class=n>place_tree</span><span class=p>(</span><span class=n>place_id</span><span class=p>,</span> <span class=n>bind_visit</span><span class=p>(</span><span class=n>toggle</span><span class=p>,</span> <span class=n>place_id</span><span class=p>),</span> <span class=n>visited</span><span class=p>)</span>
                 <span class=k>for</span> <span class=n>place_id</span> <span class=ow>in</span> <span class=n>PLACES</span><span class=p>[</span><span class=mi>0</span><span class=p>][</span><span class=s2>"childIds"</span><span class=p>]</span>
             <span class=p>]</span>
         <span class=p>),</span>

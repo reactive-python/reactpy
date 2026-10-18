@@ -123,7 +123,7 @@ Tea cup for guest #6
 <span class=k>def</span><span class=w> </span><span class=nf>tea_counter</span><span class=p>():</span>
     <span class=n>sips</span><span class=p>,</span> <span class=n>set_sips</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>take_a_sip</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>take_a_sip</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># Side effects belong here: this runs on click, not during rendering.</span>
         <span class=n>set_sips</span><span class=p>(</span><span class=n>sips</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 

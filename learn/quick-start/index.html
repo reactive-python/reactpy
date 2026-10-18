@@ -215,7 +215,7 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
 </code></pre></div></td></tr></table></div> </div> </div> </div> <h2 id=responding-to-events>Responding to events<a class=headerlink href=#responding-to-events title="Permanent link">&para;</a></h2> <p>You can respond to events by declaring <em>event handler</em> functions inside your components:</p> <div class=highlight><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>my_button</span><span class=p>():</span>
-<span class=hll>    <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+<span class=hll>    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
 </span><span class=hll>        <span class=nb>print</span><span class=p>(</span><span class=s2>"You clicked me!"</span><span class=p>)</span>
 </span>
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
@@ -231,7 +231,7 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
 <span class=k>def</span><span class=w> </span><span class=nf>my_button</span><span class=p>():</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
 <span class=hll>        <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 </span>
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Clicked </span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2> times"</span><span class=p>)</span>
@@ -270,7 +270,7 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
 <span class=k>def</span><span class=w> </span><span class=nf>my_button</span><span class=p>():</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Clicked </span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2> times"</span><span class=p>)</span>
@@ -286,7 +286,7 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
 <span class=k>def</span><span class=w> </span><span class=nf>my_app</span><span class=p>():</span>
 <span class=hll>    <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 </span><span class=hll>
-</span><span class=hll>    <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+</span><span class=hll>    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
 </span><span class=hll>        <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 </span>
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -302,7 +302,7 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
 <span class=k>def</span><span class=w> </span><span class=nf>my_app</span><span class=p>():</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -339,7 +339,7 @@ You can put more complex expressions inside the JSX curly braces too, for exampl
 <span class=k>def</span><span class=w> </span><span class=nf>my_app</span><span class=p>():</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>

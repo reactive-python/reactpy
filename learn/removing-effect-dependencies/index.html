@@ -28,7 +28,17 @@
 <span class=normal>28</span>
 <span class=normal>29</span>
 <span class=normal>30</span>
-<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span>
+<span class=normal>41</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>reporter</span><span class=p>(</span><span class=n>topic</span><span class=p>):</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
     <span class=n>theme</span><span class=p>,</span> <span class=n>set_theme</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"light"</span><span class=p>)</span>
@@ -41,10 +51,16 @@
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>report</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>topic</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_count_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_theme_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_theme</span><span class=p>(</span><span class=s2>"dark"</span> <span class=k>if</span> <span class=n>theme</span> <span class=o>==</span> <span class=s2>"light"</span> <span class=k>else</span> <span class=s2>"light"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Count </span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_count_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Count </span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_theme</span><span class=p>(</span><span class=s2>"dark"</span> <span class=k>if</span> <span class=n>theme</span> <span class=o>==</span> <span class=s2>"light"</span> <span class=k>else</span> <span class=s2>"light"</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_theme_click</span><span class=p>},</span>
             <span class=sa>f</span><span class=s2>"Theme </span><span class=si>{</span><span class=n>theme</span><span class=si>}</span><span class=s2>"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"live: count=</span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2> theme=</span><span class=si>{</span><span class=n>theme</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
@@ -55,8 +71,12 @@
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>topic</span><span class=p>,</span> <span class=n>set_topic</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"news"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_topic_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_topic_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>reporter</span><span class=p>(</span><span class=n>topic</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
@@ -96,7 +116,17 @@ summary: topic=news count=0 theme=light
 <span class=normal>32</span>
 <span class=normal>33</span>
 <span class=normal>34</span>
-<span class=normal>35</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span>
+<span class=normal>41</span>
+<span class=normal>42</span>
+<span class=normal>43</span>
+<span class=normal>44</span>
+<span class=normal>45</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>feed</span><span class=p>(</span><span class=n>topic</span><span class=p>):</span>
     <span class=n>page</span><span class=p>,</span> <span class=n>set_page</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span>
     <span class=n>rows</span><span class=p>,</span> <span class=n>set_rows</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([])</span>
@@ -117,9 +147,15 @@ summary: topic=news count=0 theme=light
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>subscribe</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>topic</span><span class=p>,</span> <span class=n>page</span><span class=p>,</span> <span class=n>online</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_page_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_page</span><span class=p>(</span><span class=n>page</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_online_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_online</span><span class=p>(</span><span class=ow>not</span> <span class=n>online</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_page</span><span class=p>(</span><span class=n>page</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Page </span><span class=si>{</span><span class=n>page</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_online</span><span class=p>(</span><span class=ow>not</span> <span class=n>online</span><span class=p>)},</span> <span class=s2>"Toggle online"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_page_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Page </span><span class=si>{</span><span class=n>page</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_online_click</span><span class=p>},</span> <span class=s2>"Toggle online"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>([</span><span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>({</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>row</span><span class=p>},</span> <span class=n>row</span><span class=p>)</span> <span class=k>for</span> <span class=n>row</span> <span class=ow>in</span> <span class=n>rows</span><span class=p>]),</span>
     <span class=p>)</span>
 
@@ -127,8 +163,12 @@ summary: topic=news count=0 theme=light
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>topic</span><span class=p>,</span> <span class=n>set_topic</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"news"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_topic_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_topic_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>feed</span><span class=p>(</span><span class=n>topic</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
@@ -159,7 +199,14 @@ summary: topic=news count=0 theme=light
 <span class=normal>25</span>
 <span class=normal>26</span>
 <span class=normal>27</span>
-<span class=normal>28</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>log_viewer</span><span class=p>(</span><span class=n>topic</span><span class=p>):</span>
     <span class=n>lines</span><span class=p>,</span> <span class=n>set_lines</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([])</span>
     <span class=n>visible</span><span class=p>,</span> <span class=n>set_visible</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>3</span><span class=p>)</span>
@@ -174,8 +221,11 @@ summary: topic=news count=0 theme=light
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>record</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>topic</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_visible_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_visible</span><span class=p>(</span><span class=n>visible</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_visible</span><span class=p>(</span><span class=n>visible</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Show </span><span class=si>{</span><span class=n>visible</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_visible_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Show </span><span class=si>{</span><span class=n>visible</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>([</span><span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>({</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>i</span><span class=p>},</span> <span class=n>line</span><span class=p>)</span> <span class=k>for</span> <span class=n>i</span><span class=p>,</span> <span class=n>line</span> <span class=ow>in</span> <span class=nb>enumerate</span><span class=p>(</span><span class=n>lines</span><span class=p>[</span><span class=o>-</span><span class=n>visible</span><span class=p>:])]),</span>
     <span class=p>)</span>
 
@@ -183,8 +233,12 @@ summary: topic=news count=0 theme=light
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>topic</span><span class=p>,</span> <span class=n>set_topic</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"news"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_topic_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_topic_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>log_viewer</span><span class=p>(</span><span class=n>topic</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
@@ -229,7 +283,12 @@ use_effect(record, dependencies=[topic, lines])   # never settles
 <span class=normal>32</span>
 <span class=normal>33</span>
 <span class=normal>34</span>
-<span class=normal>35</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>poller</span><span class=p>(</span><span class=n>topic</span><span class=p>):</span>
     <span class=n>delay</span><span class=p>,</span> <span class=n>set_delay</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mf>0.2</span><span class=p>)</span>
     <span class=n>polls</span><span class=p>,</span> <span class=n>set_polls</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
@@ -249,19 +308,24 @@ use_effect(record, dependencies=[topic, lines])   # never settles
     <span class=c1># `delay` here means adjusting it cancels and recreates the whole loop</span>
     <span class=n>use_async_effect</span><span class=p>(</span><span class=n>loop</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>topic</span><span class=p>,</span> <span class=n>delay</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_delay_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_delay</span><span class=p>(</span><span class=n>delay</span> <span class=o>+</span> <span class=mf>0.2</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>: </span><span class=si>{</span><span class=n>polls</span><span class=si>}</span><span class=s2> polls"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_delay</span><span class=p>(</span><span class=n>delay</span> <span class=o>+</span> <span class=mf>0.2</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Delay </span><span class=si>{</span><span class=n>delay</span><span class=si>:</span><span class=s2>.1f</span><span class=si>}</span><span class=s2>s"</span>
-        <span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_delay_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Delay </span><span class=si>{</span><span class=n>delay</span><span class=si>:</span><span class=s2>.1f</span><span class=si>}</span><span class=s2>s"</span><span class=p>),</span>
     <span class=p>)</span>
 
 
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>topic</span><span class=p>,</span> <span class=n>set_topic</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"news"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_topic_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_topic_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>poller</span><span class=p>(</span><span class=n>topic</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
@@ -302,7 +366,12 @@ use_effect(record, dependencies=[topic, lines])   # never settles
 <span class=normal>35</span>
 <span class=normal>36</span>
 <span class=normal>37</span>
-<span class=normal>38</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span>
+<span class=normal>41</span>
+<span class=normal>42</span>
+<span class=normal>43</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>poller</span><span class=p>(</span><span class=n>topic</span><span class=p>):</span>
     <span class=n>delay</span><span class=p>,</span> <span class=n>set_delay</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mf>0.2</span><span class=p>)</span>
     <span class=n>polls</span><span class=p>,</span> <span class=n>set_polls</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
@@ -325,19 +394,24 @@ use_effect(record, dependencies=[topic, lines])   # never settles
     <span class=c1># `delay` is deliberately absent: adjusting it must not reconnect</span>
     <span class=n>use_async_effect</span><span class=p>(</span><span class=n>loop</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>topic</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_delay_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_delay</span><span class=p>(</span><span class=n>delay</span> <span class=o>+</span> <span class=mf>0.2</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>: </span><span class=si>{</span><span class=n>polls</span><span class=si>}</span><span class=s2> polls"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_delay</span><span class=p>(</span><span class=n>delay</span> <span class=o>+</span> <span class=mf>0.2</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Delay </span><span class=si>{</span><span class=n>delay</span><span class=si>:</span><span class=s2>.1f</span><span class=si>}</span><span class=s2>s"</span>
-        <span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_delay_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Delay </span><span class=si>{</span><span class=n>delay</span><span class=si>:</span><span class=s2>.1f</span><span class=si>}</span><span class=s2>s"</span><span class=p>),</span>
     <span class=p>)</span>
 
 
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>topic</span><span class=p>,</span> <span class=n>set_topic</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"news"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_topic_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_topic_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>poller</span><span class=p>(</span><span class=n>topic</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
@@ -381,7 +455,14 @@ use_effect(record, dependencies=[topic, lines])   # never settles
 <span class=normal>38</span>
 <span class=normal>39</span>
 <span class=normal>40</span>
-<span class=normal>41</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>PAGE_SIZE</span> <span class=o>=</span> <span class=mi>20</span>
+<span class=normal>41</span>
+<span class=normal>42</span>
+<span class=normal>43</span>
+<span class=normal>44</span>
+<span class=normal>45</span>
+<span class=normal>46</span>
+<span class=normal>47</span>
+<span class=normal>48</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>PAGE_SIZE</span> <span class=o>=</span> <span class=mi>20</span>
 <span class=n>HEADERS</span> <span class=o>=</span> <span class=p>{</span><span class=s2>"Accept"</span><span class=p>:</span> <span class=s2>"application/json"</span><span class=p>}</span>
 
 
@@ -403,11 +484,14 @@ use_effect(record, dependencies=[topic, lines])   # never settles
     <span class=c1># neither PAGE_SIZE, HEADERS, nor format_rows belongs in this list</span>
     <span class=n>use_effect</span><span class=p>(</span><span class=n>load</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>topic</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_query_change</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_query</span><span class=p>(</span><span class=k>await</span> <span class=n>e</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>query</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_query</span><span class=p>(</span><span class=n>e</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_query_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"query=</span><span class=si>{</span><span class=n>query</span><span class=si>!r}</span><span class=s2> rows=</span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>rows</span><span class=p>)</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
@@ -418,8 +502,12 @@ use_effect(record, dependencies=[topic, lines])   # never settles
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>topic</span><span class=p>,</span> <span class=n>set_topic</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"news"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_topic_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_topic</span><span class=p>(</span><span class=n>topic</span> <span class=o>+</span> <span class=s2>"x"</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_topic_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Topic </span><span class=si>{</span><span class=n>topic</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>directory</span><span class=p>(</span><span class=n>topic</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
@@ -453,7 +541,14 @@ use_effect(record, dependencies=[topic, lines])   # never settles
 <span class=normal>28</span>
 <span class=normal>29</span>
 <span class=normal>30</span>
-<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span>
+<span class=normal>38</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>feed</span><span class=p>(</span><span class=n>topic</span><span class=p>):</span>
     <span class=n>page</span><span class=p>,</span> <span class=n>set_page</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span>
     <span class=n>rows</span><span class=p>,</span> <span class=n>set_rows</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([])</span>
@@ -467,8 +562,11 @@ use_effect(record, dependencies=[topic, lines])   # never settles
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>load</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>options</span><span class=p>,</span> <span class=n>page</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_page_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_page</span><span class=p>(</span><span class=n>page</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_page</span><span class=p>(</span><span class=n>page</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=sa>f</span><span class=s2>"Page </span><span class=si>{</span><span class=n>page</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_page_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"Page </span><span class=si>{</span><span class=n>page</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>([</span><span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>({</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>row</span><span class=p>},</span> <span class=n>row</span><span class=p>)</span> <span class=k>for</span> <span class=n>row</span> <span class=ow>in</span> <span class=n>rows</span><span class=p>]),</span>
     <span class=p>)</span>
 
@@ -477,9 +575,13 @@ use_effect(record, dependencies=[topic, lines])   # never settles
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>topic</span><span class=p>,</span> <span class=n>set_topic</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"news"</span><span class=p>)</span>
     <span class=n>refreshes</span><span class=p>,</span> <span class=n>set_refreshes</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_refreshes_click</span><span class=p>(</span><span class=n>e</span><span class=p>):</span>
+        <span class=n>set_refreshes</span><span class=p>(</span><span class=n>refreshes</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>e</span><span class=p>:</span> <span class=n>set_refreshes</span><span class=p>(</span><span class=n>refreshes</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_refreshes_click</span><span class=p>},</span>
             <span class=sa>f</span><span class=s2>"Re-render (</span><span class=si>{</span><span class=n>refreshes</span><span class=si>}</span><span class=s2>)"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>feed</span><span class=p>(</span><span class=n>topic</span><span class=p>),</span>

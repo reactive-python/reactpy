@@ -422,8 +422,8 @@
 
     <span class=n>use_async_effect</span><span class=p>(</span><span class=n>tick</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[])</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
-        <span class=n>set_color</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>])</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_color</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span>

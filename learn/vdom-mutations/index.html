@@ -68,12 +68,12 @@
 <span class=k>def</span><span class=w> </span><span class=nf>panel</span><span class=p>():</span>
     <span class=n>n</span><span class=p>,</span> <span class=n>set_n</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>mark_dirty</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>mark_dirty</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># Mutates the shared element and asks for no render: nothing changes</span>
         <span class=c1># on screen, and the server's model now disagrees with every client.</span>
         <span class=n>STATUS</span><span class=p>[</span><span class=s2>"children"</span><span class=p>]</span> <span class=o>=</span> <span class=p>[</span><span class=sa>f</span><span class=s2>"mutated by visitor </span><span class=si>{</span><span class=n>n</span><span class=si>}</span><span class=s2>"</span><span class=p>]</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>bump</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>bump</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># The next render of ANY state in this component re-sends STATUS --</span>
         <span class=c1># including the mutation, whoever made it.</span>
         <span class=n>set_n</span><span class=p>(</span><span class=n>n</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
@@ -102,7 +102,10 @@
 <span class=normal>15</span>
 <span class=normal>16</span>
 <span class=normal>17</span>
-<span class=normal>18</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># A function that builds a fresh element on every call: the safe shape.</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># A function that builds a fresh element on every call: the safe shape.</span>
 <span class=k>def</span><span class=w> </span><span class=nf>status_banner</span><span class=p>(</span><span class=n>text</span><span class=p>,</span> <span class=n>tone</span><span class=p>):</span>
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span>
         <span class=p>{</span><span class=s2>"id"</span><span class=p>:</span> <span class=s2>"status"</span><span class=p>,</span> <span class=s2>"className"</span><span class=p>:</span> <span class=sa>f</span><span class=s2>"status-</span><span class=si>{</span><span class=n>tone</span><span class=si>}</span><span class=s2>"</span><span class=p>},</span>
@@ -115,9 +118,12 @@
     <span class=n>n</span><span class=p>,</span> <span class=n>set_n</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
     <span class=n>tone</span> <span class=o>=</span> <span class=s2>"ok"</span> <span class=k>if</span> <span class=n>n</span> <span class=o>==</span> <span class=mi>0</span> <span class=k>else</span> <span class=s2>"warn"</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_n_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_n</span><span class=p>(</span><span class=n>n</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"n=</span><span class=si>{</span><span class=n>n</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_n</span><span class=p>(</span><span class=n>n</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"bump"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_n_click</span><span class=p>},</span> <span class=s2>"bump"</span><span class=p>),</span>
         <span class=n>status_banner</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>n</span><span class=si>}</span><span class=s2> items"</span><span class=p>,</span> <span class=n>tone</span><span class=p>),</span>  <span class=c1># a new dict every render</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>

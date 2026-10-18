@@ -426,13 +426,17 @@
 </span><span class=hll>            <span class=n>set_in_stock_only</span><span class=o>=</span><span class=n>set_in_stock_only</span><span class=p>,</span>
 </span>        <span class=p>)</span>
     <span class=p>)</span>
-</code></pre></div> <p>Inside the <code class=highlight><span class=n>search_bar</span></code>, you will add the <code class=highlight><span class=n>onChange</span></code> event handlers and set the parent state from them:</p> <div class=highlight><pre><span></span><code><span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
-    <span class=p>{</span>
-        <span class=s2>"type"</span><span class=p>:</span> <span class=s2>"text"</span><span class=p>,</span>
+</code></pre></div> <p>Inside the <code class=highlight><span class=n>search_bar</span></code>, you will add the <code class=highlight><span class=n>onChange</span></code> event handlers and set the parent state from them:</p> <div class=highlight><pre><span></span><code><span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_filter_text_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=n>set_filter_text</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+
+<span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
+<span class=hll>    <span class=p>{</span>
+</span>        <span class=s2>"type"</span><span class=p>:</span> <span class=s2>"text"</span><span class=p>,</span>
         <span class=s2>"value"</span><span class=p>:</span> <span class=n>filter_text</span><span class=p>,</span>
         <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"Search..."</span><span class=p>,</span>
-<span class=hll>        <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_filter_text</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
-</span>    <span class=p>}</span>
+        <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_filter_text_change</span><span class=p>,</span>
+    <span class=p>}</span>
 <span class=p>)</span>
 </code></pre></div> <p>Now the application fully works!</p> <div class="tabbed-set tabbed-alternate" data-tabs=3:3><input checked=checked id=__tabbed_3_1 name=__tabbed_3 type=radio><input id=__tabbed_3_2 name=__tabbed_3 type=radio><input id=__tabbed_3_3 name=__tabbed_3 type=radio><div class=tabbed-labels><label for=__tabbed_3_1>app.py</label><label for=__tabbed_3_2>styles.css</label><label for=__tabbed_3_3><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>  1</span>
 <span class=normal>  2</span>
@@ -541,7 +545,11 @@
 <span class=normal>105</span>
 <span class=normal>106</span>
 <span class=normal>107</span>
-<span class=normal>108</span></pre></div></td><td class=code><div><pre><span></span><code><span class=kn>from</span><span class=w> </span><span class=nn>reactpy</span><span class=w> </span><span class=kn>import</span> <span class=n>component</span><span class=p>,</span> <span class=n>html</span><span class=p>,</span> <span class=n>use_state</span>
+<span class=normal>108</span>
+<span class=normal>109</span>
+<span class=normal>110</span>
+<span class=normal>111</span>
+<span class=normal>112</span></pre></div></td><td class=code><div><pre><span></span><code><span class=kn>from</span><span class=w> </span><span class=nn>reactpy</span><span class=w> </span><span class=kn>import</span> <span class=n>component</span><span class=p>,</span> <span class=n>html</span><span class=p>,</span> <span class=n>use_state</span>
 
 
 <span class=nd>@component</span>
@@ -612,13 +620,19 @@
 
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>search_bar</span><span class=p>(</span><span class=n>filter_text</span><span class=p>,</span> <span class=n>in_stock_only</span><span class=p>,</span> <span class=n>set_filter_text</span><span class=p>,</span> <span class=n>set_in_stock_only</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_filter_text_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_filter_text</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_in_stock_only_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_in_stock_only</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>checked</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>form</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"type"</span><span class=p>:</span> <span class=s2>"text"</span><span class=p>,</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>filter_text</span><span class=p>,</span>
                 <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"Search..."</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_filter_text</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_filter_text_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>label</span><span class=p>(</span>
@@ -626,9 +640,7 @@
                 <span class=p>{</span>
                     <span class=s2>"type"</span><span class=p>:</span> <span class=s2>"checkbox"</span><span class=p>,</span>
                     <span class=s2>"checked"</span><span class=p>:</span> <span class=n>in_stock_only</span><span class=p>,</span>
-                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_in_stock_only</span><span class=p>(</span>
-                        <span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"checked"</span><span class=p>]</span>
-                    <span class=p>),</span>
+                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_in_stock_only_change</span><span class=p>,</span>
                 <span class=p>}</span>
             <span class=p>),</span>
             <span class=s2>"Only show products in stock"</span><span class=p>,</span>

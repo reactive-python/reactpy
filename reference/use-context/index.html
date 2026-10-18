@@ -68,14 +68,14 @@
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>theme</span><span class=p>,</span> <span class=n>set_theme</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"light"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_theme_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_theme</span><span class=p>(</span><span class=s2>"dark"</span> <span class=k>if</span> <span class=n>theme</span> <span class=o>==</span> <span class=s2>"light"</span> <span class=k>else</span> <span class=s2>"light"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>Theme</span><span class=p>(</span><span class=n>toolbar</span><span class=p>(),</span> <span class=n>value</span><span class=o>=</span><span class=n>theme</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_theme</span><span class=p>(</span>
-                    <span class=s2>"dark"</span> <span class=k>if</span> <span class=n>theme</span> <span class=o>==</span> <span class=s2>"light"</span> <span class=k>else</span> <span class=s2>"light"</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_theme_click</span><span class=p>},</span>
             <span class=sa>f</span><span class=s2>"Switch to </span><span class=si>{</span><span class=s1>'dark'</span><span class=w> </span><span class=k>if</span><span class=w> </span><span class=n>theme</span><span class=w> </span><span class=o>==</span><span class=w> </span><span class=s1>'light'</span><span class=w> </span><span class=k>else</span><span class=w> </span><span class=s1>'light'</span><span class=si>}</span><span class=s2>"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>

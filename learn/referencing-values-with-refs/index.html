@@ -15,7 +15,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>():</span>
     <span class=n>clicks</span> <span class=o>=</span> <span class=n>use_ref</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>clicks</span><span class=o>.</span><span class=n>current</span> <span class=o>+=</span> <span class=mi>1</span>
         <span class=c1># Nothing on screen changes, but the server console proves the ref is</span>
         <span class=c1># really incrementing between clicks.</span>
@@ -86,11 +86,11 @@
 
     <span class=n>use_async_effect</span><span class=p>(</span><span class=n>tick</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>running</span><span class=p>])</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>start</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>start</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
         <span class=n>started_at</span><span class=o>.</span><span class=n>current</span> <span class=o>=</span> <span class=n>time</span><span class=o>.</span><span class=n>monotonic</span><span class=p>()</span>
         <span class=n>set_running</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>stop</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>stop</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
         <span class=k>if</span> <span class=n>started_at</span><span class=o>.</span><span class=n>current</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
             <span class=c1># Write the exact final value; the ticking effect only samples</span>
             <span class=c1># every 0.1s, so relying on it alone would leave the display</span>
@@ -99,7 +99,7 @@
             <span class=n>started_at</span><span class=o>.</span><span class=n>current</span> <span class=o>=</span> <span class=kc>None</span>
         <span class=n>set_running</span><span class=p>(</span><span class=kc>False</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>reset</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>reset</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
         <span class=n>started_at</span><span class=o>.</span><span class=n>current</span> <span class=o>=</span> <span class=kc>None</span>
         <span class=n>set_running</span><span class=p>(</span><span class=kc>False</span><span class=p>)</span>
         <span class=n>set_elapsed</span><span class=p>(</span><span class=mf>0.0</span><span class=p>)</span>
@@ -124,7 +124,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>():</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span> <span class=sa>f</span><span class=s2>"You clicked </span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2> times"</span><span class=p>)</span>
@@ -141,7 +141,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>():</span>
     <span class=n>count</span> <span class=o>=</span> <span class=n>use_ref</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># This doesn't re-render the component!</span>
         <span class=n>count</span><span class=o>.</span><span class=n>current</span> <span class=o>+=</span> <span class=mi>1</span>
 

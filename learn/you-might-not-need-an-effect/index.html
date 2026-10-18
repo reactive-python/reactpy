@@ -24,7 +24,13 @@
 <span class=normal>24</span>
 <span class=normal>25</span>
 <span class=normal>26</span>
-<span class=normal>27</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>form</span><span class=p>():</span>
     <span class=n>first_name</span><span class=p>,</span> <span class=n>set_first_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Ada"</span><span class=p>)</span>
     <span class=n>last_name</span><span class=p>,</span> <span class=n>set_last_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Lovelace"</span><span class=p>)</span>
@@ -36,18 +42,24 @@
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>effect</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>first_name</span><span class=p>,</span> <span class=n>last_name</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_first_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_first_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_last_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_last_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>full_name</span> <span class=ow>or</span> <span class=s2>"(nothing yet)"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>first_name</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_first_name</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_first_name_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>last_name</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_last_name</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_last_name_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -73,25 +85,37 @@
 <span class=normal>19</span>
 <span class=normal>20</span>
 <span class=normal>21</span>
-<span class=normal>22</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>form</span><span class=p>():</span>
     <span class=n>first_name</span><span class=p>,</span> <span class=n>set_first_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Ada"</span><span class=p>)</span>
     <span class=n>last_name</span><span class=p>,</span> <span class=n>set_last_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"Lovelace"</span><span class=p>)</span>
     <span class=c1># Right: calculated during rendering, so it is always in sync.</span>
     <span class=n>full_name</span> <span class=o>=</span> <span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>first_name</span><span class=si>}</span><span class=s2> </span><span class=si>{</span><span class=n>last_name</span><span class=si>}</span><span class=s2>"</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_first_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_first_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_last_name_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_last_name</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>full_name</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>first_name</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_first_name</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_first_name_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>last_name</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_last_name</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_last_name_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -133,7 +157,9 @@
 <span class=normal>35</span>
 <span class=normal>36</span>
 <span class=normal>37</span>
-<span class=normal>38</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>todo_list</span><span class=p>():</span>
     <span class=n>filter_name</span><span class=p>,</span> <span class=n>set_filter_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"all"</span><span class=p>)</span>
     <span class=n>new_todo</span><span class=p>,</span> <span class=n>set_new_todo</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
@@ -150,24 +176,26 @@
 
     <span class=n>shown</span> <span class=o>=</span> <span class=n>use_memo</span><span class=p>(</span><span class=n>visible_todos</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_filter_name_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_filter_name</span><span class=p>(</span>
+            <span class=p>{</span><span class=s2>"all"</span><span class=p>:</span> <span class=s2>"active"</span><span class=p>,</span> <span class=s2>"active"</span><span class=p>:</span> <span class=s2>"completed"</span><span class=p>,</span> <span class=s2>"completed"</span><span class=p>:</span> <span class=s2>"all"</span><span class=p>}[</span><span class=n>filter_name</span><span class=p>]</span>
+        <span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_new_todo_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_new_todo</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>shown</span><span class=p>)</span><span class=si>}</span><span class=s2> of </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>todos</span><span class=p>)</span><span class=si>}</span><span class=s2> shown (filter: </span><span class=si>{</span><span class=n>filter_name</span><span class=si>}</span><span class=s2>)"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>([</span><span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>({</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>todo</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]},</span> <span class=n>todo</span><span class=p>[</span><span class=s2>"text"</span><span class=p>])</span> <span class=k>for</span> <span class=n>todo</span> <span class=ow>in</span> <span class=n>shown</span><span class=p>]),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_filter_name</span><span class=p>(</span>
-                    <span class=p>{</span><span class=s2>"all"</span><span class=p>:</span> <span class=s2>"active"</span><span class=p>,</span> <span class=s2>"active"</span><span class=p>:</span> <span class=s2>"completed"</span><span class=p>,</span> <span class=s2>"completed"</span><span class=p>:</span> <span class=s2>"all"</span><span class=p>}[</span>
-                        <span class=n>filter_name</span>
-                    <span class=p>]</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_filter_name_click</span><span class=p>},</span>
             <span class=s2>"Change filter"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"new todo"</span><span class=p>,</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>new_todo</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_new_todo</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_new_todo_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -206,11 +234,16 @@
 <span class=normal>32</span>
 <span class=normal>33</span>
 <span class=normal>34</span>
-<span class=normal>35</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>profile</span><span class=p>(</span><span class=n>user_id</span><span class=p>):</span>
     <span class=c1># Any state declared here is thrown away whenever the key changes, along</span>
     <span class=c1># with the state of every component below it. No Effect needed.</span>
     <span class=n>comment</span><span class=p>,</span> <span class=n>set_comment</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_comment_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_comment</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=sa>f</span><span class=s2>"profile </span><span class=si>{</span><span class=n>user_id</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
@@ -218,7 +251,7 @@
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>comment</span><span class=p>,</span>
                 <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"leave a comment"</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_comment</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_comment_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"draft: </span><span class=si>{</span><span class=n>comment</span><span class=w> </span><span class=ow>or</span><span class=w> </span><span class=s1>'(empty)'</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
@@ -229,13 +262,12 @@
 <span class=k>def</span><span class=w> </span><span class=nf>profile_page</span><span class=p>():</span>
     <span class=n>user_id</span><span class=p>,</span> <span class=n>set_user_id</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"ada"</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_user_id_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_user_id</span><span class=p>(</span><span class=s2>"grace"</span> <span class=k>if</span> <span class=n>user_id</span> <span class=o>==</span> <span class=s2>"ada"</span> <span class=k>else</span> <span class=s2>"ada"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_user_id</span><span class=p>(</span>
-                    <span class=s2>"grace"</span> <span class=k>if</span> <span class=n>user_id</span> <span class=o>==</span> <span class=s2>"ada"</span> <span class=k>else</span> <span class=s2>"ada"</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_user_id_click</span><span class=p>},</span>
             <span class=s2>"Next profile"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=c1># The key is what makes ReactPy treat this as a different profile.</span>
@@ -280,7 +312,14 @@
 <span class=normal>32</span>
 <span class=normal>33</span>
 <span class=normal>34</span>
-<span class=normal>35</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span>
+<span class=normal>41</span>
+<span class=normal>42</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>list_box</span><span class=p>(</span><span class=n>items</span><span class=p>):</span>
     <span class=n>is_reverse</span><span class=p>,</span> <span class=n>set_is_reverse</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>False</span><span class=p>)</span>
     <span class=c1># One state value that remembers which list the choice belonged to. The</span>
@@ -292,13 +331,17 @@
 
     <span class=n>shown</span> <span class=o>=</span> <span class=n>items</span><span class=p>[::</span><span class=o>-</span><span class=mi>1</span><span class=p>]</span> <span class=k>if</span> <span class=n>is_reverse</span> <span class=k>else</span> <span class=n>items</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_is_reverse_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_is_reverse</span><span class=p>(</span><span class=ow>not</span> <span class=n>is_reverse</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_chosen_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_chosen</span><span class=p>({</span><span class=s2>"items"</span><span class=p>:</span> <span class=n>items</span><span class=p>,</span> <span class=s2>"value"</span><span class=p>:</span> <span class=n>shown</span><span class=p>[</span><span class=mi>0</span><span class=p>]})</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"items: </span><span class=si>{</span><span class=n>shown</span><span class=si>}</span><span class=s2>  selected: </span><span class=si>{</span><span class=n>selection</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_is_reverse_click</span><span class=p>},</span> <span class=s2>"Reverse"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_is_reverse</span><span class=p>(</span><span class=ow>not</span> <span class=n>is_reverse</span><span class=p>)},</span> <span class=s2>"Reverse"</span>
-        <span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_chosen</span><span class=p>({</span><span class=s2>"items"</span><span class=p>:</span> <span class=n>items</span><span class=p>,</span> <span class=s2>"value"</span><span class=p>:</span> <span class=n>shown</span><span class=p>[</span><span class=mi>0</span><span class=p>]})},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_chosen_click</span><span class=p>},</span>
             <span class=s2>"Select"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -308,9 +351,12 @@
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>items</span><span class=p>,</span> <span class=n>set_items</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([</span><span class=s2>"a"</span><span class=p>,</span> <span class=s2>"b"</span><span class=p>,</span> <span class=s2>"c"</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_items_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_items</span><span class=p>([</span><span class=o>*</span><span class=n>items</span><span class=p>,</span> <span class=sa>f</span><span class=s2>"item </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>items</span><span class=p>)</span><span class=w> </span><span class=o>+</span><span class=w> </span><span class=mi>1</span><span class=si>}</span><span class=s2>"</span><span class=p>])</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_items</span><span class=p>([</span><span class=o>*</span><span class=n>items</span><span class=p>,</span> <span class=sa>f</span><span class=s2>"item </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>items</span><span class=p>)</span><span class=w> </span><span class=o>+</span><span class=w> </span><span class=mi>1</span><span class=si>}</span><span class=s2>"</span><span class=p>])},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_items_click</span><span class=p>},</span>
             <span class=s2>"Add item"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>list_box</span><span class=p>(</span><span class=n>items</span><span class=p>),</span>
@@ -342,17 +388,23 @@
 <span class=normal>22</span>
 <span class=normal>23</span>
 <span class=normal>24</span>
-<span class=normal>25</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>25</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>shipping_form</span><span class=p>():</span>
     <span class=n>shipping_city</span><span class=p>,</span> <span class=n>set_shipping_city</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
     <span class=n>billing_city</span><span class=p>,</span> <span class=n>set_billing_city</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_shipping_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
-        <span class=n>city</span> <span class=o>=</span> <span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_shipping_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>city</span> <span class=o>=</span> <span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span>
         <span class=n>set_shipping_city</span><span class=p>(</span><span class=n>city</span><span class=p>)</span>
         <span class=c1># Shared logic: just call the other setter. Handlers are ordinary</span>
         <span class=c1># functions; there is nothing to schedule and nothing to re-sync.</span>
         <span class=n>set_billing_city</span><span class=p>(</span><span class=n>city</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_billing_city_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_billing_city</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"shipping: </span><span class=si>{</span><span class=n>shipping_city</span><span class=w> </span><span class=ow>or</span><span class=w> </span><span class=s1>'(empty)'</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
@@ -363,12 +415,12 @@
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>billing_city</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_billing_city</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_billing_city_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
-</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: type in the shipping field and the billing readout changes with it, in one render, because both setters were called from one handler.</p> <p>Event handlers are ordinary functions. Call one from the other, extract the shared part into a plain function, or pass the other setter as a parameter. Whatever React's docs tell you here transfers unchanged, because none of it is rendering work.</p> <h3 id=sending-a-post-request>Sending a POST request<a class=headerlink href=#sending-a-post-request title="Permanent link">&para;</a></h3> <p>Submitting a form is an event, not a consequence of rendering. Do the work in the handler:</p> <div class="tabbed-set tabbed-alternate" data-tabs=7:2><input checked=checked id=__tabbed_7_1 name=__tabbed_7 type=radio><input id=__tabbed_7_2 name=__tabbed_7 type=radio><div class=tabbed-labels><label for=__tabbed_7_1>app.py</label><label for=__tabbed_7_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: type in the shipping field and the billing readout changes with it, in one render, because both setters were called from one handler.</p> <p>Event handlers are ordinary functions — ordinary <code class=highlight><span class=k>async</span> <span class=k>def</span></code>s, which is to say the coroutine ReactPy requires of anything in a handler slot. Call one from the other (with <code class=highlight><span class=k>await</span></code>, since it is a coroutine), extract the shared part into a plain function, or pass the other setter as a parameter. Whatever React's docs tell you here transfers unchanged, because none of it is rendering work.</p> <h3 id=sending-a-post-request>Sending a POST request<a class=headerlink href=#sending-a-post-request title="Permanent link">&para;</a></h3> <p>Submitting a form is an event, not a consequence of rendering. Do the work in the handler:</p> <div class="tabbed-set tabbed-alternate" data-tabs=7:2><input checked=checked id=__tabbed_7_1 name=__tabbed_7 type=radio><input id=__tabbed_7_2 name=__tabbed_7 type=radio><div class=tabbed-labels><label for=__tabbed_7_1>app.py</label><label for=__tabbed_7_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
 <span class=normal> 2</span>
 <span class=normal> 3</span>
 <span class=normal> 4</span>
@@ -397,7 +449,10 @@
 <span class=normal>27</span>
 <span class=normal>28</span>
 <span class=normal>29</span>
-<span class=normal>30</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>signup</span><span class=p>():</span>
     <span class=n>email</span><span class=p>,</span> <span class=n>set_email</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
     <span class=n>status</span><span class=p>,</span> <span class=n>set_status</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"idle"</span><span class=p>)</span>
@@ -413,6 +468,9 @@
         <span class=k>await</span> <span class=n>send_email</span><span class=p>(</span><span class=n>email</span><span class=p>)</span>
         <span class=n>set_status</span><span class=p>(</span><span class=sa>f</span><span class=s2>"sent to </span><span class=si>{</span><span class=n>email</span><span class=si>}</span><span class=s2>"</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_email_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_email</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=n>status</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>form</span><span class=p>(</span>
@@ -421,7 +479,7 @@
                 <span class=p>{</span>
                     <span class=s2>"value"</span><span class=p>:</span> <span class=n>email</span><span class=p>,</span>
                     <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"you@example.com"</span><span class=p>,</span>
-                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_email</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_email_change</span><span class=p>,</span>
                 <span class=p>}</span>
             <span class=p>),</span>
             <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"submit"</span><span class=p>},</span> <span class=s2>"Sign up"</span><span class=p>),</span>
@@ -457,14 +515,20 @@
 <span class=normal>27</span>
 <span class=normal>28</span>
 <span class=normal>29</span>
-<span class=normal>30</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>search_box</span><span class=p>(</span><span class=n>on_search</span><span class=p>):</span>
     <span class=n>query</span><span class=p>,</span> <span class=n>set_query</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_submit</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_submit</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>event</span><span class=o>.</span><span class=n>preventDefault</span><span class=p>()</span>
         <span class=c1># Not an Effect: the search happens because the user submitted.</span>
         <span class=n>on_search</span><span class=p>(</span><span class=n>query</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_query_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_query</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>form</span><span class=p>(</span>
         <span class=p>{</span><span class=s2>"onSubmit"</span><span class=p>:</span> <span class=n>handle_submit</span><span class=p>},</span>
@@ -472,7 +536,7 @@
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>query</span><span class=p>,</span>
                 <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"search"</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_query</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_query_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"submit"</span><span class=p>},</span> <span class=s2>"Search"</span><span class=p>),</span>
@@ -527,7 +591,13 @@
 <span class=normal>28</span>
 <span class=normal>29</span>
 <span class=normal>30</span>
-<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>clock_view</span><span class=p>():</span>
     <span class=c1># The value is owned by `clock`, not by this component, so it cannot be</span>
     <span class=c1># derived during render -- ReactPy has to be told when it changes.</span>
@@ -550,10 +620,16 @@
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>watching</span><span class=p>,</span> <span class=n>set_watching</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>clock</span><span class=o>.</span><span class=n>tick</span><span class=p>()</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_watching_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_watching</span><span class=p>(</span><span class=ow>not</span> <span class=n>watching</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>clock</span><span class=o>.</span><span class=n>tick</span><span class=p>()},</span> <span class=s2>"Tick"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span> <span class=s2>"Tick"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_watching</span><span class=p>(</span><span class=ow>not</span> <span class=n>watching</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_watching_click</span><span class=p>},</span>
             <span class=s2>"Stop watching"</span> <span class=k>if</span> <span class=n>watching</span> <span class=k>else</span> <span class=s2>"Watch"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=o>*</span><span class=p>([]</span> <span class=k>if</span> <span class=ow>not</span> <span class=n>watching</span> <span class=k>else</span> <span class=p>[</span><span class=n>clock_view</span><span class=p>()]),</span>
@@ -608,8 +684,7 @@
 <span class=normal>47</span>
 <span class=normal>48</span>
 <span class=normal>49</span>
-<span class=normal>50</span>
-<span class=normal>51</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>50</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>report_view</span><span class=p>(</span><span class=n>name</span><span class=p>):</span>
     <span class=c1># Store the response *with the name it belongs to*, so a render for a new</span>
     <span class=c1># report cannot display the old one's rows. The empty read is the</span>
@@ -647,13 +722,12 @@
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>name</span><span class=p>,</span> <span class=n>set_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"orders"</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_name_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_name</span><span class=p>(</span><span class=s2>"users"</span> <span class=k>if</span> <span class=n>name</span> <span class=o>==</span> <span class=s2>"orders"</span> <span class=k>else</span> <span class=s2>"orders"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_name</span><span class=p>(</span>
-                    <span class=s2>"users"</span> <span class=k>if</span> <span class=n>name</span> <span class=o>==</span> <span class=s2>"orders"</span> <span class=k>else</span> <span class=s2>"orders"</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_name_click</span><span class=p>},</span>
             <span class=s2>"Toggle report"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=c1># No `key` here on purpose: the derived read in report_view is what</span>
@@ -662,4 +736,4 @@
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
 </code></pre></div></td></tr></table></div> </div> </div> </div> <p>Verified: the Effect stores the raw response; the labels, the per-row formatting, and the total are computed during render. One request per report name (<code class=highlight><span class=p>[</span><span class=s1>'orders'</span><span class=p>,</span> <span class=s1>'users'</span><span class=p>]</span></code>), and no <code class=highlight><span class=n>rows</span></code> or <code class=highlight><span class=n>total</span></code> state variables that could fall out of step with the response.</p> <p>The example carries one more lesson in its state shape. It stores the response <strong>together with the name that produced it</strong> and derives the read:</p> <div class=highlight><pre><span></span><code><span class=n>raw</span> <span class=o>=</span> <span class=n>loaded</span><span class=p>[</span><span class=s2>"data"</span><span class=p>]</span> <span class=k>if</span> <span class=n>loaded</span><span class=p>[</span><span class=s2>"name"</span><span class=p>]</span> <span class=o>==</span> <span class=n>name</span> <span class=k>else</span> <span class=p>{}</span>
-</code></pre></div> <p>Storing the response alone looks fine and is wrong: switch from <code class=highlight><span class=n>orders</span></code> to <code class=highlight><span class=n>users</span></code> and the component re-renders immediately, before the new response arrives, so the client receives <code class=highlight><span class=n>users</span><span class=p>:</span> <span class=mi>55</span> <span class=n>total</span></code> above the <em>orders</em> rows — 55 being orders' total. Measured, and the derived read above is what fixes it, without remounting the component.</p> <p>The anti-pattern is a second Effect that watches the response and sets three more state variables from it. Each of those is a value you can calculate, and each adds a render in which the page is half-updated.</p> <p>Because ReactPy already runs on the server, there is usually a better option than fetching in the child at all: <strong>fetch in a parent during render, or at startup, and pass the result down as a prop.</strong> Then the child has no Effect and no loading state, and the response is shared rather than re-requested. Keep the Effect for data that depends on something only the connection knows, like <a href=../../reference/use-location/ ><code class=highlight><span class=n>use_location</span></code></a>.</p> <h2 id=how-to-tell-whether-an-effect-is-necessary>How to tell whether an Effect is necessary<a class=headerlink href=#how-to-tell-whether-an-effect-is-necessary title="Permanent link">&para;</a></h2> <table> <thead> <tr> <th>The Effect...</th> <th>Verdict</th> </tr> </thead> <tbody> <tr> <td>reads state or props and sets other state</td> <td>unnecessary — compute it during render</td> </tr> <tr> <td>caches a calculation</td> <td>unnecessary — <code class=highlight><span class=n>use_memo</span></code></td> </tr> <tr> <td>resets state when a prop changes</td> <td>unnecessary — pass a <code class=highlight><span class=n>key</span></code></td> </tr> <tr> <td>invalidates state when a prop changes</td> <td>unnecessary — derive the read from what it belonged to</td> </tr> <tr> <td>runs logic shared by two handlers</td> <td>unnecessary — call a function</td> </tr> <tr> <td>reacts to a user action</td> <td>unnecessary — put it in the event handler</td> </tr> <tr> <td>calls a parent's callback when a value changes</td> <td>unnecessary — call it from the handler</td> </tr> <tr> <td>subscribes to a queue, socket, or store</td> <td><strong>necessary</strong>, with a clean-up</td> </tr> <tr> <td>starts <code class=highlight><span class=k>async</span></code> work that outlives the render</td> <td><strong>necessary</strong>, with <code class=highlight><span class=n>use_async_effect</span></code></td> </tr> <tr> <td>starts per-connection work on mount</td> <td><strong>necessary</strong>, with <code class=highlight><span class=n>dependencies</span><span class=o>=</span><span class=p>[]</span></code></td> </tr> </tbody> </table> <p>If you cannot name what the Effect is synchronizing with, it is probably doing a render's job.</p> <div class="admonition warning"> <p class=admonition-title>Two failure modes that cost hours</p> <ul> <li><strong>An Effect that sets state it depends on loops silently.</strong> ReactPy has no loop detector. Measured: 86 renders and counting before the probe stopped.</li> <li><strong>Hooks do not work inside an effect body.</strong> <code class=highlight><span class=n>use_context</span></code>, <code class=highlight><span class=n>use_state</span></code>, and friends all raise <code class=highlight><span class=ne>RuntimeError</span><span class=p>:</span> <span class=n>No</span> <span class=n>life</span> <span class=n>cycle</span> <span class=n>hook</span> <span class=ow>is</span> <span class=n>active</span><span class=o>.</span> <span class=n>Are</span> <span class=n>you</span> <span class=n>rendering</span> <span class=ow>in</span> <span class=n>a</span> <span class=n>layout</span><span class=err>?</span></code> — effects run in their own task, with no hook on the stack. Read what you need <strong>during render</strong> and let the closure carry it in. The traceback appears only in the server log; the page just goes quiet.</li> </ul> </div> <h2 id=recap>Recap<a class=headerlink href=#recap title="Permanent link">&para;</a></h2> <ul> <li>An Effect runs after a render. If the work could happen <strong>during</strong> the render, it should.</li> <li>Values calculated from props or state are not state. Compute them; do not store and re-sync them. Measured: the Effect version costs twice the renders and ships a wrong first frame.</li> <li><code class=highlight><span class=n>use_memo</span></code> caches expensive calculations without adding a render — but it caches values, not component renders.</li> <li>Reset state with a <code class=highlight><span class=n>key</span></code>, not with an Effect.</li> <li>ReactPy cannot use React's render-phase setter trick: the stale patch reaches the client. Derive the value instead.</li> <li>Sharing logic between handlers, notifying a parent, and submitting a form are all handler work.</li> <li>Subscriptions and async streams are the real use for Effects — with a clean-up, always.</li> </ul> <h2 id=related>Related<a class=headerlink href=#related title="Permanent link">&para;</a></h2> <ul> <li><a href=../synchronizing-with-effects/ >Synchronizing with Effects</a> — how Effects work, and their four-way dependency table</li> <li><a href=../choosing-the-state-structure/ >Choosing the State Structure</a> — avoid redundant state in the first place</li> <li><a href=../preserving-and-resetting-state/ >Preserving and Resetting State</a> — resetting with <code class=highlight><span class=n>key</span></code></li> <li><a href=../../reference/use-memo/ >Use Memo</a> and <a href=../../reference/use-callback/ >Use Callback</a></li> <li><a href=../separating-events-from-effects/ >Separating Events from Effects</a> — the remaining case where reading fresh state matters</li> </ul> <aside class=md-source-file> <span class=md-source-file__fact> <span class=md-icon title="Last update"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg> </span> <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 10, 2026 00:12:33 UTC">October 10, 2026</span> </span> <span class=md-source-file__fact> <span class=md-icon title=Contributors> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4"/></svg> </span> <nav> <a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a> </nav> </span> </aside> <div class=md-source-date> <small> Authors: <span class="git-page-authors git-authors"><a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a></span> </small> </div> </article> </div> <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script> </div> <button type=button class="md-top md-icon" data-md-component=top hidden> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg> Back to top </button> </main> <footer class=md-footer> <div class="md-footer-meta md-typeset"> <div class="md-footer-meta__inner md-grid"> <div class=md-copyright> <div class=md-copyright__highlight> &copy;<div id=year> </div> <script> document.getElementById("year").innerHTML = new Date().getFullYear(); </script>Reactive Python and affiliates.<div class=legal-footer-right>This project has no affiliation to ReactJS or Meta Platforms, Inc.</div> </div> </div> </div> </div> </footer> </div> <div class=md-dialog data-md-component=dialog> <div class="md-dialog__inner md-typeset"></div> </div> <script id=__config type=application/json>{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script> <script src=../../assets/javascripts/bundle.d7400e89.min.js></script> <script src=../../assets/js/main.js></script> </body> </html>
+</code></pre></div> <p>Storing the response alone looks fine and is wrong: switch from <code class=highlight><span class=n>orders</span></code> to <code class=highlight><span class=n>users</span></code> and the component re-renders immediately, before the new response arrives, so the client receives <code class=highlight><span class=n>users</span><span class=p>:</span> <span class=mi>55</span> <span class=n>total</span></code> above the <em>orders</em> rows — 55 being orders' total. Measured, and the derived read above is what fixes it, without remounting the component.</p> <p>The anti-pattern is a second Effect that watches the response and sets three more state variables from it. Each of those is a value you can calculate, and each adds a render in which the page is half-updated.</p> <p>Because ReactPy already runs on the server, there is usually a better option than fetching in the child at all: <strong>fetch in a parent during render, or at startup, and pass the result down as a prop.</strong> Then the child has no Effect and no loading state, and the response is shared rather than re-requested. Keep the Effect for data that depends on something only the connection knows, like <a href=../../reference/use-location/ ><code class=highlight><span class=n>use_location</span></code></a>.</p> <h2 id=how-to-tell-whether-an-effect-is-necessary>How to tell whether an Effect is necessary<a class=headerlink href=#how-to-tell-whether-an-effect-is-necessary title="Permanent link">&para;</a></h2> <table> <thead> <tr> <th>The Effect...</th> <th>Verdict</th> </tr> </thead> <tbody> <tr> <td>reads state or props and sets other state</td> <td>unnecessary — compute it during render</td> </tr> <tr> <td>caches a calculation</td> <td>unnecessary — <code class=highlight><span class=n>use_memo</span></code></td> </tr> <tr> <td>resets state when a prop changes</td> <td>unnecessary — pass a <code class=highlight><span class=n>key</span></code></td> </tr> <tr> <td>invalidates state when a prop changes</td> <td>unnecessary — derive the read from what it belonged to</td> </tr> <tr> <td>runs logic shared by two handlers</td> <td>unnecessary — call a function</td> </tr> <tr> <td>reacts to a user action</td> <td>unnecessary — put it in the event handler</td> </tr> <tr> <td>calls a parent's callback when a value changes</td> <td>unnecessary — call it from the handler</td> </tr> <tr> <td>subscribes to a queue, socket, or store</td> <td><strong>necessary</strong>, with a clean-up</td> </tr> <tr> <td>starts <code class=highlight><span class=k>async</span></code> work that outlives the render</td> <td><strong>necessary</strong>, with <code class=highlight><span class=n>use_async_effect</span></code></td> </tr> <tr> <td>starts per-connection work on mount</td> <td><strong>necessary</strong>, with <code class=highlight><span class=n>dependencies</span><span class=o>=</span><span class=p>[]</span></code></td> </tr> </tbody> </table> <p>If you cannot name what the Effect is synchronizing with, it is probably doing a render's job.</p> <div class="admonition warning"> <p class=admonition-title>Two failure modes that cost hours</p> <ul> <li><strong>An Effect that sets state it depends on loops silently.</strong> ReactPy has no loop detector. Measured: 86 renders and counting before the probe stopped.</li> <li><strong>Hooks do not work inside an effect body.</strong> <code class=highlight><span class=n>use_context</span></code>, <code class=highlight><span class=n>use_state</span></code>, and friends all raise <code class=highlight><span class=ne>RuntimeError</span><span class=p>:</span> <span class=n>No</span> <span class=n>life</span> <span class=n>cycle</span> <span class=n>hook</span> <span class=ow>is</span> <span class=n>active</span><span class=o>.</span> <span class=n>Are</span> <span class=n>you</span> <span class=n>rendering</span> <span class=ow>in</span> <span class=n>a</span> <span class=n>layout</span><span class=err>?</span></code> — effects run in their own task, with no hook on the stack. Read what you need <strong>during render</strong> and let the closure carry it in. The traceback appears only in the server log; the page just goes quiet.</li> </ul> </div> <h2 id=recap>Recap<a class=headerlink href=#recap title="Permanent link">&para;</a></h2> <ul> <li>An Effect runs after a render. If the work could happen <strong>during</strong> the render, it should.</li> <li>Values calculated from props or state are not state. Compute them; do not store and re-sync them. Measured: the Effect version costs twice the renders and ships a wrong first frame.</li> <li><code class=highlight><span class=n>use_memo</span></code> caches expensive calculations without adding a render — but it caches values, not component renders.</li> <li>Reset state with a <code class=highlight><span class=n>key</span></code>, not with an Effect.</li> <li>ReactPy cannot use React's render-phase setter trick: the stale patch reaches the client. Derive the value instead.</li> <li>Sharing logic between handlers, notifying a parent, and submitting a form are all handler work.</li> <li>Subscriptions and async streams are the real use for Effects — with a clean-up, always.</li> </ul> <h2 id=related>Related<a class=headerlink href=#related title="Permanent link">&para;</a></h2> <ul> <li><a href=../synchronizing-with-effects/ >Synchronizing with Effects</a> — how Effects work, and their four-way dependency table</li> <li><a href=../choosing-the-state-structure/ >Choosing the State Structure</a> — avoid redundant state in the first place</li> <li><a href=../preserving-and-resetting-state/ >Preserving and Resetting State</a> — resetting with <code class=highlight><span class=n>key</span></code></li> <li><a href=../../reference/use-memo/ >Use Memo</a> and <a href=../../reference/use-callback/ >Use Callback</a></li> <li><a href=../separating-events-from-effects/ >Separating Events from Effects</a> — the remaining case where reading fresh state matters</li> </ul> <aside class=md-source-file> <span class=md-source-file__fact> <span class=md-icon title="Last update"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg> </span> <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 18, 2026 18:26:02 UTC">October 18, 2026</span> </span> <span class=md-source-file__fact> <span class=md-icon title=Contributors> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4"/></svg> </span> <nav> <a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a> </nav> </span> </aside> <div class=md-source-date> <small> Authors: <span class="git-page-authors git-authors"><a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a></span> </small> </div> </article> </div> <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script> </div> <button type=button class="md-top md-icon" data-md-component=top hidden> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg> Back to top </button> </main> <footer class=md-footer> <div class="md-footer-meta md-typeset"> <div class="md-footer-meta__inner md-grid"> <div class=md-copyright> <div class=md-copyright__highlight> &copy;<div id=year> </div> <script> document.getElementById("year").innerHTML = new Date().getFullYear(); </script>Reactive Python and affiliates.<div class=legal-footer-right>This project has no affiliation to ReactJS or Meta Platforms, Inc.</div> </div> </div> </div> </div> </footer> </div> <div class=md-dialog data-md-component=dialog> <div class="md-dialog__inner md-typeset"></div> </div> <script id=__config type=application/json>{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script> <script src=../../assets/javascripts/bundle.d7400e89.min.js></script> <script src=../../assets/js/main.js></script> </body> </html>

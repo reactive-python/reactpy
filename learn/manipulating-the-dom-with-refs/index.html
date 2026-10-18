@@ -205,9 +205,15 @@
 <span class=normal>12</span>
 <span class=normal>13</span>
 <span class=normal>14</span>
-<span class=normal>15</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>15</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>todo_list</span><span class=p>():</span>
     <span class=n>shown</span><span class=p>,</span> <span class=n>set_shown</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_shown_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_shown</span><span class=p>(</span><span class=ow>not</span> <span class=n>shown</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -216,7 +222,7 @@
             <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=s2>"Build something"</span><span class=p>),</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_shown</span><span class=p>(</span><span class=ow>not</span> <span class=n>shown</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_shown_click</span><span class=p>},</span>
             <span class=s2>"Hide"</span> <span class=k>if</span> <span class=n>shown</span> <span class=k>else</span> <span class=s2>"Show"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>

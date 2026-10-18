@@ -71,7 +71,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>theme</span><span class=p>,</span> <span class=n>set_theme</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"dark"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_theme</span><span class=p>(</span><span class=s2>"light"</span> <span class=k>if</span> <span class=n>theme</span> <span class=o>==</span> <span class=s2>"dark"</span> <span class=k>else</span> <span class=s2>"dark"</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -166,7 +166,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>theme</span><span class=p>,</span> <span class=n>set_theme</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"dark"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_theme</span><span class=p>(</span><span class=s2>"light"</span> <span class=k>if</span> <span class=n>theme</span> <span class=o>==</span> <span class=s2>"dark"</span> <span class=k>else</span> <span class=s2>"dark"</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -309,7 +309,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>section</span><span class=p>():</span>
     <span class=n>theme</span><span class=p>,</span> <span class=n>set_theme</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"dark"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_theme</span><span class=p>(</span><span class=s2>"light"</span> <span class=k>if</span> <span class=n>theme</span> <span class=o>==</span> <span class=s2>"dark"</span> <span class=k>else</span> <span class=s2>"dark"</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -369,17 +369,25 @@
 <span class=normal>42</span>
 <span class=normal>43</span>
 <span class=normal>44</span>
-<span class=normal>45</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>45</span>
+<span class=normal>46</span>
+<span class=normal>47</span>
+<span class=normal>48</span>
+<span class=normal>49</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>draft</span><span class=p>():</span>
     <span class=c1># State owned by the leaf. It is lost if this component is remounted.</span>
     <span class=n>text</span><span class=p>,</span> <span class=n>set_text</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
     <span class=n>body</span> <span class=o>=</span> <span class=n>use_ref</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
     <span class=n>body</span><span class=o>.</span><span class=n>current</span> <span class=o>+=</span> <span class=mi>1</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_text_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_text</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>text</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_text</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_text_change</span><span class=p>,</span>
                 <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"type something"</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
@@ -395,12 +403,12 @@
     <span class=n>wrap</span><span class=p>,</span> <span class=n>set_wrap</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
     <span class=n>theme</span><span class=p>,</span> <span class=n>set_theme</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"dark"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>toggle_wrap</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>toggle_wrap</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># Adding or removing the provider changes the shape of the tree, so the</span>
         <span class=c1># subtree below is unmounted and rebuilt: the draft text is lost.</span>
         <span class=n>set_wrap</span><span class=p>(</span><span class=ow>not</span> <span class=n>wrap</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>toggle_theme</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>toggle_theme</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># Changing only the value keeps the same tree: the draft survives.</span>
         <span class=n>set_theme</span><span class=p>(</span><span class=s2>"light"</span> <span class=k>if</span> <span class=n>theme</span> <span class=o>==</span> <span class=s2>"dark"</span> <span class=k>else</span> <span class=s2>"dark"</span><span class=p>)</span>
 
@@ -460,18 +468,26 @@
 <span class=normal>43</span>
 <span class=normal>44</span>
 <span class=normal>45</span>
-<span class=normal>46</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>46</span>
+<span class=normal>47</span>
+<span class=normal>48</span>
+<span class=normal>49</span>
+<span class=normal>50</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>draft</span><span class=p>():</span>
     <span class=c1># State owned by the leaf. It survives as long as this component keeps the</span>
     <span class=c1># same position in the tree.</span>
     <span class=n>text</span><span class=p>,</span> <span class=n>set_text</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
     <span class=n>body</span> <span class=o>=</span> <span class=n>use_ref</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
     <span class=n>body</span><span class=o>.</span><span class=n>current</span> <span class=o>+=</span> <span class=mi>1</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_text_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_text</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>text</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_text</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_text_change</span><span class=p>,</span>
                 <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"type something"</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
@@ -487,10 +503,10 @@
     <span class=n>provide</span><span class=p>,</span> <span class=n>set_provide</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
     <span class=n>theme</span><span class=p>,</span> <span class=n>set_theme</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"dark"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>toggle_wrap</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>toggle_wrap</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_provide</span><span class=p>(</span><span class=ow>not</span> <span class=n>provide</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>toggle_theme</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>toggle_theme</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_theme</span><span class=p>(</span><span class=s2>"light"</span> <span class=k>if</span> <span class=n>theme</span> <span class=o>==</span> <span class=s2>"dark"</span> <span class=k>else</span> <span class=s2>"dark"</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>

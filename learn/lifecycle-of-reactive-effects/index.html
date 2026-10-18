@@ -28,7 +28,10 @@
 <span class=normal>28</span>
 <span class=normal>29</span>
 <span class=normal>30</span>
-<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>room_view</span><span class=p>(</span><span class=n>room</span><span class=p>):</span>
     <span class=k>def</span><span class=w> </span><span class=nf>effect</span><span class=p>():</span>
         <span class=c1># Setup: ReactPy runs this when the Effect is created.</span>
@@ -51,9 +54,12 @@
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>room</span><span class=p>,</span> <span class=n>set_room</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"lobby"</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_room_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_room</span><span class=p>(</span><span class=s2>"dev"</span> <span class=k>if</span> <span class=n>room</span> <span class=o>==</span> <span class=s2>"lobby"</span> <span class=k>else</span> <span class=s2>"lobby"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_room</span><span class=p>(</span><span class=s2>"dev"</span> <span class=k>if</span> <span class=n>room</span> <span class=o>==</span> <span class=s2>"lobby"</span> <span class=k>else</span> <span class=s2>"lobby"</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_room_click</span><span class=p>},</span>
             <span class=sa>f</span><span class=s2>"Leave </span><span class=si>{</span><span class=n>room</span><span class=si>}</span><span class=s2>"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=s2>"(server log is printed on the server console)"</span><span class=p>),</span>
@@ -87,7 +93,13 @@
 <span class=normal>23</span>
 <span class=normal>24</span>
 <span class=normal>25</span>
-<span class=normal>26</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>():</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
     <span class=n>show_error</span><span class=p>,</span> <span class=n>set_show_error</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
@@ -103,11 +115,17 @@
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>effect</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>count</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_count_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_show_error_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_show_error</span><span class=p>(</span><span class=ow>not</span> <span class=n>show_error</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>count</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Add 1"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_count_click</span><span class=p>},</span> <span class=s2>"Add 1"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_show_error</span><span class=p>(</span><span class=ow>not</span> <span class=n>show_error</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_show_error_click</span><span class=p>},</span>
             <span class=sa>f</span><span class=s2>"Toggle error (currently </span><span class=si>{</span><span class=n>show_error</span><span class=si>}</span><span class=s2>)"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=s2>"Effect reports:"</span><span class=p>),</span>
@@ -140,7 +158,13 @@
 <span class=normal>24</span>
 <span class=normal>25</span>
 <span class=normal>26</span>
-<span class=normal>27</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>():</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
     <span class=n>label</span><span class=p>,</span> <span class=n>set_label</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"count"</span><span class=p>)</span>
@@ -160,10 +184,16 @@
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>effect</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>describe</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_count_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_label_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_label</span><span class=p>(</span><span class=n>label</span> <span class=o>+</span> <span class=s2>"!"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>label</span><span class=si>}</span><span class=s2>: </span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Add 1"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_label</span><span class=p>(</span><span class=n>label</span> <span class=o>+</span> <span class=s2>"!"</span><span class=p>)},</span> <span class=s2>"Rename"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_count_click</span><span class=p>},</span> <span class=s2>"Add 1"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_label_click</span><span class=p>},</span> <span class=s2>"Rename"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=s2>"Effect runs:"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>([</span><span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>({</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>index</span><span class=p>},</span> <span class=n>line</span><span class=p>)</span> <span class=k>for</span> <span class=n>index</span><span class=p>,</span> <span class=n>line</span> <span class=ow>in</span> <span class=nb>enumerate</span><span class=p>(</span><span class=n>runs</span><span class=p>)]),</span>
     <span class=p>)</span>
@@ -228,7 +258,9 @@
 <span class=normal>37</span>
 <span class=normal>38</span>
 <span class=normal>39</span>
-<span class=normal>40</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>40</span>
+<span class=normal>41</span>
+<span class=normal>42</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>feed</span><span class=p>(</span><span class=n>topic</span><span class=p>,</span> <span class=n>enabled</span><span class=p>):</span>
     <span class=k>def</span><span class=w> </span><span class=nf>effect</span><span class=p>():</span>
         <span class=k>if</span> <span class=ow>not</span> <span class=n>enabled</span><span class=p>:</span>
@@ -253,17 +285,19 @@
     <span class=n>topic</span><span class=p>,</span> <span class=n>set_topic</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"news"</span><span class=p>)</span>
     <span class=n>enabled</span><span class=p>,</span> <span class=n>set_enabled</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_enabled_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_enabled</span><span class=p>(</span><span class=ow>not</span> <span class=n>enabled</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_topic_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_topic</span><span class=p>(</span><span class=s2>"sports"</span> <span class=k>if</span> <span class=n>topic</span> <span class=o>==</span> <span class=s2>"news"</span> <span class=k>else</span> <span class=s2>"news"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_enabled</span><span class=p>(</span><span class=ow>not</span> <span class=n>enabled</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_enabled_click</span><span class=p>},</span>
             <span class=s2>"Stop"</span> <span class=k>if</span> <span class=n>enabled</span> <span class=k>else</span> <span class=s2>"Start"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_topic</span><span class=p>(</span>
-                    <span class=s2>"sports"</span> <span class=k>if</span> <span class=n>topic</span> <span class=o>==</span> <span class=s2>"news"</span> <span class=k>else</span> <span class=s2>"news"</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_topic_click</span><span class=p>},</span>
             <span class=s2>"Switch topic"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>feed</span><span class=p>(</span><span class=n>topic</span><span class=p>,</span> <span class=n>enabled</span><span class=p>),</span>
@@ -378,7 +412,10 @@ finished polling sports
 <span class=normal>17</span>
 <span class=normal>18</span>
 <span class=normal>19</span>
-<span class=normal>20</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>dashboard</span><span class=p>():</span>
     <span class=n>refreshes</span><span class=p>,</span> <span class=n>set_refreshes</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
@@ -394,9 +431,12 @@ finished polling sports
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>effect</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>refreshes</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_refreshes_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_refreshes</span><span class=p>(</span><span class=n>refreshes</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=s2>"Dashboard looks fine"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_refreshes</span><span class=p>(</span><span class=n>refreshes</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Refresh"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_refreshes_click</span><span class=p>},</span> <span class=s2>"Refresh"</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
 </code></pre></div></td></tr></table></div> </div> </div> </div> <p>Measured with a log handler attached to the <code class=highlight><span class=n>reactpy</span></code> logger: after mount, after three dependency changes, and after half a second idle, <strong>zero</strong> log records. The single <code class=highlight><span class=n>ERROR</span> <span class=n>Error</span> <span class=ow>in</span> <span class=n>effect</span></code> record appears only when the component unmounts — because <code>core/_life_cycle_hook.py</code>, <code>affect_component_will_unmount</code> is where the Effect tasks are finally awaited and their exceptions gathered (<code>core/hooks.py</code> parks each task on <code class=highlight><span class=n>stop</span><span class=o>.</span><span class=n>wait</span><span class=p>()</span></code>, so nobody looks at its result before then).</p> <p>Consequences to design around:</p> <ul> <li><strong>Never diagnose an Effect from the page.</strong> Read the server log, and read it <em>after</em> navigating away — that is when failures surface.</li> <li><strong>Assert the external world in tests.</strong> A render assertion passes happily while your Effect is throwing; assert that the connection happened, the row was written, the file exists.</li> <li> <p><strong>Catch inside the Effect and set state</strong> when a failure should be visible to the user. ReactPy will not do it for you:</p> <div class=highlight><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>effect</span><span class=p>():</span>

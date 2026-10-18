@@ -62,7 +62,9 @@
 <span class=normal>62</span>
 <span class=normal>63</span>
 <span class=normal>64</span>
-<span class=normal>65</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>INITIAL_TASKS</span> <span class=o>=</span> <span class=p>[</span>
+<span class=normal>65</span>
+<span class=normal>66</span>
+<span class=normal>67</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>INITIAL_TASKS</span> <span class=o>=</span> <span class=p>[</span>
     <span class=p>{</span><span class=s2>"id"</span><span class=p>:</span> <span class=mi>0</span><span class=p>,</span> <span class=s2>"text"</span><span class=p>:</span> <span class=s2>"Packing"</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=kc>False</span><span class=p>},</span>
     <span class=p>{</span><span class=s2>"id"</span><span class=p>:</span> <span class=mi>1</span><span class=p>,</span> <span class=s2>"text"</span><span class=p>:</span> <span class=s2>"Passport"</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=kc>True</span><span class=p>},</span>
     <span class=p>{</span><span class=s2>"id"</span><span class=p>:</span> <span class=mi>2</span><span class=p>,</span> <span class=s2>"text"</span><span class=p>:</span> <span class=s2>"Camera"</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=kc>False</span><span class=p>},</span>
@@ -74,17 +76,19 @@
     <span class=n>next_id</span><span class=p>,</span> <span class=n>set_next_id</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>3</span><span class=p>)</span>
     <span class=n>tasks</span><span class=p>,</span> <span class=n>set_tasks</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=n>INITIAL_TASKS</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_add_task</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add_task</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_tasks</span><span class=p>([</span><span class=o>*</span><span class=n>tasks</span><span class=p>,</span> <span class=p>{</span><span class=s2>"id"</span><span class=p>:</span> <span class=n>next_id</span><span class=p>,</span> <span class=s2>"text"</span><span class=p>:</span> <span class=s2>"New task"</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=kc>False</span><span class=p>}])</span>
         <span class=n>set_next_id</span><span class=p>(</span><span class=n>next_id</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>def</span><span class=w> </span><span class=nf>handle_toggle</span><span class=p>(</span><span class=n>task_id</span><span class=p>):</span>
-        <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
             <span class=n>set_tasks</span><span class=p>(</span>
                 <span class=p>[</span>
-                    <span class=p>{</span><span class=o>**</span><span class=n>task</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=ow>not</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]}</span>
-                    <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>task_id</span>
-                    <span class=k>else</span> <span class=n>task</span>
+                    <span class=p>(</span>
+                        <span class=p>{</span><span class=o>**</span><span class=n>task</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=ow>not</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]}</span>
+                        <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>task_id</span>
+                        <span class=k>else</span> <span class=n>task</span>
+                    <span class=p>)</span>
                     <span class=k>for</span> <span class=n>task</span> <span class=ow>in</span> <span class=n>tasks</span>
                 <span class=p>]</span>
             <span class=p>)</span>
@@ -92,7 +96,7 @@
         <span class=k>return</span> <span class=n>handle_click</span>
 
     <span class=k>def</span><span class=w> </span><span class=nf>handle_delete</span><span class=p>(</span><span class=n>task_id</span><span class=p>):</span>
-        <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
             <span class=n>set_tasks</span><span class=p>([</span><span class=n>task</span> <span class=k>for</span> <span class=n>task</span> <span class=ow>in</span> <span class=n>tasks</span> <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>!=</span> <span class=n>task_id</span><span class=p>])</span>
 
         <span class=k>return</span> <span class=n>handle_click</span>
@@ -107,9 +111,9 @@
                     <span class=n>html</span><span class=o>.</span><span class=n>span</span><span class=p>(</span>
                         <span class=p>{</span>
                             <span class=s2>"style"</span><span class=p>:</span> <span class=p>{</span>
-                                <span class=s2>"textDecoration"</span><span class=p>:</span> <span class=s2>"line-through"</span>
-                                <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]</span>
-                                <span class=k>else</span> <span class=s2>"none"</span>
+                                <span class=s2>"textDecoration"</span><span class=p>:</span> <span class=p>(</span>
+                                    <span class=s2>"line-through"</span> <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]</span> <span class=k>else</span> <span class=s2>"none"</span>
+                                <span class=p>)</span>
                             <span class=p>}</span>
                         <span class=p>},</span>
                         <span class=n>task</span><span class=p>[</span><span class=s2>"text"</span><span class=p>],</span>
@@ -214,7 +218,9 @@
 <span class=normal>84</span>
 <span class=normal>85</span>
 <span class=normal>86</span>
-<span class=normal>87</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>INITIAL_TASKS</span> <span class=o>=</span> <span class=p>[</span>
+<span class=normal>87</span>
+<span class=normal>88</span>
+<span class=normal>89</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>INITIAL_TASKS</span> <span class=o>=</span> <span class=p>[</span>
     <span class=p>{</span><span class=s2>"id"</span><span class=p>:</span> <span class=mi>0</span><span class=p>,</span> <span class=s2>"text"</span><span class=p>:</span> <span class=s2>"Packing"</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=kc>False</span><span class=p>},</span>
     <span class=p>{</span><span class=s2>"id"</span><span class=p>:</span> <span class=mi>1</span><span class=p>,</span> <span class=s2>"text"</span><span class=p>:</span> <span class=s2>"Passport"</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=kc>True</span><span class=p>},</span>
     <span class=p>{</span><span class=s2>"id"</span><span class=p>:</span> <span class=mi>2</span><span class=p>,</span> <span class=s2>"text"</span><span class=p>:</span> <span class=s2>"Camera"</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=kc>False</span><span class=p>},</span>
@@ -235,9 +241,11 @@
         <span class=k>return</span> <span class=p>{</span>
             <span class=o>**</span><span class=n>state</span><span class=p>,</span>
             <span class=s2>"tasks"</span><span class=p>:</span> <span class=p>[</span>
-                <span class=p>{</span><span class=o>**</span><span class=n>task</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=ow>not</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]}</span>
-                <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>action</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span>
-                <span class=k>else</span> <span class=n>task</span>
+                <span class=p>(</span>
+                    <span class=p>{</span><span class=o>**</span><span class=n>task</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=ow>not</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]}</span>
+                    <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>action</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span>
+                    <span class=k>else</span> <span class=n>task</span>
+                <span class=p>)</span>
                 <span class=k>for</span> <span class=n>task</span> <span class=ow>in</span> <span class=n>state</span><span class=p>[</span><span class=s2>"tasks"</span><span class=p>]</span>
             <span class=p>],</span>
         <span class=p>}</span>
@@ -253,17 +261,17 @@
 <span class=k>def</span><span class=w> </span><span class=nf>task_app</span><span class=p>():</span>
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>tasks_reducer</span><span class=p>,</span> <span class=p>{</span><span class=s2>"tasks"</span><span class=p>:</span> <span class=n>INITIAL_TASKS</span><span class=p>,</span> <span class=s2>"next_id"</span><span class=p>:</span> <span class=mi>3</span><span class=p>})</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_add_task</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add_task</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"added"</span><span class=p>})</span>
 
     <span class=k>def</span><span class=w> </span><span class=nf>handle_toggle</span><span class=p>(</span><span class=n>task_id</span><span class=p>):</span>
-        <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
             <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"toggled"</span><span class=p>,</span> <span class=s2>"id"</span><span class=p>:</span> <span class=n>task_id</span><span class=p>})</span>
 
         <span class=k>return</span> <span class=n>handle_click</span>
 
     <span class=k>def</span><span class=w> </span><span class=nf>handle_delete</span><span class=p>(</span><span class=n>task_id</span><span class=p>):</span>
-        <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
             <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"deleted"</span><span class=p>,</span> <span class=s2>"id"</span><span class=p>:</span> <span class=n>task_id</span><span class=p>})</span>
 
         <span class=k>return</span> <span class=n>handle_click</span>
@@ -278,9 +286,9 @@
                     <span class=n>html</span><span class=o>.</span><span class=n>span</span><span class=p>(</span>
                         <span class=p>{</span>
                             <span class=s2>"style"</span><span class=p>:</span> <span class=p>{</span>
-                                <span class=s2>"textDecoration"</span><span class=p>:</span> <span class=s2>"line-through"</span>
-                                <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]</span>
-                                <span class=k>else</span> <span class=s2>"none"</span>
+                                <span class=s2>"textDecoration"</span><span class=p>:</span> <span class=p>(</span>
+                                    <span class=s2>"line-through"</span> <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]</span> <span class=k>else</span> <span class=s2>"none"</span>
+                                <span class=p>)</span>
                             <span class=p>}</span>
                         <span class=p>},</span>
                         <span class=n>task</span><span class=p>[</span><span class=s2>"text"</span><span class=p>],</span>
@@ -351,10 +359,10 @@
     <span class=n>reducer</span> <span class=o>=</span> <span class=n>add_by_one</span> <span class=k>if</span> <span class=n>version</span> <span class=o>==</span> <span class=mi>1</span> <span class=k>else</span> <span class=n>add_by_hundred</span>
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>reducer</span><span class=p>,</span> <span class=p>{</span><span class=s2>"n"</span><span class=p>:</span> <span class=mi>0</span><span class=p>,</span> <span class=s2>"by"</span><span class=p>:</span> <span class=s2>"-"</span><span class=p>})</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"add"</span><span class=p>})</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_switch</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_switch</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_version</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -430,7 +438,7 @@
 
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>reducer</span><span class=p>,</span> <span class=n>INITIAL</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"add"</span><span class=p>})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -446,7 +454,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>price_control</span><span class=p>():</span>
     <span class=n>price</span><span class=p>,</span> <span class=n>set_price</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>10</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>raise_price</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>raise_price</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_price</span><span class=p>(</span><span class=mi>50</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -525,7 +533,7 @@
     <span class=c1># Defined at module level, so there is no enclosing scope to freeze.</span>
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>cart_reducer</span><span class=p>,</span> <span class=n>INITIAL</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=c1># The handler closes over the *current* price, and hands it over.</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"add"</span><span class=p>,</span> <span class=s2>"price"</span><span class=p>:</span> <span class=n>item_price</span><span class=p>})</span>
 
@@ -542,7 +550,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>price_control</span><span class=p>():</span>
     <span class=n>price</span><span class=p>,</span> <span class=n>set_price</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>10</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>raise_price</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>raise_price</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>set_price</span><span class=p>(</span><span class=mi>50</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -622,7 +630,7 @@ render
         <span class=n>mutating_reducer</span><span class=p>,</span> <span class=p>{</span><span class=s2>"tasks"</span><span class=p>:</span> <span class=p>[</span><span class=o>*</span><span class=n>INITIAL_TASKS</span><span class=p>],</span> <span class=s2>"next_id"</span><span class=p>:</span> <span class=mi>2</span><span class=p>}</span>
     <span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_add_task</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add_task</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"added"</span><span class=p>})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>

@@ -48,9 +48,7 @@
 <span class=normal>46</span>
 <span class=normal>47</span>
 <span class=normal>48</span>
-<span class=normal>49</span>
-<span class=normal>50</span>
-<span class=normal>51</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>ROSTER</span> <span class=o>=</span> <span class=p>[</span>
+<span class=normal>49</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>ROSTER</span> <span class=o>=</span> <span class=p>[</span>
     <span class=p>(</span><span class=s2>"ada"</span><span class=p>,</span> <span class=mi>91</span><span class=p>),</span>
     <span class=p>(</span><span class=s2>"grace"</span><span class=p>,</span> <span class=mi>120</span><span class=p>),</span>
     <span class=p>(</span><span class=s2>"alan"</span><span class=p>,</span> <span class=mi>77</span><span class=p>),</span>
@@ -79,25 +77,23 @@
 
     <span class=n>ranked</span> <span class=o>=</span> <span class=n>use_memo</span><span class=p>(</span><span class=n>rank</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>players</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_highlight_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_highlight</span><span class=p>(</span><span class=s2>"grace"</span> <span class=k>if</span> <span class=n>highlight</span> <span class=o>==</span> <span class=s2>"ada"</span> <span class=k>else</span> <span class=s2>"ada"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_players_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_players</span><span class=p>([{</span><span class=o>**</span><span class=n>player</span><span class=p>,</span> <span class=s2>"score"</span><span class=p>:</span> <span class=n>player</span><span class=p>[</span><span class=s2>"score"</span><span class=p>]</span> <span class=o>+</span> <span class=mi>1</span><span class=p>}</span> <span class=k>for</span> <span class=n>player</span> <span class=ow>in</span> <span class=n>players</span><span class=p>])</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=s2>"Leaderboard"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ol</span><span class=p>([</span><span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>player</span><span class=p>[</span><span class=s1>'name'</span><span class=p>]</span><span class=si>}</span><span class=s2>: </span><span class=si>{</span><span class=n>player</span><span class=p>[</span><span class=s1>'score'</span><span class=p>]</span><span class=si>}</span><span class=s2>"</span><span class=p>)</span> <span class=k>for</span> <span class=n>player</span> <span class=ow>in</span> <span class=n>ranked</span><span class=p>]),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"sorted </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>sorts</span><span class=p>)</span><span class=si>}</span><span class=s2> time(s)"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"highlighted: </span><span class=si>{</span><span class=n>highlight</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_highlight</span><span class=p>(</span>
-                    <span class=s2>"grace"</span> <span class=k>if</span> <span class=n>highlight</span> <span class=o>==</span> <span class=s2>"ada"</span> <span class=k>else</span> <span class=s2>"ada"</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_highlight_click</span><span class=p>},</span>
             <span class=s2>"Change highlight"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_players</span><span class=p>(</span>
-                    <span class=p>[{</span><span class=o>**</span><span class=n>player</span><span class=p>,</span> <span class=s2>"score"</span><span class=p>:</span> <span class=n>player</span><span class=p>[</span><span class=s2>"score"</span><span class=p>]</span> <span class=o>+</span> <span class=mi>1</span><span class=p>}</span> <span class=k>for</span> <span class=n>player</span> <span class=ow>in</span> <span class=n>players</span><span class=p>]</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_players_click</span><span class=p>},</span>
             <span class=s2>"Everyone scores +1"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -130,7 +126,13 @@
 <span class=normal>26</span>
 <span class=normal>27</span>
 <span class=normal>28</span>
-<span class=normal>29</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>counts</span> <span class=o>=</span> <span class=p>[]</span>  <span class=c1># demo-only: lets you *see* how often `count` actually runs</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>counts</span> <span class=o>=</span> <span class=p>[]</span>  <span class=c1># demo-only: lets you *see* how often `count` actually runs</span>
 
 
 <span class=nd>@component</span>
@@ -147,15 +149,21 @@
 
     <span class=n>total</span> <span class=o>=</span> <span class=n>use_memo</span><span class=p>(</span><span class=n>count</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_upper_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_upper</span><span class=p>(</span><span class=ow>not</span> <span class=n>upper</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_text_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_text</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>total</span><span class=si>}</span><span class=s2> words"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=n>text</span><span class=o>.</span><span class=n>upper</span><span class=p>()</span> <span class=k>if</span> <span class=n>upper</span> <span class=k>else</span> <span class=n>text</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"counted </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>counts</span><span class=p>)</span><span class=si>}</span><span class=s2> time(s)"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_upper</span><span class=p>(</span><span class=ow>not</span> <span class=n>upper</span><span class=p>)},</span> <span class=s2>"Toggle case"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_upper_click</span><span class=p>},</span> <span class=s2>"Toggle case"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>text</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_text</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_text_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -185,7 +193,13 @@
 <span class=normal>23</span>
 <span class=normal>24</span>
 <span class=normal>25</span>
-<span class=normal>26</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># Module-level, so it is *not* a closure variable and ReactPy cannot infer it</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># Module-level, so it is *not* a closure variable and ReactPy cannot infer it</span>
 <span class=c1># as a dependency.</span>
 <span class=n>config</span> <span class=o>=</span> <span class=p>{</span><span class=s2>"prefix"</span><span class=p>:</span> <span class=s2>"count"</span><span class=p>}</span>
 
@@ -205,11 +219,17 @@
         <span class=n>calls</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span>
         <span class=k>return</span> <span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>config</span><span class=p>[</span><span class=s1>'prefix'</span><span class=p>]</span><span class=si>}</span><span class=s2>: </span><span class=si>{</span><span class=n>count</span><span class=si>}{</span><span class=n>suffix</span><span class=si>}</span><span class=s2>"</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_count_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_suffix_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_suffix</span><span class=p>(</span><span class=s2>"!"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>use_memo</span><span class=p>(</span><span class=n>label</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=kc>None</span><span class=p>)),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"label() ran </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>calls</span><span class=p>)</span><span class=si>}</span><span class=s2> time(s)"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Count +1"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_suffix</span><span class=p>(</span><span class=s2>"!"</span><span class=p>)},</span> <span class=s2>"Set suffix"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_count_click</span><span class=p>},</span> <span class=s2>"Count +1"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_suffix_click</span><span class=p>},</span> <span class=s2>"Set suffix"</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
 </code></pre></div></td></tr></table></div> </div> </div> </div> <hr> <h2 id=troubleshooting>Troubleshooting<a class=headerlink href=#troubleshooting title="Permanent link">&para;</a></h2> <h3 id=my-memo-value-never-updates>My memo value never updates<a class=headerlink href=#my-memo-value-never-updates title="Permanent link">&para;</a></h3> <p>In order of likelihood:</p> <ul> <li><strong>You mutated a dependency instead of replacing it.</strong> Same object in, equal to itself, cached value kept. Build a new object.</li> <li><strong>You listed a ref as a dependency.</strong> Mutating <code class=highlight><span class=n>some_ref</span><span class=o>.</span><span class=n>current</span></code> never invalidates anything. Use state, or list the value itself.</li> <li><strong>The dependency compares equal to its replacement.</strong> Two <code class=highlight><span class=p>[</span><span class=mi>1</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>3</span><span class=p>]</span></code> lists are equal, so rebuilding one each render changes nothing.</li> <li><strong>You left the value out of the list.</strong> See the next item.</li> </ul> <h3 id=i-removed-a-dependency-and-nothing-complained>I removed a dependency and nothing complained<a class=headerlink href=#i-removed-a-dependency-and-nothing-complained title="Permanent link">&para;</a></h3> <p>Because nothing checks. The example below omits <code class=highlight><span class=n>tax_rate</span></code> from the list, and it <em>seems</em> to work: press <strong>Add 10% tax</strong> twice and the rate climbs while the total stays frozen at whatever a 0% rate produced. Then press <strong>Add an item</strong> — a real dependency — and the total jumps to <code class=highlight><span class=mf>12.00</span></code>, silently incorporating both tax increases you could see never happened.</p> <div class="tabbed-set tabbed-alternate" data-tabs=4:2><input checked=checked id=__tabbed_4_1 name=__tabbed_4 type=radio><input id=__tabbed_4_2 name=__tabbed_4 type=radio><div class=tabbed-labels><label for=__tabbed_4_1>app.py</label><label for=__tabbed_4_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
@@ -237,7 +257,11 @@
 <span class=normal>23</span>
 <span class=normal>24</span>
 <span class=normal>25</span>
-<span class=normal>26</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>totals</span><span class=p>():</span>
     <span class=n>items</span><span class=p>,</span> <span class=n>set_items</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([</span><span class=mi>1</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>3</span><span class=p>])</span>
     <span class=n>tax_rate</span><span class=p>,</span> <span class=n>set_tax_rate</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mf>0.0</span><span class=p>)</span>
@@ -252,14 +276,18 @@
 
     <span class=n>total</span> <span class=o>=</span> <span class=n>use_memo</span><span class=p>(</span><span class=n>grand_total</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>items</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_tax_rate_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_tax_rate</span><span class=p>(</span><span class=n>tax_rate</span> <span class=o>+</span> <span class=mf>0.1</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_items_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_items</span><span class=p>([</span><span class=o>*</span><span class=n>items</span><span class=p>,</span> <span class=nb>len</span><span class=p>(</span><span class=n>items</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>])</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"total: </span><span class=si>{</span><span class=n>total</span><span class=si>:</span><span class=s2>.2f</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"tax rate: </span><span class=si>{</span><span class=n>tax_rate</span><span class=si>:</span><span class=s2>.0%</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_tax_rate_click</span><span class=p>},</span> <span class=s2>"Add 10% tax"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_tax_rate</span><span class=p>(</span><span class=n>tax_rate</span> <span class=o>+</span> <span class=mf>0.1</span><span class=p>)},</span> <span class=s2>"Add 10% tax"</span>
-        <span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_items</span><span class=p>([</span><span class=o>*</span><span class=n>items</span><span class=p>,</span> <span class=nb>len</span><span class=p>(</span><span class=n>items</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>])},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_items_click</span><span class=p>},</span>
             <span class=s2>"Add an item"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>

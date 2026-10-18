@@ -67,7 +67,11 @@
 <span class=normal>24</span>
 <span class=normal>25</span>
 <span class=normal>26</span>
-<span class=normal>27</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>form</span><span class=p>(</span><span class=n>status</span><span class=o>=</span><span class=s2>"empty"</span><span class=p>):</span>
 <span class=w>    </span><span class=sd>"""A mock: the visual states are driven by a prop, not by real logic.</span>
 
@@ -89,9 +93,13 @@
                 <span class=p>{</span><span class=s2>"disabled"</span><span class=p>:</span> <span class=n>status</span> <span class=ow>in</span> <span class=p>{</span><span class=s2>"empty"</span><span class=p>,</span> <span class=s2>"submitting"</span><span class=p>}},</span>
                 <span class=s2>"Submit"</span><span class=p>,</span>
             <span class=p>),</span>
-            <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>({</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"Error"</span><span class=p>},</span> <span class=s2>"Good guess but a wrong answer. Try again!"</span><span class=p>)</span>
-            <span class=k>if</span> <span class=n>status</span> <span class=o>==</span> <span class=s2>"error"</span>
-            <span class=k>else</span> <span class=kc>None</span><span class=p>,</span>
+            <span class=p>(</span>
+                <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span>
+                    <span class=p>{</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"Error"</span><span class=p>},</span> <span class=s2>"Good guess but a wrong answer. Try again!"</span>
+                <span class=p>)</span>
+                <span class=k>if</span> <span class=n>status</span> <span class=o>==</span> <span class=s2>"error"</span>
+                <span class=k>else</span> <span class=kc>None</span>
+            <span class=p>),</span>
         <span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
@@ -174,7 +182,11 @@
 <span class=normal>39</span>
 <span class=normal>40</span>
 <span class=normal>41</span>
-<span class=normal>42</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>42</span>
+<span class=normal>43</span>
+<span class=normal>44</span>
+<span class=normal>45</span>
+<span class=normal>46</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>form</span><span class=p>(</span><span class=n>status</span><span class=o>=</span><span class=s2>"empty"</span><span class=p>):</span>
     <span class=k>if</span> <span class=n>status</span> <span class=o>==</span> <span class=s2>"success"</span><span class=p>:</span>
         <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=s2>"That's right!"</span><span class=p>)</span>
@@ -191,9 +203,13 @@
                 <span class=p>{</span><span class=s2>"disabled"</span><span class=p>:</span> <span class=n>status</span> <span class=ow>in</span> <span class=p>{</span><span class=s2>"empty"</span><span class=p>,</span> <span class=s2>"submitting"</span><span class=p>}},</span>
                 <span class=s2>"Submit"</span><span class=p>,</span>
             <span class=p>),</span>
-            <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>({</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"Error"</span><span class=p>},</span> <span class=s2>"Good guess but a wrong answer. Try again!"</span><span class=p>)</span>
-            <span class=k>if</span> <span class=n>status</span> <span class=o>==</span> <span class=s2>"error"</span>
-            <span class=k>else</span> <span class=kc>None</span><span class=p>,</span>
+            <span class=p>(</span>
+                <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span>
+                    <span class=p>{</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"Error"</span><span class=p>},</span> <span class=s2>"Good guess but a wrong answer. Try again!"</span>
+                <span class=p>)</span>
+                <span class=k>if</span> <span class=n>status</span> <span class=o>==</span> <span class=s2>"error"</span>
+                <span class=k>else</span> <span class=kc>None</span>
+            <span class=p>),</span>
         <span class=p>),</span>
     <span class=p>)</span>
 
@@ -341,8 +357,8 @@
         <span class=k>else</span><span class=p>:</span>
             <span class=n>set_status</span><span class=p>(</span><span class=s2>"success"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_textarea_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
-        <span class=n>set_answer</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>])</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_textarea_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_answer</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=s2>"City quiz"</span><span class=p>),</span>

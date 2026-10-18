@@ -14,14 +14,20 @@
 <span class=normal>14</span>
 <span class=normal>15</span>
 <span class=normal>16</span>
-<span class=normal>17</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>():</span>
     <span class=n>score</span><span class=p>,</span> <span class=n>set_score</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_score_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=p>{</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"counter"</span><span class=p>},</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>score</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Add one"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_score_click</span><span class=p>},</span> <span class=s2>"Add one"</span><span class=p>),</span>
     <span class=p>)</span>
 
 
@@ -99,20 +105,32 @@
 <span class=normal>28</span>
 <span class=normal>29</span>
 <span class=normal>30</span>
-<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>(</span><span class=n>is_fancy</span><span class=p>):</span>
     <span class=n>score</span><span class=p>,</span> <span class=n>set_score</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_score_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=p>{</span><span class=s2>"className"</span><span class=p>:</span> <span class=sa>f</span><span class=s2>"counter</span><span class=si>{</span><span class=s1>' fancy'</span><span class=w> </span><span class=k>if</span><span class=w> </span><span class=n>is_fancy</span><span class=w> </span><span class=k>else</span><span class=w> </span><span class=s1>''</span><span class=si>}</span><span class=s2>"</span><span class=p>},</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>score</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Add one"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_score_click</span><span class=p>},</span> <span class=s2>"Add one"</span><span class=p>),</span>
     <span class=p>)</span>
 
 
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>is_fancy</span><span class=p>,</span> <span class=n>set_is_fancy</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>False</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_is_fancy_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_is_fancy</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>checked</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=c1># Only one counter() is ever rendered at this position, and it is the</span>
@@ -124,7 +142,7 @@
                 <span class=p>{</span>
                     <span class=s2>"type"</span><span class=p>:</span> <span class=s2>"checkbox"</span><span class=p>,</span>
                     <span class=s2>"checked"</span><span class=p>:</span> <span class=n>is_fancy</span><span class=p>,</span>
-                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_is_fancy</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"checked"</span><span class=p>]),</span>
+                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_is_fancy_change</span><span class=p>,</span>
                 <span class=p>}</span>
             <span class=p>),</span>
             <span class=s2>"Use fancy styling"</span><span class=p>,</span>
@@ -196,20 +214,32 @@
 <span class=normal>28</span>
 <span class=normal>29</span>
 <span class=normal>30</span>
-<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>():</span>
     <span class=n>score</span><span class=p>,</span> <span class=n>set_score</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_score_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=p>{</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"counter"</span><span class=p>},</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>score</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Add one"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_score_click</span><span class=p>},</span> <span class=s2>"Add one"</span><span class=p>),</span>
     <span class=p>)</span>
 
 
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>is_paused</span><span class=p>,</span> <span class=n>set_is_paused</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>False</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_is_paused_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_is_paused</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>checked</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=c1># Switching between a counter() and an html.p() puts a *different* kind</span>
@@ -221,7 +251,7 @@
                 <span class=p>{</span>
                     <span class=s2>"type"</span><span class=p>:</span> <span class=s2>"checkbox"</span><span class=p>,</span>
                     <span class=s2>"checked"</span><span class=p>:</span> <span class=n>is_paused</span><span class=p>,</span>
-                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_is_paused</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"checked"</span><span class=p>]),</span>
+                    <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_is_paused_change</span><span class=p>,</span>
                 <span class=p>}</span>
             <span class=p>),</span>
             <span class=s2>"Take a break"</span><span class=p>,</span>
@@ -293,20 +323,32 @@
 <span class=normal>27</span>
 <span class=normal>28</span>
 <span class=normal>29</span>
-<span class=normal>30</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>(</span><span class=n>person</span><span class=p>):</span>
     <span class=n>score</span><span class=p>,</span> <span class=n>set_score</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_score_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=p>{</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"counter"</span><span class=p>},</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>person</span><span class=si>}</span><span class=s2>'s score: </span><span class=si>{</span><span class=n>score</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Add one"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_score_click</span><span class=p>},</span> <span class=s2>"Add one"</span><span class=p>),</span>
     <span class=p>)</span>
 
 
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>scoreboard</span><span class=p>():</span>
     <span class=n>is_player_a</span><span class=p>,</span> <span class=n>set_is_player_a</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_is_player_a_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_is_player_a</span><span class=p>(</span><span class=ow>not</span> <span class=n>is_player_a</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=c1># Two containers that always exist, so each player's counter has its</span>
@@ -319,7 +361,7 @@
         <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span><span class=n>counter</span><span class=p>(</span><span class=s2>"Taylor"</span><span class=p>)</span> <span class=k>if</span> <span class=n>is_player_a</span> <span class=k>else</span> <span class=kc>None</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span><span class=n>counter</span><span class=p>(</span><span class=s2>"Sarah"</span><span class=p>)</span> <span class=k>if</span> <span class=ow>not</span> <span class=n>is_player_a</span> <span class=k>else</span> <span class=kc>None</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_is_player_a</span><span class=p>(</span><span class=ow>not</span> <span class=n>is_player_a</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_is_player_a_click</span><span class=p>},</span>
             <span class=s2>"Next player!"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -387,14 +429,25 @@
 <span class=normal>25</span>
 <span class=normal>26</span>
 <span class=normal>27</span>
-<span class=normal>28</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>(</span><span class=n>person</span><span class=p>):</span>
     <span class=n>score</span><span class=p>,</span> <span class=n>set_score</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_score_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=p>{</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"counter"</span><span class=p>},</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>person</span><span class=si>}</span><span class=s2>'s score: </span><span class=si>{</span><span class=n>score</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_score</span><span class=p>(</span><span class=n>score</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Add one"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_score_click</span><span class=p>},</span> <span class=s2>"Add one"</span><span class=p>),</span>
     <span class=p>)</span>
 
 
@@ -402,16 +455,21 @@
 <span class=k>def</span><span class=w> </span><span class=nf>scoreboard</span><span class=p>():</span>
     <span class=n>is_player_a</span><span class=p>,</span> <span class=n>set_is_player_a</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_is_player_a_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_is_player_a</span><span class=p>(</span><span class=ow>not</span> <span class=n>is_player_a</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=c1># Both branches render counter() at the same position, so without a key</span>
         <span class=c1># ReactPy would treat them as the same component and carry the score</span>
         <span class=c1># from one player to the next. The key gives each player their own</span>
         <span class=c1># identity, so switching players resets the score.</span>
-        <span class=n>counter</span><span class=p>(</span><span class=s2>"Taylor"</span><span class=p>,</span> <span class=n>key</span><span class=o>=</span><span class=s2>"Taylor"</span><span class=p>)</span>
-        <span class=k>if</span> <span class=n>is_player_a</span>
-        <span class=k>else</span> <span class=n>counter</span><span class=p>(</span><span class=s2>"Sarah"</span><span class=p>,</span> <span class=n>key</span><span class=o>=</span><span class=s2>"Sarah"</span><span class=p>),</span>
+        <span class=p>(</span>
+            <span class=n>counter</span><span class=p>(</span><span class=s2>"Taylor"</span><span class=p>,</span> <span class=n>key</span><span class=o>=</span><span class=s2>"Taylor"</span><span class=p>)</span>
+            <span class=k>if</span> <span class=n>is_player_a</span>
+            <span class=k>else</span> <span class=n>counter</span><span class=p>(</span><span class=s2>"Sarah"</span><span class=p>,</span> <span class=n>key</span><span class=o>=</span><span class=s2>"Sarah"</span><span class=p>)</span>
+        <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_is_player_a</span><span class=p>(</span><span class=ow>not</span> <span class=n>is_player_a</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_is_player_a_click</span><span class=p>},</span>
             <span class=s2>"Next player!"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -492,20 +550,42 @@
 <span class=normal>39</span>
 <span class=normal>40</span>
 <span class=normal>41</span>
-<span class=normal>42</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>42</span>
+<span class=normal>43</span>
+<span class=normal>44</span>
+<span class=normal>45</span>
+<span class=normal>46</span>
+<span class=normal>47</span>
+<span class=normal>48</span>
+<span class=normal>49</span>
+<span class=normal>50</span>
+<span class=normal>51</span>
+<span class=normal>52</span>
+<span class=normal>53</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>chat</span><span class=p>(</span><span class=n>contact</span><span class=p>):</span>
     <span class=n>draft</span><span class=p>,</span> <span class=n>set_draft</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_draft_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_draft</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>section</span><span class=p>(</span>
         <span class=p>{</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"chat"</span><span class=p>},</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h3</span><span class=p>(</span><span class=sa>f</span><span class=s2>"To: </span><span class=si>{</span><span class=n>contact</span><span class=p>[</span><span class=s1>'name'</span><span class=p>]</span><span class=si>}</span><span class=s2> &lt;</span><span class=si>{</span><span class=n>contact</span><span class=p>[</span><span class=s1>'email'</span><span class=p>]</span><span class=si>}</span><span class=s2>&gt;"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>textarea</span><span class=p>({</span><span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"Write a message"</span><span class=p>,</span> <span class=s2>"value"</span><span class=p>:</span> <span class=n>draft</span><span class=p>}),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_draft</span><span class=p>(</span><span class=s2>""</span><span class=p>)},</span> <span class=s2>"Clear"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_draft_click</span><span class=p>},</span> <span class=s2>"Clear"</span><span class=p>),</span>
     <span class=p>)</span>
 
 
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>contact_list</span><span class=p>(</span><span class=n>selected_contact</span><span class=p>,</span> <span class=n>on_select</span><span class=p>):</span>
+    <span class=k>def</span><span class=w> </span><span class=nf>make_select</span><span class=p>(</span><span class=n>contact</span><span class=p>):</span>
+        <span class=c1># A factory, not a lambda: a handler must be a coroutine, and the</span>
+        <span class=c1># contact it acts on is bound by the closure.</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>choose</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+            <span class=n>on_select</span><span class=p>(</span><span class=n>contact</span><span class=p>)</span>
+
+        <span class=k>return</span> <span class=n>choose</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>section</span><span class=p>(</span>
         <span class=p>{</span><span class=s2>"className"</span><span class=p>:</span> <span class=s2>"contact-list"</span><span class=p>},</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>(</span>
@@ -513,7 +593,7 @@
                 <span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>(</span>
                     <span class=p>{</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>contact</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]},</span>
                     <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-                        <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>,</span> <span class=n>c</span><span class=o>=</span><span class=n>contact</span><span class=p>:</span> <span class=n>on_select</span><span class=p>(</span><span class=n>c</span><span class=p>)},</span>
+                        <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>make_select</span><span class=p>(</span><span class=n>contact</span><span class=p>)},</span>
                         <span class=n>contact</span><span class=p>[</span><span class=s2>"name"</span><span class=p>],</span>
                     <span class=p>),</span>
                 <span class=p>)</span>

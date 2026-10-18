@@ -59,12 +59,18 @@
 <span class=normal> 7</span>
 <span class=normal> 8</span>
 <span class=normal> 9</span>
-<span class=normal>10</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>10</span>
+<span class=normal>11</span>
+<span class=normal>12</span>
+<span class=normal>13</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_count_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Re-render"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_count_click</span><span class=p>},</span> <span class=s2>"Re-render"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"Rendered </span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2> times"</span><span class=p>),</span>
         <span class=c1># No `value`: the browser owns this field, so ReactPy never rewrites it.</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>({</span><span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"Type here and then click the button"</span><span class=p>}),</span>

@@ -27,7 +27,10 @@
 <span class=normal>16</span>
 <span class=normal>17</span>
 <span class=normal>18</span>
-<span class=normal>19</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>status_page</span><span class=p>():</span>
     <span class=n>visit_count</span><span class=p>,</span> <span class=n>set_visit_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
 
@@ -38,11 +41,14 @@
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>effect</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_visit_count_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_visit_count</span><span class=p>(</span><span class=n>visit_count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=s2>"Service status"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"This page has been opened </span><span class=si>{</span><span class=n>visit_count</span><span class=si>}</span><span class=s2> times."</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_visit_count</span><span class=p>(</span><span class=n>visit_count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_visit_count_click</span><span class=p>},</span>
             <span class=s2>"Re-check"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -67,7 +73,13 @@
 <span class=normal>17</span>
 <span class=normal>18</span>
 <span class=normal>19</span>
-<span class=normal>20</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span>
+<span class=normal>25</span>
+<span class=normal>26</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>():</span>
     <span class=n>count</span><span class=p>,</span> <span class=n>set_count</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
     <span class=n>label</span><span class=p>,</span> <span class=n>set_label</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"clicks"</span><span class=p>)</span>
@@ -81,10 +93,16 @@
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>effect</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_count_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_label_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_label</span><span class=p>(</span><span class=n>label</span> <span class=o>+</span> <span class=s2>"!"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=n>label</span><span class=si>}</span><span class=s2>: </span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_count</span><span class=p>(</span><span class=n>count</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Add 1"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_label</span><span class=p>(</span><span class=n>label</span> <span class=o>+</span> <span class=s2>"!"</span><span class=p>)},</span> <span class=s2>"Rename"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_count_click</span><span class=p>},</span> <span class=s2>"Add 1"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_label_click</span><span class=p>},</span> <span class=s2>"Rename"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>([</span><span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>({</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>index</span><span class=p>},</span> <span class=n>line</span><span class=p>)</span> <span class=k>for</span> <span class=n>index</span><span class=p>,</span> <span class=n>line</span> <span class=ow>in</span> <span class=nb>enumerate</span><span class=p>(</span><span class=n>runs</span><span class=p>)]),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
@@ -127,7 +145,13 @@
 <span class=normal>35</span>
 <span class=normal>36</span>
 <span class=normal>37</span>
-<span class=normal>38</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span>
+<span class=normal>41</span>
+<span class=normal>42</span>
+<span class=normal>43</span>
+<span class=normal>44</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>chat_room</span><span class=p>(</span><span class=n>room</span><span class=p>):</span>
     <span class=n>status</span><span class=p>,</span> <span class=n>set_status</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"offline"</span><span class=p>)</span>
 
@@ -154,13 +178,19 @@
     <span class=n>room</span><span class=p>,</span> <span class=n>set_room</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"lobby"</span><span class=p>)</span>
     <span class=n>connected</span><span class=p>,</span> <span class=n>set_connected</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_room_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_room</span><span class=p>(</span><span class=s2>"dev"</span> <span class=k>if</span> <span class=n>room</span> <span class=o>==</span> <span class=s2>"lobby"</span> <span class=k>else</span> <span class=s2>"lobby"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_connected_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_connected</span><span class=p>(</span><span class=ow>not</span> <span class=n>connected</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_room</span><span class=p>(</span><span class=s2>"dev"</span> <span class=k>if</span> <span class=n>room</span> <span class=o>==</span> <span class=s2>"lobby"</span> <span class=k>else</span> <span class=s2>"lobby"</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_room_click</span><span class=p>},</span>
             <span class=sa>f</span><span class=s2>"Switch room (now </span><span class=si>{</span><span class=n>room</span><span class=si>}</span><span class=s2>)"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_connected</span><span class=p>(</span><span class=ow>not</span> <span class=n>connected</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_connected_click</span><span class=p>},</span>
             <span class=s2>"Leave"</span> <span class=k>if</span> <span class=n>connected</span> <span class=k>else</span> <span class=s2>"Join"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=o>*</span><span class=p>([]</span> <span class=k>if</span> <span class=ow>not</span> <span class=n>connected</span> <span class=k>else</span> <span class=p>[</span><span class=n>chat_room</span><span class=p>(</span><span class=n>room</span><span class=p>)]),</span>
@@ -196,8 +226,7 @@
 <span class=normal>28</span>
 <span class=normal>29</span>
 <span class=normal>30</span>
-<span class=normal>31</span>
-<span class=normal>32</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>connection_monitor</span><span class=p>():</span>
     <span class=n>threshold</span><span class=p>,</span> <span class=n>set_threshold</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=n>HIGH_THRESHOLD</span><span class=p>)</span>
     <span class=n>alerts</span><span class=p>,</span> <span class=n>set_alerts</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([])</span>
@@ -217,14 +246,13 @@
     <span class=c1># Reading `threshold` directly here would freeze it at its first value.</span>
     <span class=n>use_async_effect</span><span class=p>(</span><span class=n>watch</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_threshold_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_threshold</span><span class=p>(</span><span class=n>LOW_THRESHOLD</span> <span class=k>if</span> <span class=n>threshold</span> <span class=o>==</span> <span class=n>HIGH_THRESHOLD</span> <span class=k>else</span> <span class=n>HIGH_THRESHOLD</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"threshold: </span><span class=si>{</span><span class=n>threshold</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_threshold</span><span class=p>(</span>
-                    <span class=n>LOW_THRESHOLD</span> <span class=k>if</span> <span class=n>threshold</span> <span class=o>==</span> <span class=n>HIGH_THRESHOLD</span> <span class=k>else</span> <span class=n>HIGH_THRESHOLD</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_threshold_click</span><span class=p>},</span>
             <span class=s2>"Toggle threshold"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"alerts: </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>alerts</span><span class=p>)</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
@@ -265,8 +293,7 @@
 <span class=normal>33</span>
 <span class=normal>34</span>
 <span class=normal>35</span>
-<span class=normal>36</span>
-<span class=normal>37</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>36</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>report</span><span class=p>(</span><span class=n>name</span><span class=p>):</span>
     <span class=n>page_size</span><span class=p>,</span> <span class=n>set_page_size</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"letter"</span><span class=p>)</span>
     <span class=c1># The engine lives in a ref: it has to survive renders, and changing it</span>
@@ -291,15 +318,14 @@
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>apply_page_size</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>page_size</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_page_size_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_page_size</span><span class=p>(</span><span class=s2>"a4"</span> <span class=k>if</span> <span class=n>page_size</span> <span class=o>==</span> <span class=s2>"letter"</span> <span class=k>else</span> <span class=s2>"letter"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=n>name</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"page size: </span><span class=si>{</span><span class=n>page_size</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_page_size</span><span class=p>(</span>
-                    <span class=s2>"a4"</span> <span class=k>if</span> <span class=n>page_size</span> <span class=o>==</span> <span class=s2>"letter"</span> <span class=k>else</span> <span class=s2>"letter"</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_page_size_click</span><span class=p>},</span>
             <span class=s2>"Toggle page size"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -345,7 +371,12 @@
 <span class=normal>39</span>
 <span class=normal>40</span>
 <span class=normal>41</span>
-<span class=normal>42</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>42</span>
+<span class=normal>43</span>
+<span class=normal>44</span>
+<span class=normal>45</span>
+<span class=normal>46</span>
+<span class=normal>47</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>scroll_log</span><span class=p>(</span><span class=n>topic</span><span class=p>):</span>
     <span class=n>lines</span><span class=p>,</span> <span class=n>set_lines</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([])</span>
 
@@ -371,20 +402,25 @@
     <span class=n>topic</span><span class=p>,</span> <span class=n>set_topic</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"news"</span><span class=p>)</span>
     <span class=n>watching</span><span class=p>,</span> <span class=n>set_watching</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=kc>True</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_topic_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_topic</span><span class=p>(</span><span class=s2>"sports"</span> <span class=k>if</span> <span class=n>topic</span> <span class=o>==</span> <span class=s2>"news"</span> <span class=k>else</span> <span class=s2>"news"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_watching_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_watching</span><span class=p>(</span><span class=ow>not</span> <span class=n>watching</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>ticker</span><span class=o>.</span><span class=n>publish</span><span class=p>(</span><span class=n>topic</span><span class=p>,</span> <span class=s2>"ping"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_topic</span><span class=p>(</span>
-                    <span class=s2>"sports"</span> <span class=k>if</span> <span class=n>topic</span> <span class=o>==</span> <span class=s2>"news"</span> <span class=k>else</span> <span class=s2>"news"</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_topic_click</span><span class=p>},</span>
             <span class=s2>"Switch topic"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_watching</span><span class=p>(</span><span class=ow>not</span> <span class=n>watching</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_watching_click</span><span class=p>},</span>
             <span class=s2>"Stop watching"</span> <span class=k>if</span> <span class=n>watching</span> <span class=k>else</span> <span class=s2>"Watch"</span><span class=p>,</span>
         <span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>ticker</span><span class=o>.</span><span class=n>publish</span><span class=p>(</span><span class=n>topic</span><span class=p>,</span> <span class=s2>"ping"</span><span class=p>)},</span> <span class=s2>"Ping"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span> <span class=s2>"Ping"</span><span class=p>),</span>
         <span class=o>*</span><span class=p>([]</span> <span class=k>if</span> <span class=ow>not</span> <span class=n>watching</span> <span class=k>else</span> <span class=p>[</span><span class=n>scroll_log</span><span class=p>(</span><span class=n>topic</span><span class=p>)]),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
@@ -418,8 +454,7 @@
 <span class=normal>28</span>
 <span class=normal>29</span>
 <span class=normal>30</span>
-<span class=normal>31</span>
-<span class=normal>32</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>report_view</span><span class=p>(</span><span class=n>name</span><span class=p>):</span>
     <span class=n>rows</span><span class=p>,</span> <span class=n>set_rows</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"nothing loaded yet"</span><span class=p>)</span>
 
@@ -440,13 +475,12 @@
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>name</span><span class=p>,</span> <span class=n>set_name</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"orders"</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_name_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_name</span><span class=p>(</span><span class=s2>"users"</span> <span class=k>if</span> <span class=n>name</span> <span class=o>==</span> <span class=s2>"orders"</span> <span class=k>else</span> <span class=s2>"orders"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_name</span><span class=p>(</span>
-                    <span class=s2>"users"</span> <span class=k>if</span> <span class=n>name</span> <span class=o>==</span> <span class=s2>"orders"</span> <span class=k>else</span> <span class=s2>"orders"</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_name_click</span><span class=p>},</span>
             <span class=s2>"Toggle report"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>report_view</span><span class=p>(</span><span class=n>name</span><span class=p>),</span>
@@ -489,7 +523,9 @@
 <span class=normal>35</span>
 <span class=normal>36</span>
 <span class=normal>37</span>
-<span class=normal>38</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>38</span>
+<span class=normal>39</span>
+<span class=normal>40</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>page_view</span><span class=p>(</span><span class=n>path</span><span class=p>):</span>
     <span class=n>draft</span><span class=p>,</span> <span class=n>set_draft</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
 
@@ -500,13 +536,16 @@
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>effect</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>path</span><span class=p>])</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_draft_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_draft</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h2</span><span class=p>(</span><span class=n>path</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"total reports sent: </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>analytics</span><span class=o>.</span><span class=n>sent</span><span class=p>)</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"placeholder"</span><span class=p>:</span> <span class=s2>"notes"</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_draft</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_draft_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
     <span class=p>)</span>
@@ -516,13 +555,12 @@
 <span class=k>def</span><span class=w> </span><span class=nf>app</span><span class=p>():</span>
     <span class=n>path</span><span class=p>,</span> <span class=n>set_path</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"/home"</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_path_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_path</span><span class=p>(</span><span class=s2>"/about"</span> <span class=k>if</span> <span class=n>path</span> <span class=o>==</span> <span class=s2>"/home"</span> <span class=k>else</span> <span class=s2>"/home"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_path</span><span class=p>(</span>
-                    <span class=s2>"/about"</span> <span class=k>if</span> <span class=n>path</span> <span class=o>==</span> <span class=s2>"/home"</span> <span class=k>else</span> <span class=s2>"/home"</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_path_click</span><span class=p>},</span>
             <span class=s2>"Navigate"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>page_view</span><span class=p>(</span><span class=n>path</span><span class=p>),</span>
@@ -531,7 +569,7 @@
 </code></pre></div></td></tr></table></div> </div> </div> </div> <p>The Effect depends on <code class=highlight><span class=n>path</span></code> only. Type into the field and the report count stays put; press <strong>Navigate</strong> and it climbs by one. Verified: two typing re-renders produced zero reports, two navigations produced two.</p> <h3 id=not-an-effect-initializing-the-application>Not an Effect: initializing the application<a class=headerlink href=#not-an-effect-initializing-the-application title="Permanent link">&para;</a></h3> <p>Logic that should run once for the whole process does not belong in a component at all — a component's Effect runs once <strong>per connection</strong>, and a server serves many:</p> <div class=highlight><pre><span></span><code><span class=c1># module level: runs when the module is imported, once</span>
 <span class=n>configure_logging</span><span class=p>()</span>
 <span class=n>POOL</span> <span class=o>=</span> <span class=n>create_pool</span><span class=p>()</span>
-</code></pre></div> <p>Put it in the ASGI app's startup, or in the module that builds the <code class=highlight><span class=n>ReactPy</span></code> executor. Reach for a <code class=highlight><span class=n>dependencies</span><span class=o>=</span><span class=p>[]</span></code> Effect only when the work is genuinely per-connection. Never guard it with <code class=highlight><span class=n>my_component</span><span class=o>.</span><span class=n>started</span> <span class=o>=</span> <span class=kc>True</span></code>: the function object is module-scope, so the first visitor flips the flag for everyone (<a href=../vdom-mutations/ >VDOM Mutations</a>).</p> <h3 id=not-an-effect-buying-a-product>Not an Effect: buying a product<a class=headerlink href=#not-an-effect-buying-a-product title="Permanent link">&para;</a></h3> <p>An Effect is not the place for something that must happen exactly once per user action, because you cannot promise how many times an Effect runs — dependencies change, components unmount, processes restart. Charging a card belongs in an event handler, where a click is the only trigger:</p> <div class=highlight><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>handle_buy</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+</code></pre></div> <p>Put it in the ASGI app's startup, or in the module that builds the <code class=highlight><span class=n>ReactPy</span></code> executor. Reach for a <code class=highlight><span class=n>dependencies</span><span class=o>=</span><span class=p>[]</span></code> Effect only when the work is genuinely per-connection. Never guard it with <code class=highlight><span class=n>my_component</span><span class=o>.</span><span class=n>started</span> <span class=o>=</span> <span class=kc>True</span></code>: the function object is module-scope, so the first visitor flips the flag for everyone (<a href=../vdom-mutations/ >VDOM Mutations</a>).</p> <h3 id=not-an-effect-buying-a-product>Not an Effect: buying a product<a class=headerlink href=#not-an-effect-buying-a-product title="Permanent link">&para;</a></h3> <p>An Effect is not the place for something that must happen exactly once per user action, because you cannot promise how many times an Effect runs — dependencies change, components unmount, processes restart. Charging a card belongs in an event handler, where a click is the only trigger:</p> <div class=highlight><pre><span></span><code><span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_buy</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
     <span class=n>set_status</span><span class=p>(</span><span class=s2>"buying..."</span><span class=p>)</span>
     <span class=n>order</span> <span class=o>=</span> <span class=n>place_order</span><span class=p>(</span><span class=n>sku</span><span class=p>)</span>
     <span class=n>set_status</span><span class=p>(</span><span class=sa>f</span><span class=s2>"ordered </span><span class=si>{</span><span class=n>order</span><span class=o>.</span><span class=n>id</span><span class=si>}</span><span class=s2>"</span><span class=p>)</span>
@@ -565,7 +603,13 @@
 <span class=normal>28</span>
 <span class=normal>29</span>
 <span class=normal>30</span>
-<span class=normal>31</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span>
+<span class=normal>34</span>
+<span class=normal>35</span>
+<span class=normal>36</span>
+<span class=normal>37</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>audit_log</span><span class=p>(</span><span class=n>room</span><span class=p>,</span> <span class=n>message</span><span class=p>):</span>
     <span class=n>entries</span><span class=p>,</span> <span class=n>set_entries</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([])</span>
 
@@ -587,14 +631,20 @@
     <span class=n>room</span><span class=p>,</span> <span class=n>set_room</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"lobby"</span><span class=p>)</span>
     <span class=n>message</span><span class=p>,</span> <span class=n>set_message</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>"hello"</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_message_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_message</span><span class=p>(</span><span class=n>message</span> <span class=o>+</span> <span class=s2>"!"</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_room_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_room</span><span class=p>(</span><span class=s2>"dev"</span> <span class=k>if</span> <span class=n>room</span> <span class=o>==</span> <span class=s2>"lobby"</span> <span class=k>else</span> <span class=s2>"lobby"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"room=</span><span class=si>{</span><span class=n>room</span><span class=si>}</span><span class=s2> message=</span><span class=si>{</span><span class=n>message</span><span class=si>!r}</span><span class=s2>"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_message</span><span class=p>(</span><span class=n>message</span> <span class=o>+</span> <span class=s2>"!"</span><span class=p>)},</span> <span class=s2>"Type !"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_message_click</span><span class=p>},</span> <span class=s2>"Type !"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_room</span><span class=p>(</span><span class=s2>"dev"</span> <span class=k>if</span> <span class=n>room</span> <span class=o>==</span> <span class=s2>"lobby"</span> <span class=k>else</span> <span class=s2>"lobby"</span><span class=p>)},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_room_click</span><span class=p>},</span>
             <span class=s2>"Switch room"</span><span class=p>,</span>
         <span class=p>),</span>
         <span class=n>audit_log</span><span class=p>(</span><span class=n>room</span><span class=p>,</span> <span class=n>message</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
-</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Press <strong>Type !</strong> twice, then <strong>Switch room</strong>. The log gains <code class=highlight><span class=n>lobby</span> <span class=o>&lt;-</span> <span class=n>hello</span></code> from the mount, and then <code class=highlight><span class=n>dev</span> <span class=o>&lt;-</span> <span class=n>hello</span><span class=err>!!</span></code> — the Effect that ran for <code class=highlight><span class=n>dev</span></code> was created by the render whose <code class=highlight><span class=n>message</span></code> was already <code class=highlight><span class=s1>'hello!!'</span></code>. Verified. No entry ever records an intermediate message, because only the renders whose dependencies changed created an Effect.</p> <p>This is why "my Effect reads an old value" has exactly two correct answers: add the value to the dependency list, or read it through a ref.</p> <h2 id=there-is-no-double-invoke-in-development>There is no double-invoke in development<a class=headerlink href=#there-is-no-double-invoke-in-development title="Permanent link">&para;</a></h2> <p>React remounts every component twice under Strict Mode to expose Effects that are not restart-safe. <strong>ReactPy has no Strict Mode and never calls your component twice</strong> — verified: a component that increments a counter in its own body counted exactly one render per render.</p> <p>Two consequences:</p> <ul> <li><strong>Nothing will find your unclean Effects for you.</strong> The restart-safety check React gives away for free is one you have to run yourself: render the component, unmount it, mount it again, and assert the external system is back where it started. A <code class=highlight><span class=n>reactpy</span><span class=o>.</span><span class=n>core</span><span class=o>.</span><span class=n>layout</span><span class=o>.</span><span class=n>Layout</span></code> in a pytest makes that a ten-line test.</li> <li><strong>Do not add artificial guards to compensate.</strong> <code class=highlight><span class=k>if</span> <span class=n>already_ran</span><span class=o>.</span><span class=n>current</span><span class=p>:</span> <span class=k>return</span></code> inside an Effect is evidence the dependency list is wrong, not a fix. Write the clean-up so a restart is free and the question stops mattering.</li> </ul> <h2 id=recap>Recap<a class=headerlink href=#recap title="Permanent link">&para;</a></h2> <ul> <li>An <strong>Effect</strong> is a side effect caused by rendering; an <strong>event handler</strong> is one caused by a user action. Prefer the handler.</li> <li>Effects are scheduled after the render completes, in the connection's own task. They do not block the render, and the browser may not have the update yet.</li> <li>They run on the <strong>server</strong>: no DOM, no <code class=highlight><span class=n>window</span></code>, no element to focus.</li> <li><code class=highlight><span class=n>use_effect</span></code> takes a plain <code class=highlight><span class=k>def</span></code>; <code class=highlight><span class=n>use_async_effect</span></code> takes a zero-argument <code class=highlight><span class=k>async</span> <span class=k>def</span></code>. One mismatch fails loudly, the other (the old <code class=highlight><span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>effect</span><span class=p>(</span><span class=n>stop</span><span class=p>)</span></code> shape) fails silently.</li> <li><code class=highlight><span class=n>dependencies</span></code> has four settings. Omitted means <strong>inferred from the closure</strong>, not "every render" — and the comparison is <code class=highlight><span class=o>==</span></code>, not identity.</li> <li>Return a <strong>clean-up</strong> function. It runs before the Effect's next run and on unmount. Skipping it leaks, and a leak in a long-lived server process leaks forever.</li> <li>A long-lived Effect sees a frozen snapshot; read current values from a ref, or restart the Effect by depending on them.</li> </ul> <h2 id=related>Related<a class=headerlink href=#related title="Permanent link">&para;</a></h2> <ul> <li><a href=../../reference/use-effect/ >Use Effect</a> and <a href=../../reference/use-async-effect/ >Use Async Effect</a> — full parameter reference</li> <li><a href=../you-might-not-need-an-effect/ >You Might Not Need an Effect</a> — the cases that belong back in the render</li> <li><a href=../separating-events-from-effects/ >Separating Events from Effects</a> — reading the newest state without restarting an Effect</li> <li><a href=../removing-effect-dependencies/ >Removing Effect Dependencies</a> — when to omit a dependency, safely</li> <li><a href=../referencing-values-with-refs/ >Referencing Values with Refs</a> — the box that survives renders</li> </ul> <aside class=md-source-file> <span class=md-source-file__fact> <span class=md-icon title="Last update"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg> </span> <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 9, 2026 23:25:38 UTC">October 9, 2026</span> </span> <span class=md-source-file__fact> <span class=md-icon title=Contributors> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4"/></svg> </span> <nav> <a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a> </nav> </span> </aside> <div class=md-source-date> <small> Authors: <span class="git-page-authors git-authors"><a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a></span> </small> </div> </article> </div> <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script> </div> <button type=button class="md-top md-icon" data-md-component=top hidden> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg> Back to top </button> </main> <footer class=md-footer> <div class="md-footer-meta md-typeset"> <div class="md-footer-meta__inner md-grid"> <div class=md-copyright> <div class=md-copyright__highlight> &copy;<div id=year> </div> <script> document.getElementById("year").innerHTML = new Date().getFullYear(); </script>Reactive Python and affiliates.<div class=legal-footer-right>This project has no affiliation to ReactJS or Meta Platforms, Inc.</div> </div> </div> </div> </div> </footer> </div> <div class=md-dialog data-md-component=dialog> <div class="md-dialog__inner md-typeset"></div> </div> <script id=__config type=application/json>{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script> <script src=../../assets/javascripts/bundle.d7400e89.min.js></script> <script src=../../assets/js/main.js></script> </body> </html>
+</code></pre></div></td></tr></table></div> </div> </div> </div> <p>Press <strong>Type !</strong> twice, then <strong>Switch room</strong>. The log gains <code class=highlight><span class=n>lobby</span> <span class=o>&lt;-</span> <span class=n>hello</span></code> from the mount, and then <code class=highlight><span class=n>dev</span> <span class=o>&lt;-</span> <span class=n>hello</span><span class=err>!!</span></code> — the Effect that ran for <code class=highlight><span class=n>dev</span></code> was created by the render whose <code class=highlight><span class=n>message</span></code> was already <code class=highlight><span class=s1>'hello!!'</span></code>. Verified. No entry ever records an intermediate message, because only the renders whose dependencies changed created an Effect.</p> <p>This is why "my Effect reads an old value" has exactly two correct answers: add the value to the dependency list, or read it through a ref.</p> <h2 id=there-is-no-double-invoke-in-development>There is no double-invoke in development<a class=headerlink href=#there-is-no-double-invoke-in-development title="Permanent link">&para;</a></h2> <p>React remounts every component twice under Strict Mode to expose Effects that are not restart-safe. <strong>ReactPy has no Strict Mode and never calls your component twice</strong> — verified: a component that increments a counter in its own body counted exactly one render per render.</p> <p>Two consequences:</p> <ul> <li><strong>Nothing will find your unclean Effects for you.</strong> The restart-safety check React gives away for free is one you have to run yourself: render the component, unmount it, mount it again, and assert the external system is back where it started. A <code class=highlight><span class=n>reactpy</span><span class=o>.</span><span class=n>core</span><span class=o>.</span><span class=n>layout</span><span class=o>.</span><span class=n>Layout</span></code> in a pytest makes that a ten-line test.</li> <li><strong>Do not add artificial guards to compensate.</strong> <code class=highlight><span class=k>if</span> <span class=n>already_ran</span><span class=o>.</span><span class=n>current</span><span class=p>:</span> <span class=k>return</span></code> inside an Effect is evidence the dependency list is wrong, not a fix. Write the clean-up so a restart is free and the question stops mattering.</li> </ul> <h2 id=recap>Recap<a class=headerlink href=#recap title="Permanent link">&para;</a></h2> <ul> <li>An <strong>Effect</strong> is a side effect caused by rendering; an <strong>event handler</strong> is one caused by a user action. Prefer the handler.</li> <li>Effects are scheduled after the render completes, in the connection's own task. They do not block the render, and the browser may not have the update yet.</li> <li>They run on the <strong>server</strong>: no DOM, no <code class=highlight><span class=n>window</span></code>, no element to focus.</li> <li><code class=highlight><span class=n>use_effect</span></code> takes a plain <code class=highlight><span class=k>def</span></code>; <code class=highlight><span class=n>use_async_effect</span></code> takes a zero-argument <code class=highlight><span class=k>async</span> <span class=k>def</span></code>. One mismatch fails loudly, the other (the old <code class=highlight><span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>effect</span><span class=p>(</span><span class=n>stop</span><span class=p>)</span></code> shape) fails silently.</li> <li><code class=highlight><span class=n>dependencies</span></code> has four settings. Omitted means <strong>inferred from the closure</strong>, not "every render" — and the comparison is <code class=highlight><span class=o>==</span></code>, not identity.</li> <li>Return a <strong>clean-up</strong> function. It runs before the Effect's next run and on unmount. Skipping it leaks, and a leak in a long-lived server process leaks forever.</li> <li>A long-lived Effect sees a frozen snapshot; read current values from a ref, or restart the Effect by depending on them.</li> </ul> <h2 id=related>Related<a class=headerlink href=#related title="Permanent link">&para;</a></h2> <ul> <li><a href=../../reference/use-effect/ >Use Effect</a> and <a href=../../reference/use-async-effect/ >Use Async Effect</a> — full parameter reference</li> <li><a href=../you-might-not-need-an-effect/ >You Might Not Need an Effect</a> — the cases that belong back in the render</li> <li><a href=../separating-events-from-effects/ >Separating Events from Effects</a> — reading the newest state without restarting an Effect</li> <li><a href=../removing-effect-dependencies/ >Removing Effect Dependencies</a> — when to omit a dependency, safely</li> <li><a href=../referencing-values-with-refs/ >Referencing Values with Refs</a> — the box that survives renders</li> </ul> <aside class=md-source-file> <span class=md-source-file__fact> <span class=md-icon title="Last update"> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg> </span> <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 18, 2026 18:26:02 UTC">October 18, 2026</span> </span> <span class=md-source-file__fact> <span class=md-icon title=Contributors> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4"/></svg> </span> <nav> <a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a> </nav> </span> </aside> <div class=md-source-date> <small> Authors: <span class="git-page-authors git-authors"><a href=mailto:16909269+archmonger@users.noreply.github.com>Archmonger</a></span> </small> </div> </article> </div> <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script> </div> <button type=button class="md-top md-icon" data-md-component=top hidden> <svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg> Back to top </button> </main> <footer class=md-footer> <div class="md-footer-meta md-typeset"> <div class="md-footer-meta__inner md-grid"> <div class=md-copyright> <div class=md-copyright__highlight> &copy;<div id=year> </div> <script> document.getElementById("year").innerHTML = new Date().getFullYear(); </script>Reactive Python and affiliates.<div class=legal-footer-right>This project has no affiliation to ReactJS or Meta Platforms, Inc.</div> </div> </div> </div> </div> </footer> </div> <div class=md-dialog data-md-component=dialog> <div class="md-dialog__inner md-typeset"></div> </div> <script id=__config type=application/json>{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.top", "content.code.copy", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script> <script src=../../assets/javascripts/bundle.d7400e89.min.js></script> <script src=../../assets/js/main.js></script> </body> </html>

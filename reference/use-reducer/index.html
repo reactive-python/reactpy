@@ -59,7 +59,11 @@
 <span class=normal>57</span>
 <span class=normal>58</span>
 <span class=normal>59</span>
-<span class=normal>60</span></pre></div></td><td class=code><div><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>todos_reducer</span><span class=p>(</span><span class=n>state</span><span class=p>,</span> <span class=n>action</span><span class=p>):</span>
+<span class=normal>60</span>
+<span class=normal>61</span>
+<span class=normal>62</span>
+<span class=normal>63</span>
+<span class=normal>64</span></pre></div></td><td class=code><div><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>todos_reducer</span><span class=p>(</span><span class=n>state</span><span class=p>,</span> <span class=n>action</span><span class=p>):</span>
 <span class=w>    </span><span class=sd>"""One function per behaviour, chosen by the action's type.</span>
 
 <span class=sd>    Defined at module level on purpose: ReactPy builds the dispatcher once, on</span>
@@ -89,6 +93,20 @@
 <span class=k>def</span><span class=w> </span><span class=nf>todo_list</span><span class=p>():</span>
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>todos_reducer</span><span class=p>,</span> <span class=p>{</span><span class=s2>"items"</span><span class=p>:</span> <span class=p>[]})</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"add"</span><span class=p>,</span> <span class=s2>"text"</span><span class=p>:</span> <span class=sa>f</span><span class=s2>"task </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>state</span><span class=p>[</span><span class=s1>'items'</span><span class=p>])</span><span class=w> </span><span class=o>+</span><span class=w> </span><span class=mi>1</span><span class=si>}</span><span class=s2>"</span><span class=p>})</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_clear_done_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"clear_done"</span><span class=p>})</span>
+
+    <span class=k>def</span><span class=w> </span><span class=nf>make_toggle</span><span class=p>(</span><span class=n>index</span><span class=p>):</span>
+        <span class=c1># A factory rather than a bound-argument lambda: a handler must be a</span>
+        <span class=c1># coroutine, and a coroutine cannot be a lambda.</span>
+        <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+            <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"toggle"</span><span class=p>,</span> <span class=s2>"index"</span><span class=p>:</span> <span class=n>index</span><span class=p>})</span>
+
+        <span class=k>return</span> <span class=n>toggle</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"To-do (</span><span class=si>{</span><span class=nb>sum</span><span class=p>(</span><span class=mi>1</span><span class=w> </span><span class=k>for</span><span class=w> </span><span class=n>i</span><span class=w> </span><span class=ow>in</span><span class=w> </span><span class=n>state</span><span class=p>[</span><span class=s1>'items'</span><span class=p>]</span><span class=w> </span><span class=k>if</span><span class=w> </span><span class=ow>not</span><span class=w> </span><span class=n>i</span><span class=p>[</span><span class=s1>'done'</span><span class=p>])</span><span class=si>}</span><span class=s2> left)"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>ul</span><span class=p>(</span>
@@ -96,11 +114,7 @@
                 <span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>(</span>
                     <span class=p>{</span><span class=s2>"key"</span><span class=p>:</span> <span class=n>i</span><span class=p>},</span>
                     <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-                        <span class=p>{</span>
-                            <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>,</span> <span class=n>i</span><span class=o>=</span><span class=n>i</span><span class=p>:</span> <span class=n>dispatch</span><span class=p>(</span>
-                                <span class=p>{</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"toggle"</span><span class=p>,</span> <span class=s2>"index"</span><span class=p>:</span> <span class=n>i</span><span class=p>}</span>
-                            <span class=p>)</span>
-                        <span class=p>},</span>
+                        <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>make_toggle</span><span class=p>(</span><span class=n>i</span><span class=p>)},</span>
                         <span class=n>state</span><span class=p>[</span><span class=s2>"items"</span><span class=p>][</span><span class=n>i</span><span class=p>][</span><span class=s2>"text"</span><span class=p>],</span>
                     <span class=p>),</span>
                 <span class=p>)</span>
@@ -108,16 +122,10 @@
             <span class=p>]</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>dispatch</span><span class=p>(</span>
-                    <span class=p>{</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"add"</span><span class=p>,</span> <span class=s2>"text"</span><span class=p>:</span> <span class=sa>f</span><span class=s2>"task </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>state</span><span class=p>[</span><span class=s1>'items'</span><span class=p>])</span><span class=w> </span><span class=o>+</span><span class=w> </span><span class=mi>1</span><span class=si>}</span><span class=s2>"</span><span class=p>}</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_add_click</span><span class=p>},</span>
             <span class=s2>"Add task"</span><span class=p>,</span>
         <span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"clear_done"</span><span class=p>})},</span> <span class=s2>"Clear done"</span>
-        <span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_clear_done_click</span><span class=p>},</span> <span class=s2>"Clear done"</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
 </code></pre></div></td></tr></table></div> </div> </div> </div> <p>Three things to notice in <code class=highlight><span class=n>todos_reducer</span></code>. It is at module level, so the closure trap above never arises. Every branch builds a new dict with <code class=highlight><span class=p>{</span><span class=o>**</span><span class=n>state</span><span class=p>,</span> <span class=o>...</span><span class=p>}</span></code> — none of them mutate. And the fallback <code class=highlight><span class=k>return</span> <span class=n>state</span></code> makes an unhandled action a deliberate no-op rather than a crash.</p> <h3 id=the-reducer-must-not-mutate>The reducer must not mutate<a class=headerlink href=#the-reducer-must-not-mutate title="Permanent link">&para;</a></h3> <p>This is the failure mode most likely to cost you an afternoon, and it is silent. A reducer that modifies <code class=highlight><span class=n>state</span></code> and returns it hands back the very object ReactPy already holds; the comparison finds them equal and schedules nothing. No error, no warning, nothing in the console — the button just stops working while your data quietly changes underneath.</p> <div class="tabbed-set tabbed-alternate" data-tabs=2:2><input checked=checked id=__tabbed_2_1 name=__tabbed_2 type=radio><input id=__tabbed_2_2 name=__tabbed_2 type=radio><div class=tabbed-labels><label for=__tabbed_2_1>app.py</label><label for=__tabbed_2_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
@@ -135,7 +143,11 @@
 <span class=normal>13</span>
 <span class=normal>14</span>
 <span class=normal>15</span>
-<span class=normal>16</span></pre></div></td><td class=code><div><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>counter_reducer</span><span class=p>(</span><span class=n>state</span><span class=p>,</span> <span class=n>action</span><span class=p>):</span>
+<span class=normal>16</span>
+<span class=normal>17</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span></pre></div></td><td class=code><div><pre><span></span><code><span class=k>def</span><span class=w> </span><span class=nf>counter_reducer</span><span class=p>(</span><span class=n>state</span><span class=p>,</span> <span class=n>action</span><span class=p>):</span>
     <span class=c1># Always return a NEW object. `use_reducer` is built on `use_state`, which</span>
     <span class=c1># compares what you return against what it already holds and schedules no</span>
     <span class=c1># render when the two are equal. Mutating `state` here and returning it</span>
@@ -147,9 +159,13 @@
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>counter</span><span class=p>():</span>
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>counter_reducer</span><span class=p>,</span> <span class=p>{</span><span class=s2>"count"</span><span class=p>:</span> <span class=mi>0</span><span class=p>})</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"inc"</span><span class=p>})</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=n>state</span><span class=p>[</span><span class=s2>"count"</span><span class=p>]),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"inc"</span><span class=p>})},</span> <span class=s2>"Add 1"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span> <span class=s2>"Add 1"</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
 </code></pre></div></td></tr></table></div> </div> </div> </div> <p>Return <code class=highlight><span class=p>{</span><span class=o>**</span><span class=n>state</span><span class=p>,</span> <span class=s2>"count"</span><span class=p>:</span> <span class=n>state</span><span class=p>[</span><span class=s2>"count"</span><span class=p>]</span> <span class=o>+</span> <span class=mi>1</span><span class=p>}</span></code>, not <code class=highlight><span class=n>state</span><span class=p>[</span><span class=s2>"count"</span><span class=p>]</span> <span class=o>+=</span> <span class=mi>1</span><span class=p>;</span> <span class=k>return</span> <span class=n>state</span></code>. The same applies one level down: <code class=highlight><span class=p>{</span><span class=o>**</span><span class=n>state</span><span class=p>,</span> <span class=s2>"items"</span><span class=p>:</span> <span class=n>state</span><span class=p>[</span><span class=s2>"items"</span><span class=p>]</span> <span class=o>+</span> <span class=p>[</span><span class=n>new</span><span class=p>]}</span></code>, never <code class=highlight><span class=n>state</span><span class=p>[</span><span class=s2>"items"</span><span class=p>]</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>new</span><span class=p>)</span></code>. See <a href=../../learn/updating-objects-in-state/ >Updating Objects in State</a> and <a href=../../learn/updating-arrays-in-state/ >Updating Arrays in State</a>.</p> <h3 id=the-reducer-never-changes>The reducer never changes<a class=headerlink href=#the-reducer-never-changes title="Permanent link">&para;</a></h3> <p>Because the first reducer is the only one that ever runs, a reducer that closes over component state reads a value frozen at the first render — permanently, with no warning.</p> <p>Run this, press <strong>Add step</strong> twice, then <strong>Bump step</strong>, then <strong>Add step</strong> again:</p> <div class="tabbed-set tabbed-alternate" data-tabs=3:2><input checked=checked id=__tabbed_3_1 name=__tabbed_3 type=radio><input id=__tabbed_3_2 name=__tabbed_3 type=radio><div class=tabbed-labels><label for=__tabbed_3_1>app.py</label><label for=__tabbed_3_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
@@ -169,7 +185,13 @@
 <span class=normal>15</span>
 <span class=normal>16</span>
 <span class=normal>17</span>
-<span class=normal>18</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>18</span>
+<span class=normal>19</span>
+<span class=normal>20</span>
+<span class=normal>21</span>
+<span class=normal>22</span>
+<span class=normal>23</span>
+<span class=normal>24</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>stepper</span><span class=p>():</span>
     <span class=n>step</span><span class=p>,</span> <span class=n>set_step</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span>
 
@@ -181,11 +203,17 @@
 
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>reducer</span><span class=p>,</span> <span class=p>{</span><span class=s2>"total"</span><span class=p>:</span> <span class=mi>0</span><span class=p>})</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"add"</span><span class=p>})</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_step_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_step</span><span class=p>(</span><span class=n>step</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"total: </span><span class=si>{</span><span class=n>state</span><span class=p>[</span><span class=s1>'total'</span><span class=p>]</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"step: </span><span class=si>{</span><span class=n>step</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"add"</span><span class=p>})},</span> <span class=s2>"Add step"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_step</span><span class=p>(</span><span class=n>step</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Bump step"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span> <span class=s2>"Add step"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_step_click</span><span class=p>},</span> <span class=s2>"Bump step"</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal>1</span></pre></div></td><td class=code><div><pre><span></span><code><span class=c1># TODO</span>
 </code></pre></div></td></tr></table></div> </div> </div> </div> <p><code class=highlight><span class=n>step</span></code> goes to 2 on screen, but the total keeps rising by 1. The reducer still holds the <code class=highlight><span class=n>step</span></code> from the render that created it. Two ways out: keep the reducer at module level and put <code class=highlight><span class=n>step</span></code> in the state, or send it in the action — <code class=highlight><span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"add"</span><span class=p>,</span> <span class=s2>"amount"</span><span class=p>:</span> <span class=n>step</span><span class=p>})</span></code>.</p> <h3 id=avoiding-recreating-the-initial-state>Avoiding recreating the initial state<a class=headerlink href=#avoiding-recreating-the-initial-state title="Permanent link">&para;</a></h3> <p>Pass a function and ReactPy calls it once; pass a call and it runs on every render, with every result but the first discarded. Measured across four renders: 1 call versus 4. The counter on screen reports the total, and it stays at 1 no matter what you press.</p> <div class="tabbed-set tabbed-alternate" data-tabs=4:2><input checked=checked id=__tabbed_4_1 name=__tabbed_4 type=radio><input id=__tabbed_4_2 name=__tabbed_4 type=radio><div class=tabbed-labels><label for=__tabbed_4_1>app.py</label><label for=__tabbed_4_2><span class=twemoji><svg xmlns=http://www.w3.org/2000/svg viewbox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg></span> Run</label></div> <div class=tabbed-content> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
@@ -221,8 +249,7 @@
 <span class=normal>31</span>
 <span class=normal>32</span>
 <span class=normal>33</span>
-<span class=normal>34</span>
-<span class=normal>35</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>loads</span> <span class=o>=</span> <span class=p>[]</span>  <span class=c1># demo-only: shows how often the initializer actually runs</span>
+<span class=normal>34</span></pre></div></td><td class=code><div><pre><span></span><code><span class=n>loads</span> <span class=o>=</span> <span class=p>[]</span>  <span class=c1># demo-only: shows how often the initializer actually runs</span>
 
 
 <span class=k>def</span><span class=w> </span><span class=nf>load_config</span><span class=p>():</span>
@@ -244,16 +271,15 @@
     <span class=c1># render and throw every result but the first away.</span>
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>reducer</span><span class=p>,</span> <span class=n>load_config</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"select"</span><span class=p>,</span> <span class=s2>"name"</span><span class=p>:</span> <span class=n>state</span><span class=p>[</span><span class=s2>"rows"</span><span class=p>][</span><span class=mi>0</span><span class=p>][</span><span class=s2>"name"</span><span class=p>]})</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>state</span><span class=p>[</span><span class=s1>'rows'</span><span class=p>])</span><span class=si>}</span><span class=s2> rows"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"selected: </span><span class=si>{</span><span class=n>state</span><span class=p>[</span><span class=s1>'selected'</span><span class=p>]</span><span class=w> </span><span class=ow>or</span><span class=w> </span><span class=s1>'-'</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"initializer ran </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>loads</span><span class=p>)</span><span class=si>}</span><span class=s2> time(s)"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>(</span>
-            <span class=p>{</span>
-                <span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>dispatch</span><span class=p>(</span>
-                    <span class=p>{</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"select"</span><span class=p>,</span> <span class=s2>"name"</span><span class=p>:</span> <span class=n>state</span><span class=p>[</span><span class=s2>"rows"</span><span class=p>][</span><span class=mi>0</span><span class=p>][</span><span class=s2>"name"</span><span class=p>]}</span>
-                <span class=p>)</span>
-            <span class=p>},</span>
+            <span class=p>{</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span>
             <span class=s2>"Select first"</span><span class=p>,</span>
         <span class=p>),</span>
     <span class=p>)</span>

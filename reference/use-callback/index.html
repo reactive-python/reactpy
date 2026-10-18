@@ -25,7 +25,13 @@
 <span class=normal>23</span>
 <span class=normal>24</span>
 <span class=normal>25</span>
-<span class=normal>26</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>26</span>
+<span class=normal>27</span>
+<span class=normal>28</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>listener</span><span class=p>():</span>
     <span class=n>renders</span><span class=p>,</span> <span class=n>set_renders</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
     <span class=n>heard</span><span class=p>,</span> <span class=n>set_heard</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span>
@@ -44,12 +50,18 @@
 
     <span class=n>use_effect</span><span class=p>(</span><span class=n>subscribe</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=kc>None</span><span class=p>)</span>
 
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_renders_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_renders</span><span class=p>(</span><span class=n>renders</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_click</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>bus</span><span class=o>.</span><span class=n>publish</span><span class=p>(</span><span class=s2>"ping"</span><span class=p>)</span>
+
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"renders: </span><span class=si>{</span><span class=n>renders</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"handlers registered: </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>bus</span><span class=o>.</span><span class=n>handlers</span><span class=p>)</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>p</span><span class=p>(</span><span class=sa>f</span><span class=s2>"this component heard: </span><span class=si>{</span><span class=n>heard</span><span class=si>}</span><span class=s2>"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_renders</span><span class=p>(</span><span class=n>renders</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)},</span> <span class=s2>"Re-render"</span><span class=p>),</span>
-        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>bus</span><span class=o>.</span><span class=n>publish</span><span class=p>(</span><span class=s2>"ping"</span><span class=p>)},</span> <span class=s2>"Publish"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_renders_click</span><span class=p>},</span> <span class=s2>"Re-render"</span><span class=p>),</span>
+        <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>handle_click</span><span class=p>},</span> <span class=s2>"Publish"</span><span class=p>),</span>
     <span class=p>)</span>
 </code></pre></div></td></tr></table></div> </div> <div class=tabbed-block> <div class=highlight><table class=highlighttable><tr><td class=linenos><div class=linenodiv><pre><span></span><span class=normal> 1</span>
 <span class=normal> 2</span>
@@ -132,7 +144,10 @@
 <span class=normal>27</span>
 <span class=normal>28</span>
 <span class=normal>29</span>
-<span class=normal>30</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span>
+<span class=normal>33</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>notes</span><span class=p>():</span>
     <span class=n>notes_list</span><span class=p>,</span> <span class=n>set_notes_list</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([])</span>
     <span class=n>draft</span><span class=p>,</span> <span class=n>set_draft</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
@@ -141,10 +156,13 @@
     <span class=c1># changes -- so ReactPy keeps handing back the *first* function, which</span>
     <span class=c1># closed over an empty `draft`. Each click adds a blank note no matter what</span>
     <span class=c1># you typed. Listing what the handler reads is what fixes it.</span>
-    <span class=n>add_note</span> <span class=o>=</span> <span class=n>use_callback</span><span class=p>(</span>
-        <span class=k>lambda</span> <span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>:</span> <span class=n>set_notes_list</span><span class=p>([</span><span class=o>*</span><span class=n>notes_list</span><span class=p>,</span> <span class=n>draft</span><span class=p>]),</span>
-        <span class=n>dependencies</span><span class=o>=</span><span class=p>[],</span>
-    <span class=p>)</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>add_note_handler</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_notes_list</span><span class=p>([</span><span class=o>*</span><span class=n>notes_list</span><span class=p>,</span> <span class=n>draft</span><span class=p>])</span>
+
+    <span class=n>add_note</span> <span class=o>=</span> <span class=n>use_callback</span><span class=p>(</span><span class=n>add_note_handler</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[])</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_draft_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_draft</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=s2>"Notes"</span><span class=p>),</span>
@@ -157,7 +175,7 @@
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>draft</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_draft</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_draft_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>add_note</span><span class=p>},</span> <span class=s2>"Add note"</span><span class=p>),</span>
@@ -191,7 +209,10 @@
 <span class=normal>26</span>
 <span class=normal>27</span>
 <span class=normal>28</span>
-<span class=normal>29</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
+<span class=normal>29</span>
+<span class=normal>30</span>
+<span class=normal>31</span>
+<span class=normal>32</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>notes</span><span class=p>():</span>
     <span class=n>notes_list</span><span class=p>,</span> <span class=n>set_notes_list</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>([])</span>
     <span class=n>draft</span><span class=p>,</span> <span class=n>set_draft</span> <span class=o>=</span> <span class=n>use_state</span><span class=p>(</span><span class=s2>""</span><span class=p>)</span>
@@ -199,10 +220,13 @@
     <span class=c1># List what the handler reads and the cached function is replaced exactly</span>
     <span class=c1># when those values change: the click always sees the current draft, while</span>
     <span class=c1># the identity still stays put between changes.</span>
-    <span class=n>add_note</span> <span class=o>=</span> <span class=n>use_callback</span><span class=p>(</span>
-        <span class=k>lambda</span> <span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>:</span> <span class=n>set_notes_list</span><span class=p>([</span><span class=o>*</span><span class=n>notes_list</span><span class=p>,</span> <span class=n>draft</span><span class=p>]),</span>
-        <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>notes_list</span><span class=p>,</span> <span class=n>draft</span><span class=p>],</span>
-    <span class=p>)</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>add_note_handler</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_notes_list</span><span class=p>([</span><span class=o>*</span><span class=n>notes_list</span><span class=p>,</span> <span class=n>draft</span><span class=p>])</span>
+
+    <span class=n>add_note</span> <span class=o>=</span> <span class=n>use_callback</span><span class=p>(</span><span class=n>add_note_handler</span><span class=p>,</span> <span class=n>dependencies</span><span class=o>=</span><span class=p>[</span><span class=n>notes_list</span><span class=p>,</span> <span class=n>draft</span><span class=p>])</span>
+
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_draft_change</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+        <span class=n>set_draft</span><span class=p>(</span><span class=k>await</span> <span class=n>event</span><span class=o>.</span><span class=n>target</span><span class=o>.</span><span class=n>value</span><span class=p>)</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
         <span class=n>html</span><span class=o>.</span><span class=n>h1</span><span class=p>(</span><span class=s2>"Notes"</span><span class=p>),</span>
@@ -215,7 +239,7 @@
         <span class=n>html</span><span class=o>.</span><span class=n>input</span><span class=p>(</span>
             <span class=p>{</span>
                 <span class=s2>"value"</span><span class=p>:</span> <span class=n>draft</span><span class=p>,</span>
-                <span class=s2>"onChange"</span><span class=p>:</span> <span class=k>lambda</span> <span class=n>event</span><span class=p>:</span> <span class=n>set_draft</span><span class=p>(</span><span class=n>event</span><span class=p>[</span><span class=s2>"target"</span><span class=p>][</span><span class=s2>"value"</span><span class=p>]),</span>
+                <span class=s2>"onChange"</span><span class=p>:</span> <span class=n>handle_draft_change</span><span class=p>,</span>
             <span class=p>}</span>
         <span class=p>),</span>
         <span class=n>html</span><span class=o>.</span><span class=n>button</span><span class=p>({</span><span class=s2>"onClick"</span><span class=p>:</span> <span class=n>add_note</span><span class=p>},</span> <span class=s2>"Add note"</span><span class=p>),</span>

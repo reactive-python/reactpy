@@ -52,7 +52,7 @@
 <span class=normal>52</span></pre></div></td><td class=code><div><pre><span></span><code><span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>task_form</span><span class=p>(</span><span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span><span class=p>,</span> <span class=n>task</span><span class=p>):</span>
     <span class=c1># The only component that actually wants dispatch...</span>
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"toggled"</span><span class=p>,</span> <span class=s2>"id"</span><span class=p>:</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -65,7 +65,7 @@
 <span class=nd>@component</span>
 <span class=k>def</span><span class=w> </span><span class=nf>task</span><span class=p>(</span><span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span><span class=p>,</span> <span class=n>task</span><span class=p>):</span>
     <span class=c1># ...but must receive it and hand it on, unchanged.</span>
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_delete</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_delete</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"deleted"</span><span class=p>,</span> <span class=s2>"id"</span><span class=p>:</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>(</span>
@@ -87,7 +87,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>task_app</span><span class=p>():</span>
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>tasks_reducer</span><span class=p>,</span> <span class=p>{</span><span class=s2>"tasks"</span><span class=p>:</span> <span class=n>INITIAL_TASKS</span><span class=p>,</span> <span class=s2>"next_id"</span><span class=p>:</span> <span class=mi>2</span><span class=p>})</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"added"</span><span class=p>})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -161,7 +161,7 @@
     <span class=c1># Reads dispatch from context; no prop arrived.</span>
     <span class=n>_</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_context</span><span class=p>(</span><span class=n>TaskContext</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"toggled"</span><span class=p>,</span> <span class=s2>"id"</span><span class=p>:</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -175,7 +175,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>task</span><span class=p>(</span><span class=n>task</span><span class=p>):</span>
     <span class=n>_</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_context</span><span class=p>(</span><span class=n>TaskContext</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_delete</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_delete</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"deleted"</span><span class=p>,</span> <span class=s2>"id"</span><span class=p>:</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>(</span>
@@ -196,7 +196,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>task_app</span><span class=p>():</span>
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_reducer</span><span class=p>(</span><span class=n>tasks_reducer</span><span class=p>,</span> <span class=n>INITIAL_STATE</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"added"</span><span class=p>})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -260,7 +260,9 @@
 <span class=normal>47</span>
 <span class=normal>48</span>
 <span class=normal>49</span>
-<span class=normal>50</span></pre></div></td><td class=code><div><pre><span></span><code><span class=sd>"""The reducer, the context, and the initial state — all outside the UI."""</span>
+<span class=normal>50</span>
+<span class=normal>51</span>
+<span class=normal>52</span></pre></div></td><td class=code><div><pre><span></span><code><span class=sd>"""The reducer, the context, and the initial state — all outside the UI."""</span>
 
 <span class=kn>from</span><span class=w> </span><span class=nn>collections.abc</span><span class=w> </span><span class=kn>import</span> <span class=n>Callable</span>
 <span class=kn>from</span><span class=w> </span><span class=nn>typing</span><span class=w> </span><span class=kn>import</span> <span class=n>Any</span>
@@ -298,9 +300,11 @@
         <span class=k>return</span> <span class=p>{</span>
             <span class=o>**</span><span class=n>state</span><span class=p>,</span>
             <span class=s2>"tasks"</span><span class=p>:</span> <span class=p>[</span>
-                <span class=p>{</span><span class=o>**</span><span class=n>task</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=ow>not</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]}</span>
-                <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>action</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span>
-                <span class=k>else</span> <span class=n>task</span>
+                <span class=p>(</span>
+                    <span class=p>{</span><span class=o>**</span><span class=n>task</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=ow>not</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]}</span>
+                    <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>action</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span>
+                    <span class=k>else</span> <span class=n>task</span>
+                <span class=p>)</span>
                 <span class=k>for</span> <span class=n>task</span> <span class=ow>in</span> <span class=n>state</span><span class=p>[</span><span class=s2>"tasks"</span><span class=p>]</span>
             <span class=p>],</span>
         <span class=p>}</span>
@@ -376,7 +380,7 @@
     <span class=c1># No props. The dispatch comes from the wiring file.</span>
     <span class=n>_</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_tasks</span><span class=p>()</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_toggle</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"toggled"</span><span class=p>,</span> <span class=s2>"id"</span><span class=p>:</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -390,7 +394,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>task</span><span class=p>(</span><span class=n>task</span><span class=p>):</span>
     <span class=n>_</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_tasks</span><span class=p>()</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_delete</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_delete</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"deleted"</span><span class=p>,</span> <span class=s2>"id"</span><span class=p>:</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>li</span><span class=p>(</span>
@@ -410,7 +414,7 @@
 <span class=k>def</span><span class=w> </span><span class=nf>task_app</span><span class=p>():</span>
     <span class=n>state</span><span class=p>,</span> <span class=n>dispatch</span> <span class=o>=</span> <span class=n>use_tasks</span><span class=p>()</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>handle_add</span><span class=p>(</span><span class=n>event</span><span class=p>):</span>
         <span class=n>dispatch</span><span class=p>({</span><span class=s2>"type"</span><span class=p>:</span> <span class=s2>"added"</span><span class=p>})</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
@@ -484,7 +488,9 @@
 <span class=normal>57</span>
 <span class=normal>58</span>
 <span class=normal>59</span>
-<span class=normal>60</span></pre></div></td><td class=code><div><pre><span></span><code><span class=sd>"""All the reducer, context, and wiring lives here; the UI imports two names."""</span>
+<span class=normal>60</span>
+<span class=normal>61</span>
+<span class=normal>62</span></pre></div></td><td class=code><div><pre><span></span><code><span class=sd>"""All the reducer, context, and wiring lives here; the UI imports two names."""</span>
 
 <span class=kn>from</span><span class=w> </span><span class=nn>collections.abc</span><span class=w> </span><span class=kn>import</span> <span class=n>Callable</span>
 <span class=kn>from</span><span class=w> </span><span class=nn>typing</span><span class=w> </span><span class=kn>import</span> <span class=n>Any</span>
@@ -520,9 +526,11 @@
         <span class=k>return</span> <span class=p>{</span>
             <span class=o>**</span><span class=n>state</span><span class=p>,</span>
             <span class=s2>"tasks"</span><span class=p>:</span> <span class=p>[</span>
-                <span class=p>{</span><span class=o>**</span><span class=n>task</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=ow>not</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]}</span>
-                <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>action</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span>
-                <span class=k>else</span> <span class=n>task</span>
+                <span class=p>(</span>
+                    <span class=p>{</span><span class=o>**</span><span class=n>task</span><span class=p>,</span> <span class=s2>"done"</span><span class=p>:</span> <span class=ow>not</span> <span class=n>task</span><span class=p>[</span><span class=s2>"done"</span><span class=p>]}</span>
+                    <span class=k>if</span> <span class=n>task</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span> <span class=o>==</span> <span class=n>action</span><span class=p>[</span><span class=s2>"id"</span><span class=p>]</span>
+                    <span class=k>else</span> <span class=n>task</span>
+                <span class=p>)</span>
                 <span class=k>for</span> <span class=n>task</span> <span class=ow>in</span> <span class=n>state</span><span class=p>[</span><span class=s2>"tasks"</span><span class=p>]</span>
             <span class=p>],</span>
         <span class=p>}</span>

@@ -38,7 +38,7 @@ shop(7f7ef6f0d540) 3 item(s): item 1, item 2, item 3
     <span class=c1># built on every render; reading state makes it change only when it should.</span>
     <span class=n>use_debug_value</span><span class=p>(</span><span class=sa>f</span><span class=s2>"</span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>items</span><span class=p>)</span><span class=si>}</span><span class=s2> item(s): </span><span class=si>{</span><span class=s1>', '</span><span class=o>.</span><span class=n>join</span><span class=p>(</span><span class=n>items</span><span class=p>)</span><span class=w> </span><span class=ow>or</span><span class=w> </span><span class=s1>'-'</span><span class=si>}</span><span class=s2>"</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>add</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>add</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
         <span class=n>set_items</span><span class=p>([</span><span class=o>*</span><span class=n>items</span><span class=p>,</span> <span class=sa>f</span><span class=s2>"item </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>items</span><span class=p>)</span><span class=w> </span><span class=o>+</span><span class=w> </span><span class=mi>1</span><span class=si>}</span><span class=s2>"</span><span class=p>])</span>
 
     <span class=k>return</span> <span class=n>items</span><span class=p>,</span> <span class=n>add</span>
@@ -90,7 +90,7 @@ report(7f7ef6f0da80) 3 rows, best=ada:91
 
     <span class=n>use_debug_value</span><span class=p>(</span><span class=n>describe</span><span class=p>)</span>
 
-    <span class=k>def</span><span class=w> </span><span class=nf>add_row</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
+    <span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>add_row</span><span class=p>(</span><span class=n>event</span><span class=o>=</span><span class=kc>None</span><span class=p>):</span>
         <span class=n>set_rows</span><span class=p>([</span><span class=o>*</span><span class=n>rows</span><span class=p>,</span> <span class=p>{</span><span class=s2>"name"</span><span class=p>:</span> <span class=sa>f</span><span class=s2>"row </span><span class=si>{</span><span class=nb>len</span><span class=p>(</span><span class=n>rows</span><span class=p>)</span><span class=si>}</span><span class=s2>"</span><span class=p>,</span> <span class=s2>"score"</span><span class=p>:</span> <span class=nb>len</span><span class=p>(</span><span class=n>rows</span><span class=p>)</span> <span class=o>*</span> <span class=mi>7</span><span class=p>}])</span>
 
     <span class=k>return</span> <span class=n>html</span><span class=o>.</span><span class=n>div</span><span class=p>(</span>
