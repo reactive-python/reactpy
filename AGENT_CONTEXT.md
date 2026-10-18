@@ -1,11 +1,17 @@
 # ReactPy v2.0.0 — Agent Context
 
 Compact reference for writing/reviewing ReactPy v2 docs. Every claim verified against
-`reactive-python/reactpy@main` (`aafabc2965`, `reactpy==2.0.0b13`) or this repo's
-`docs/examples/`. Cites are file + symbol name, never line numbers.
+`reactive-python/reactpy@main` (`4b765d44`, which includes PR #1352 "Add live event proxy
+for accessing browser event data"; the published wheel is still `reactpy==2.0.0b13` and
+does **not** contain these changes) or this repo's `docs/examples/`. Cites are file +
+symbol name, never line numbers.
 
 Rules for docs work: snake_case everywhere, never invent an API, keep Python runnable,
 verify a claim in source/tests before writing it.
+
+**If you are updating docs for events, read section 4 first.** Everything about the event
+payload changed in #1352: handlers must be coroutines, `event["target"]["value"]` raises,
+and the client no longer serializes the event.
 
 ---
 
@@ -109,34 +115,133 @@ Event keys are **camelCase DOM names** (`onClick`, `onChange`, `onKeyDown`) — 
 keys ReactJS uses (`tests/test_html.py`, `tests/test_core/test_events.py` — every handler in both uses `onClick`/`onChange`/`onKeyDown`).
 
 ```python
-def handle_click(event):
+async def handle_click(event):
     print("You clicked me!")
 
 html.button({"onClick": handle_click}, "Click me")   # docs/examples/responding_to_events/simple_button_event.py
 ```
 
-- Handlers may be sync `def`, `async def`, or a `lambda`. ReactPy wraps them
-  (`events.py: to_event_handler_function`).
+### A handler must be a coroutine
+
+- `EventHandler.__init__` and `to_event_handler_function` both call
+  `check_is_async_handler` (`core/events.py`), which raises
+  `TypeError: <name> cannot be used as an event handler because it is not a coroutine.
+  Event handlers must be declared with 'async def':`. It fires at **element-build time** —
+  `core/vdom.py`, `separate_attributes_handlers_and_inline_javascript` routes every
+  `callable(v)` through `to_event_handler_function`, under **any** key name.
+- Accepted: `async def`, a callable object whose `__call__` is a coroutine, and a
+  `functools.partial` / `functools.wraps` wrapper around either (`_is_handler_coroutine`
+  unwraps through `_unwrap_handler`). Rejected: plain `def` and **any `lambda`** — a lambda
+  has no `await` syntax, and there is no synchronous event data to hand it. Why: every
+  property of an event is fetched from the browser, so only a coroutine can make the round
+  trip without stalling the event loop.
+- A **state setter passed directly** (`{"onClick": set_count}`) is refused too, with an extra
+  sentence: "A state setter is not an event handler - call it from one instead."
+- Because a handler can no longer be inline, docs must hoist every one-liner into a named
+  `async def`, a handler **factory**, or `functools.partial` when extra args are the point.
+  With `partial`, the underlying function must leave exactly one parameter free for the event
+  (`partial(f, x)` over `async def f(x, event)`, never over `async def f(x)` — measured:
+  `TypeError: f() takes 1 positional argument but 2 were given`), and prefer the factory in
+  docs because a bound leading argument also defeats detection (see below).
+
+### The event object is a live proxy, not a payload
+
+- The value is `reactpy.types.Event` (`Event(EventProxy)`), re-exported from `reactpy.types`
+  along with `EventProxy` and the alias `EventObject = Event[Any] | EventProxy[Any]`. It is
+  **not** a dict and not a container: `__getitem__`, `__iter__`, `__contains__`, `__len__` do
+  not exist, so `event["target"]["value"]` raises
+  `TypeError: 'Event' object is not subscriptable`. `bool(proxy)` is always `True`.
+- Reads are `await`ed: `await event.target.value`, `await event.target.checked`,
+  `await event.key`, `await event.type`, `await event.target.dataset`,
+  `await event.target.files`, `await event.clientX`. Method calls work too —
+  `await event.target.focus()` — which the old serialized payload could never do.
+- `event.read(*paths, refresh=False)` batches N paths into **one** message; so does
+  `asyncio.gather` of separate reads issued in the same synchronous stretch. Sequential
+  `await`s cost one round trip each. Values are cached per event; `refresh=True` refetches.
+  Verified on the wire: sequential `await`s → two `event-proxy-request` messages; a
+  `read()`/`gather` → one message with a `requests` array.
+- `preventDefault()`, `stopPropagation()`, `stopImmediatePropagation()` are called with no
+  `await`. Each sets a Python-side flag (`_reactpy_flags`) which the bytecode inspector also
+  reads, and then calls `_reactpy_invoke` → `backend.notify(..., reply=False)`: a best-effort,
+  fire-and-forget call on the page which is **not** waited for. If the event object has aged
+  out of the registry the call silently does nothing — which is why the handler flag, not this
+  call, is what reliably prevents the action (the browser was asked before the event was even
+  sent to the server).
+- Sync *properties* (no `await`): `defaultPrevented`, `propagationStopped`, `debounce`,
+  `event_id`, `path`, `backend`, `is_known`. `defaultPrevented`/`propagationStopped` return
+  `bool(self._reactpy_flags.get(...))` — what *this* handler asked for, not what the browser
+  settled on. For the browser's answer, read it like any other property:
+  `(prevented,) = await event.read("defaultPrevented")`.
+- `composedPath()` is **not** sync: it is a plain `def` returning an awaitable, so it must
+  be awaited — `await event.composedPath()` — like any other method call into the page.
+- A read which is never awaited leaves the proxy (or its coroutine) in the model, which
+  fails at frame encode: `TypeError: Object of type coroutine is not JSON serializable`.
+  Parenthesise postfix calls: `(await event.target.value).upper()`.
+- Errors (`_event_proxy.py`): `EventProxyError(RuntimeError)` with subclasses
+  `EventProxyUnavailable`, `EventProxyTimeout`, `EventProxyNotFound`,
+  `EventProxyEvicted`/`EventProxyEvicted(EventProxyNotFound)`, `EventProxyAccessError`.
+- Bounded client-side (`@reactpy/client`, `event-proxy.ts`): `MAX_LIVE_OBJECTS` 512,
+  `LIVE_OBJECT_TTL_MS` 60000, `MAX_PROPERTIES` 100, `MAX_REQUESTS_PER_MESSAGE` 256.
+  `BLOCKED_MEMBERS` refuses `window`/`document`/`parentNode`/`__proto__`/`eval`/
+  `setTimeout`/…, plus `__reactpy_event__`, `__reactpy_ref__`, and `/^on[a-z]/i`, so a
+  handler cannot read its own handle or reach another event.
+- Config (`config.py`): `REACTPY_EVENT_PROXY_TIMEOUT` (5.0 s),
+  `REACTPY_EVENT_PROXY_MAX_DEPTH` (10), `REACTPY_EVENT_PROXY_MAX_TIMEOUTS` (3 — counted per
+  unanswered **message**, not per property). There is **no** global enable/disable switch:
+  `REACTPY_EVENT_PROXY_ENABLED` was added during review and dropped before merge, and
+  per-handler opt-out is gone too. `Layout.set_event_proxy_sender()` returns the
+  `EventProxyBackend` while the layout is running and `None` when it is not, in which
+  case the sender is remembered and used once it starts (`core/layout.py`);
+  `core/serve.py` binds it behind `getattr(layout, "set_event_proxy_sender", None)` +
+  a `callable()` guard, and `Layout.deliver` routes `event-proxy-response` frames
+  itself — `executors/asgi/middleware.py` filters frames, so it routes them through
+  `Layout.handle_event_proxy_response` instead. A custom backend which pumps every
+  frame into `deliver` gets proxy support for free.
+- The old `event-to-object` package, `build_js_event_to_object.py`, its hatch env and its
+  NPM publish job are **deleted**. Do not describe the client walking the event, copying
+  enumerables, or shipping the whole `HTMLInputElement`. The `classToObject` /
+  `["value","checked","files","type","name"]` re-read note that used to live here is
+  **obsolete**; so is any claim about what the walk "happened to reach", and the
+  `submit`-gives-you-a-list claim survives only because the form's named controls are what
+  `await event.target` returns.
+
+### Argument shapes
+
 - The handler receives the **event payload as a single positional arg** — client data is
   a list, unpacked positionally onto the handler's parameters
   (`core/events.py`, `to_event_handler_function`; `tests/test_core/test_events.py`,
   `test_to_event_handler_function` → `([1, 2, 3])` yields `args == (1, 2, 3)`). Name it `event`.
-- The value is a `reactpy.types.Event` — a `dict` subclass with **attribute access into
-  nested dicts** (`types.py: Event.__getattr__`):
+- An `EventHandler` gets the **list itself** (`positional_args=False`) — an `EventArguments`,
+  a `list` subclass, not the event. Wrong pairings are now distinguishable: list into an
+  event-shaped handler → `AttributeError: 'EventArguments' object has no attribute 'target'`
+  (measured; not `'list' object …`); unpacked event into a list-shaped handler →
+  `TypeError: 'Event' object is not subscriptable`.
+- `merge_event_handler_funcs` runs merged handlers **concurrently in a task group with the
+  same event data** — do not describe them as sequential.
 
-  ```python
-  event["target"]["value"]      # dict style
-  event.target.value            # identical, attribute style
-  ```
-- Supported payload reads, **verified in a real headless Chrome round-trip** (not just by
-  reading the serializer): `event["target"]["value"]`, `event["target"]["checked"]`,
-  `event["key"]`, `event["type"]`, `event["target"]["dataset"]`.
-  `checked` **works** — a checkbox `onChange` handler receives `checked=True`. The
-  `FIXME: ... event["target"]["checked"] doesn't exist` comment in
-  `docs/src/learn/thinking-in-react.md` is **wrong** and should be removed when that page is
-  touched: the client serializer deliberately re-reads `["value","checked","files","type",
-  "name"]` off the element via `prop in x` (`static/index.js`, the `classToObject` helper),
-  which bypasses enumerability entirely. Do not repeat the FIXME's claim.
+### Wire format
+
+```text
+client → server  {"type": "layout-event", "target": ..., "data": [
+                    {"__reactpy_event__": {"id": ...}, "type": "click"}, ...]}
+server → client  {"type": "event-proxy-request", "requestId": ..., "eventId": ...,
+                  "path": ["target","value"], "call": false, "args": [], "reply": true,
+                  "maxDepth": 10}          (batched: {"requests": [...]})
+client → server  {"type": "event-proxy-response", "requestId": ..., "ok": true,
+                  "value": ..., "error": null, "code": null}   (batched: {"responses": [...]})
+```
+
+`vdom.tsx` sends the handle plus `type` and nothing else. Constants in `_event_proxy.py`:
+`EVENT_MARKER_KEY = "__reactpy_event__"`, `EVENT_REFERENCE_KEY = "__reactpy_ref__"`,
+`EVENT_PROXY_REQUEST_TYPE`/`EVENT_PROXY_RESPONSE_TYPE`, `CACHE_LIMIT` 2048, `PENDING_LIMIT` 256.
+`core/layout.py`, `_serialize_event_handler` forwards `target`, `preventDefault`,
+`stopPropagation`, optional `stopImmediatePropagation`, `debounce`, `throttle`. Its docstring
+still mentions an `eventProxy` key which is **never emitted** — dead code path, do not
+document it. `@reactpy/client` was released as v1.3.0 before the PR and there is no v1.4.0
+tag on main yet.
+
+### Everything else
+
 - **Capture-phase handlers work.** Append `Capture` to the key (`{"onClickCapture": h}`);
   ReactPy forwards it untouched and the client strips the suffix and registers with
   `addEventListener(type, handler, true)`. Verified order: capture parent → child → bubble
@@ -147,40 +252,54 @@ html.button({"onClick": handle_click}, "Click me")   # docs/examples/responding_
   any propagation behavior.
 - A handler key that is not a real DOM event (`{"on_click": h}`) and a handler that is `None`
   (from accidentally calling the function) both **render without error and never fire**.
-  Confirmed in-browser: neither produced a single server-side invocation.
-- `event.preventDefault()`, `event.stopPropagation()`, and assigning
-  `event.debounce = <ms>` are detected by **bytecode inspection** of the handler:
-  `prevent_default` / `stop_propagation` / `debounce` get set automatically
-  (`core/events.py`, `EventHandler.__init__`; `tests/test_core/test_events.py`,
-  `test_detect_prevent_default`, `test_detect_stop_propagation`, `test_detect_debounce`). Detection fails for a
-  computed value (`event.debounce = get_debounce()` → stays `None`,
-  `test_computed_debounce_value_is_not_detected`).
+  Confirmed in-browser: neither produced a single server-side invocation. Calling an
+  `async def` handler instead of passing it yields a coroutine object, which is not
+  `callable()` either, so it also lands in attributes — and then dies at frame encode.
+- `event.preventDefault()`, `event.stopPropagation()`, `event.stopImmediatePropagation()`,
+  and assigning `event.debounce = <ms>` are detected by **bytecode inspection** of the
+  handler: `prevent_default` / `stop_propagation` (`"immediate"` for
+  `stopImmediatePropagation`) / `debounce` get set automatically
+  (`core/events.py`, `EventHandler.__init__` → `core/_event_inspect.py`,
+  `inspect_event_handler`). It is handed `_unwrap_handler(function)`, which peels `partial`
+  layers and follows `functools.wraps` via `__wrapped__`, so the bytecode it walks is the
+  function you wrote; it also handles a callable object's `__call__` (offset by 1 for `self`).
+  But it matches the propagation calls against **`co_varnames[0]` of that unwrapped
+  function**, so anything which moves the event off the first parameter defeats it silently:
+  a bound method (`def on_submit(self, event)` inspects to `(False, False, None)`) and
+  `functools.partial` with a **bound leading argument** (`partial(f, x)` over
+  `async def f(x, event)` inspects to `(False, False, None)` — measured, not inferred).
+  A `functools.wraps` decorator keeps detection working. It does not follow calls,
+  so a computed value (`event.debounce = get_debounce()`) stays `None`, and with two
+  assignments the result depends on which the bytecode settles first.
 - `@event(...)` decorator adds the same controls explicitly
   (`core/events.py`, `event`):
 
   ```python
   @event(prevent_default=True)
-  async def on_key_down(value): ...
+  async def on_key_down(event): ...
   ```
-  kwargs: `stop_propagation`, `prevent_default`, `debounce` (server→client value
-  updates on inputs), `throttle` (client→server outgoing rate limit).
+  kwargs: `stop_propagation`, `prevent_default`, `stop_immediate_propagation`, `debounce`
+  (server→client value updates on inputs), `throttle` (client→server outgoing rate limit).
 - Inline JS handlers are supported: a `str` value on an `onXxx` key becomes client JS —
   `{"onClick": '(e) => e.target.innerText = "Thank you!"'}` or
   `{"onClick": "this.innerText = ..."}` (`vdom.py: EVENT_ATTRIBUTE_PATTERN`;
-  `test_events.py: test_javascript_event_as_arrow_function`).
+  `test_events.py: test_javascript_event_as_arrow_function`). Such a handler cannot be
+  bytecode-inspected at all, and `isBlockedMember` refuses `/^on[a-z]/i` on proxy reads.
 - Controlled input idiom (verified end-to-end):
 
   ```python
   value, set_value = use_state("")
 
-  def on_change(event):
-      set_value(event.target.value)
+  async def on_change(event):
+      set_value(await event.target.value)
 
   html.input({"value": value, "onChange": on_change})
   ```
-  Inputs are debounced client-side by default (200 ms); the server value is reconciled
-  once the window expires (`types.py: BaseEventHandler.debounce`;
-  `test_controlled_input_default_debounce_reconciles_server_value`).
+  There is **no default debounce**: `components.tsx` applies `debounce`/`throttle` only when
+  the handler asks for them ("we don't apply a debounce by default"), because the per-element
+  `_reactpy_ack_seq` reconcile already keeps typed input coherent. Set `debounce=` when you
+  want it. State setters are still not awaited: N setter calls with no `await` between them
+  batch into one render; an `await asyncio.sleep(0)` between them splits into two.
 
 ## 5. Hooks
 

@@ -281,30 +281,32 @@ Pass a `#!python list` — a comprehension is usually the smallest change.
 
 ## Event handlers
 
-Any callable under any attribute name becomes an event handler:
+Any `#!python callable` value under any attribute name is treated as an event handler — and the coroutine check runs at that same moment, so a callable which is not one raises there rather than being quietly routed to the attributes:
 
 ```python linenums="0"
 async def save(event):
-    await store.save(event["target"]["value"])
+    await store.save(await event.target.value)
 
 
 html.button({"onClick": save}, "Save")
 ```
 
-The name is forwarded as the DOM event to listen for, so the names that work are the DOM event names in camelCase — `#!python onClick`, `#!python onInput`, `#!python onKeyDown`. The handler receives one argument: the event data as a JSON-serializable `#!python dict`, wrapped in `#!python reactpy.types.Event` so nested keys are also readable as attributes. There is no `#!python "data"` key to unwrap — the browser sends a *list* of arguments, and ReactPy hands you its single element. Make the handler `#!python async` when the work is slow, because a plain `#!python def` handler runs to completion **inside the server's event loop**: `core/events.py`, `to_event_handler_function` wraps a non-coroutine in an `#!python async def wrapper` that simply calls it, so nothing is handed to a thread. A slow or blocking handler stalls every connection in the process, not just the one that clicked. See [Responding to Events](../learn/responding-to-events.md).
+The name is forwarded as the DOM event to listen for, so the names that work are the DOM event names in camelCase — `#!python onClick`, `#!python onInput`, `#!python onKeyDown`. The handler receives one argument: a `#!python reactpy.types.Event`, a live proxy onto the browser's event object rather than a serialized copy of it. `#!python await event.target.value` asks the page for the property at that moment; the proxy has no `#!python __getitem__`, so `#!python event["target"]["value"]` raises `TypeError: 'Event' object is not subscriptable`. There is no `#!python "data"` key to unwrap — the browser sends a *list* of arguments, and ReactPy hands you its single element.
+
+The coroutine requirement is not a style rule and `#!python async` is not optional. The event lives in the browser, so every read is a round trip which must be awaited; a handler that cannot be awaited cannot make one. `core/events.py`, `check_is_async_handler` therefore rejects a `#!python def` and a `#!python lambda` outright, at element-build time, with a `TypeError` naming the function. What is accepted: a coroutine function, a callable object whose `#!python __call__` is a coroutine, and a `#!python functools.partial` or `#!python functools.wraps` wrapper around either. See [Responding to Events](../learn/responding-to-events.md).
 
 !!! warning "A handler wrapped in `EventHandler` receives the raw list"
-    A plain callable is called with the browser's argument list **unpacked**, so `def f(event)` gets the event dict. An `EventHandler` does the opposite: it is called with the **list itself**, so `def f(data)` must index into it. The difference stays invisible until a handler is converted, and then `event["target"]` becomes `TypeError: list indices must be integers or slices, not str`:
+    A plain coroutine is called with the browser's argument list **unpacked**, so `async def f(event)` gets the event. An `EventHandler` does the opposite: it is called with the **list itself** — an `#!python EventArguments`, a `#!python list` subclass — so `async def f(data)` must index into it. The difference stays invisible until a handler is converted, and the two directions fail differently — `AttributeError: 'EventArguments' object has no attribute 'target'` one way, `TypeError: 'Event' object is not subscriptable` the other:
 
     ```python linenums="0"
     from reactpy.core.events import EventHandler
 
-    def save(event):      # plain callable: receives the event dict
-        store.save(event["target"]["value"])
+    async def save(event):        # plain coroutine: receives the event
+        await store.save(await event.target.value)
 
 
-    def save_all(data):   # EventHandler: receives the list of arguments
-        store.save(data[0]["target"]["value"])
+    async def save_all(data):     # EventHandler: receives the list of arguments
+        await store.save(await data[0].target.value)
 
 
     html.button({"onClick": save}, "Save")
@@ -313,7 +315,7 @@ The name is forwarded as the DOM event to listen for, so the names that work are
 
 ### ReactPy's own options
 
-Four behaviours run in the browser *before* the event is sent to the server. Configure them by wrapping the function, not by an attribute:
+Five behaviours run in the browser *before* the event is sent to the server. Configure them by wrapping the function, not by an attribute:
 
 ```python linenums="0"
 from reactpy.core.events import EventHandler
@@ -328,8 +330,9 @@ html.form(
 | --- | --- | --- |
 | `#!python prevent_default` | `#!python bool` | calls `#!python preventDefault()` in the browser before sending |
 | `#!python stop_propagation` | `#!python bool` | calls `#!python stopPropagation()` in the browser before sending |
-| `#!python debounce` | `#!python int` ms | rate-limits value updates on user-input elements |
-| `#!python throttle` | `#!python int` ms | rate-limits outgoing events |
+| `#!python stop_immediate_propagation` | `#!python bool` | also calls `#!python stopImmediatePropagation()`, blocking sibling listeners on the same element |
+| `#!python debounce` | `#!python int` ms | coalesces outgoing events on a trailing edge, so the server sees one after the user pauses — only on user-input elements |
+| `#!python throttle` | `#!python int` ms | rate-limits outgoing events on a leading edge, on any element |
 
 A non-negative integer is required for `#!python debounce` and `#!python throttle`; anything else is ignored with a browser-console warning rather than an error:
 
@@ -456,6 +459,7 @@ Any other key raises, as shown above. `#!python VdomDict` is a `#!python dict` s
 ## Related
 
 -   [Usage](usage.md) — the tag API itself: naming rules, custom tags, SVG
--   [Responding to Events](../learn/responding-to-events.md) — the event `#!python dict`, `#!python async` handlers
+-   [Responding to Events](../learn/responding-to-events.md) — the event proxy, and why handlers must be coroutines
+-   [Protocol Structure](protocol-structure.md) — what an event costs on the wire
 -   [Rendering Lists](../learn/rendering-lists.md) — keys and why rows keep the wrong state
 -   [Use Ref](use-ref.md) — ReactPy's `#!python Ref`, which is never attached to an element

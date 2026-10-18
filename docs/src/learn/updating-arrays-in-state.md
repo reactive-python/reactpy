@@ -17,7 +17,7 @@ Lists are mutable in Python, but you should treat them as immutable when you sto
 In JavaScript you copy arrays with the spread syntax, and mutating methods like `#!js push()` and `#!js pop()` are easy to reach for by mistake. Python's equivalent methods — `#!python append()`, `#!python extend()`, `#!python insert()`, `#!python remove()`, `#!python pop()`, `#!python sort()`, `#!python reverse()` — are **in-place and return `#!python None`**, so the mistake looks different and fails harder:
 
 ```python linenums="0"
-def handle_add(event):
+async def handle_add(event):
     items.append({"id": next_id, "text": text})   # mutates, returns None
     set_items(items)                              # same object -> ignored
 ```

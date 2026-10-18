@@ -44,19 +44,19 @@ set_number(0 + 1)
 set_number(0 + 1)
 ```
 
-Second, **a synchronous event handler never yields, so nothing can render until it returns.** ReactPy's setter applies its value immediately and only *flags* the component for re-render (`core/hooks.py`, `_CurrentState.dispatch`), and the flag is deduplicated — a component already flagged is not scheduled twice (`core/_life_cycle_hook.py`, `LifeCycleHook.schedule_render` and its `_scheduled_render` guard). Three calls to the setter inside one `#!python def` therefore leave one render queued, showing `#!python 1`.
+Second, **a handler which does not `#!python await` never yields, so nothing can render until it returns.** ReactPy's setter applies its value immediately and only *flags* the component for re-render (`core/hooks.py`, `_CurrentState.dispatch`), and the flag is deduplicated — a component already flagged is not scheduled twice (`core/_life_cycle_hook.py`, `LifeCycleHook.schedule_render` and its `_scheduled_render` guard). Three calls to the setter inside one such handler therefore leave one render queued, showing `#!python 1`.
 
 This lets you update several state variables — even across several components — without triggering a render for each. It also avoids "half-finished" renders in which only some variables have been updated.
 
 !!! warning "Batching stops at an `await`"
 
-    The batching above is a side effect of a *synchronous* handler, and it is narrower than React's. Because the values are already stored, an `#!python await` hands the event loop to the queued render task — which clears the flag, so the *next* setter schedules a second render. Nothing about the handler is special; the only difference is who holds the loop.
+    The batching above belongs to a handler that never yields, and it is narrower than React's. Because the values are already stored, an `#!python await` hands the event loop to the queued render task — which clears the flag, so the *next* setter schedules a second render. Nothing about the handler is special; the only difference is who holds the loop. Since every handler is a coroutine, the distinction is not `#!python def` versus `#!python async def` but whether anything is awaited between the setter calls.
 
     Measured in a real browser, watching every value the counter takes after a single click:
 
     | Handler | Observed sequence |
     | --- | --- |
-    | three `set_number(lambda n: n + 1)` in a `def` | `0 → 3` (one render) |
+    | three `set_number(lambda n: n + 1)` with no `await` between them | `0 → 3` (one render) |
     | the same, with `await asyncio.sleep(0.3)` between the calls | `0 → 1 → 2 → 3` (three renders) |
 
     React 18+ would batch both into a single render. In ReactPy, an `#!python async def` handler that awaits between updates renders — and repaints — in between. If that flicker matters, do the awaits first and set state once at the end, or collect the results and make a single setter call.
@@ -166,7 +166,7 @@ For clarity, prefer a descriptive name over `#!python n`: `#!python lambda previ
 ## Recap
 
 -   Setting state does not change the variable in the existing render; it requests a new render.
--   ReactPy processes state updates after a synchronous event handler has finished. That is batching.
+-   ReactPy processes state updates after a handler which never awaits has finished. That is batching.
 -   Batching does **not** survive an `#!python await` inside an `#!python async def` handler — each await can flush a render with partial updates.
 -   To update the same state several times in one handler, use updater functions: `#!python set_number(lambda n: n + 1)`.
 -   A plain value replaces the state and discards earlier updater results; an updater is applied to the current value.

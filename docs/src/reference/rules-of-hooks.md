@@ -62,10 +62,14 @@ A component that mounts with one hook and later calls two tries to read a slot t
 @component
 def grow():
     n, set_n = use_state(0)
+
+    async def bump(event):
+        set_n(n + 1)
+
     if n >= 1:  # a second hook appears only after the first click
         extra, set_extra = use_state("EXTRA")
         return html.div(f"n={n} extra={extra}")
-    return html.div(f"n={n}", html.button({"onClick": lambda e: set_n(n + 1)}, "bump"))
+    return html.div(f"n={n}", html.button({"onClick": bump}, "bump"))
 ```
 
 With debug mode on, the component is replaced by an error node and the server logs the cause:

@@ -22,7 +22,9 @@ Strip away the executors and there are exactly four responsibilities. Everything
 3.  **Return a document** containing a mount element and a `#!js mountReactPy(...)` call.
 4.  **Accept a websocket** and run one `#!python Layout` against it, pumping messages in both directions.
 
-The whole of the protocol is two message types. A rendered update goes down as `#!python {"type": "layout-update", "path": ..., "model": ...}`; an event comes up as `#!python {"type": "layout-event", "target": ..., "data": [...]}`. [Protocol Structure](../reference/protocol-structure.md) documents them in full — this page is about plumbing, not the schema.
+The protocol is four message types. A rendered update goes down as `#!python {"type": "layout-update", "path": ..., "model": ...}`; an event comes up as `#!python {"type": "layout-event", "target": ..., "data": [...]}`; and when a handler reads a property of that event, the request goes down as `#!python {"type": "event-proxy-request", ...}` and the browser's answer comes up as `#!python {"type": "event-proxy-response", ...}`. [Protocol Structure](../reference/protocol-structure.md) documents them in full — this page is about plumbing, not the schema.
+
+The good news about the last pair: `serve_layout` wires both directions for you. It binds your `send` as the proxy sender, and `Layout.deliver` recognises a response and routes it to the proxy backend instead of treating it as an event. A backend which pumps every received frame into `deliver` and every message out through `send` supports live event access without knowing it exists. A backend that filters frames before `deliver` — the way the ASGI middleware does, matching on `#!python "layout-event"` first — must route the responses itself or every `#!python await` on an event stalls until it times out.
 
 ## The job, in one file
 
@@ -202,7 +204,8 @@ What it does **not** buy you: performance. `serve_layout` in your own code is th
 ## Summary
 
 -   A backend serves the bundle, serves web modules, returns a mount document, and runs one `#!python Layout` per websocket.
--   The message shapes are fixed: `#!python layout-update` down, `#!python layout-event` up.
+-   The message shapes are fixed: `#!python layout-update` and `#!python event-proxy-request` down, `#!python layout-event` and `#!python event-proxy-response` up.
+-   Feed every received frame to `layout.deliver` and `serve_layout` routes event-proxy responses for you; filter frames yourself and you must route them yourself.
 -   Skip the `#!python websocket.connect` event in your pump; it is the most common cause of an instantly-dying socket.
 -   Speak raw ASGI on the socket; framework websocket wrappers do not have the methods `serve_layout` needs.
 -   Build the `#!python Layout` per connection, and wrap the component in `#!python ConnectionContext` or the connection hooks raise.
@@ -211,7 +214,7 @@ What it does **not** buy you: performance. `serve_layout` in your own code is th
 
 ## Related
 
--   [Protocol Structure](../reference/protocol-structure.md) — the two message types, `#!python target`, and `#!python seq`
+-   [Protocol Structure](../reference/protocol-structure.md) — all four message types, `#!python target`, `#!python seq`, and the event proxy round trip
 -   [Client API](../reference/client-api.md) — what `#!js mountReactPy` expects from your URL layout
 -   [ReactPy](../reference/reactpy.md) and [ReactPyMiddleware](../reference/reactpy-middleware.md) — the two built-in backends
 -   [User Connection](../reference/use-connection.md), [User Scope](../reference/use-scope.md), [User Location](../reference/use-location.md) — what your `Connection` feeds

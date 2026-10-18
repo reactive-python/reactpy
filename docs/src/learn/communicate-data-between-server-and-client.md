@@ -2,7 +2,7 @@
 
 <p class="intro" markdown>
 
-ReactPy connects a Python process and a browser tab with one websocket and one message type in each direction. That single constraint decides how every kind of data moves between the two: values the server knows flow down as rendered models, values the user produces flow up as event payloads, and anything else needs a deliberate detour. This page is a map of those routes — what crosses, what cannot, and the honest workaround for each.
+ReactPy connects a Python process and a browser tab with one websocket. Everything crossing it is JSON, and nothing is pushed: the server sends rendered models, the client sends events, and a handler which wants to know something about the browser has to ask for it one property at a time. That constraint decides how every kind of data moves — values the server knows flow down as models, values the user produces flow up as events, and anything else needs a deliberate detour. This page is a map of those routes — what crosses, what cannot, and the honest workaround for each.
 
 </p>
 
@@ -10,7 +10,7 @@ ReactPy connects a Python process and a browser tab with one websocket and one m
 
     -   Which channels actually exist, and the one direction that is not supported
     -   How to push a server-side value into a view without the client asking
-    -   What an event payload really contains — including why file uploads do not work the way people expect
+    -   What an event actually gives your handler — including why file uploads do not work the way people expect
     -   How to get real file bytes across, and how to keep blocking code off the loop
 
 ## The channels that exist
@@ -19,8 +19,11 @@ ReactPy connects a Python process and a browser tab with one websocket and one m
 | --- | --- | --- |
 | server → client | the rendered model, sent as `#!python layout-update` patches | total — return it from the component |
 | client → server | an event handler, receiving `#!python layout-event` | total — read `#!python event` |
+| server → client, on demand | `#!python event-proxy-request` / `#!python event-proxy-response`, driven by `#!python await` on an event | indirect — you ask by awaiting, ReactPy frames the message |
 | server → client, arbitrary message | **none** | not supported |
 | shared mutable state | **none** | the two sides hold different objects |
+
+The third row is new, and it is narrower than it looks: the request row exists because a handler *pulled*, on the back of an event the client chose to send. A read carries no application data and starts no conversation — see [Protocol Structure](../reference/protocol-structure.md#the-event-proxy-round-trip). Calling a method is the exception which proves the rule: `#!python await event.getCoalescedEvents()` ships your arguments down as JSON (`_event_proxy.py`, `_begin`), which is data travelling the direction the table says does not exist. Reads are the default; a call is a door you have to choose to open.
 
 The server-to-client push row is the one people look for first, and its absence is a design choice, not an omission. A component's `#!python Connection` has no `#!python send`, no `#!python deliver`, no `#!python close` ([User Connection](../reference/use-connection.md)), and the backend is the only code allowed to write to the socket. That keeps the model the single source of truth: if a component could scribble on the wire, the client's tree and the server's model would drift apart with nothing to reconcile them.
 
@@ -32,7 +35,7 @@ The server-to-client push row is the one people look for first, and its absence 
     [ReactPy] Received message without handler Object
     ```
 
-    and discards it. The client dispatches on `#!python message.type` against a fixed registry — `#!python "layout-update"` is the only one registered by the mount path — and an unregistered type warns and returns. Nothing throws, the socket stays up, and the UI never changes. The client bundle exports exactly one function and offers no `#!js onMessage` hook to register against, so there is no supported way to add a handler. Do not build on this path; use one of the routes below.
+    and discards it. The client dispatches on `#!python message.type` against a fixed registry — `#!python "layout-update"` is the only one registered by the mount path — and an unregistered type warns and returns. Nothing throws, the socket stays up, and the UI never changes. The page's only entry point is `mountReactPy`, and nothing in that path lets you register a handler of your own: `#!js onMessage` exists on the client classes, but a page built by `mountReactPy` never hands you the instance ([The client object](../reference/client-api.md#the-client-object)). Do not build on this path; use one of the routes below.
 
 ## Down: push a value the client never asked for
 
@@ -62,38 +65,43 @@ Polling is fine for a demo and wrong at scale. For real work, prefer a server-se
 
 ## Up: read what the client sends
 
-An event handler receives a `#!python dict`, not a live event — the browser serialized it and your code is now on the other side of a network boundary. The client walks the target and copies enumerable properties, plus `#!python value`, `#!python checked`, `#!python files`, `#!python type`, `#!python name` read off the element even though they are accessors, plus `#!python dataset`, plus — on `#!python submit` — the form's named controls. Functions, DOM nodes, and cycles are skipped rather than raising.
+An event handler receives a live proxy onto the browser's event, not a copy of it. The client keeps the object and hands the server a handle; each `#!python await` on a property is a question asked of the page at that moment (`event-proxy.ts`, `serializeValue`). Nothing about the DOM event arrives unless you ask for it, which is the whole point: an `#!html <input>` used to arrive as the entire `#!python HTMLInputElement` — a measured `#!python onChange` payload carried roughly ninety keys, `#!python accept`, `#!python formAction`, `#!python validity`, and the rest — of which a handler reads `#!python value`.
 
-Two consequences to internalize:
+What a read gives back is decided by the client. Plain data comes across as itself. A method comes back as a reference, so `await event.target.focus()` is a call the client makes rather than a function you receive. An object too deep, too large, or recursive comes back as a reference too, and you reach further with more `#!python await`s. Blocked members — `#!python window`, `#!python document`, `#!python parentNode`, `#!python eval`, `#!python setTimeout` — are refused outright, so a read cannot be used to walk out of the event and into the page.
 
-**An `#!html <input>` arrives as the whole element.** A measured `#!python onChange` payload carried roughly ninety keys — `#!python accept`, `#!python formAction`, `#!python validity`, `#!python validationMessage`, and the rest of `#!python HTMLInputElement` — of which you read `#!python value`. Index what you need; do not count on a specific key surviving, and do not iterate the payload assuming it is small.
-
-**On `#!python submit`, `#!python event["target"]` is a *list*, not a dict.** The named controls are serialized as list entries, so the read shape differs from every other event:
+**On `#!python submit`, the target is the form, and the thing you want is one level down.** `#!python HTMLFormControlsCollection` — what `#!python form.elements` holds — is iterable, and the client hands over anything iterable as a list (`serializeValue`), so `await event.target.elements` answers with one entry per control, named or not, each a plain dict of a hundred properties. The form itself is iterable too, so `await event.target` gives you the same controls; `#!python .elements` is just the name which says what you mean:
 
 ```python linenums="0"
-def handle_submit(event):
+async def handle_submit(event):
     event.preventDefault()
-    controls = event["target"]  # list of control dicts
-    payload = next((c["value"] for c in controls if c.get("name") == "payload"), "")
+    controls = await event.target.elements  # list of control dicts
+    payload = next(
+        (c["value"] for c in controls if c.get("name") == "payload"), ""
+    )
 ```
 
-This is verified: submitting a form with a hidden `#!python name="payload"` input produced `[{"name": "", "type": "file", ...}, {"name": "payload", "type": "hidden", "value": "hello world\n"}, {"name": "", "type": "submit", ...}]`. The full working example is in [Files](#files-what-actually-crosses-the-wire) below. The protocol behind this is documented in [Protocol Structure](../reference/protocol-structure.md).
+Note what makes that readable: the list arrives as data, so `c["value"]` is a plain subscript on the answer. The proxy itself is not subscriptable, but the JSON the client sent back is an ordinary `#!python list` of `#!python dict`s. The nested back-references inside each control (`#!python c["form"]`, which points at the form again) come through as references rather than copies. The full working example is in [Files](#files-what-actually-crosses-the-wire) below, and the wire format is in [Protocol Structure](../reference/protocol-structure.md).
+
+Because each read is a round trip, how you write them costs time. Awaiting two properties one after another is two trips; `#!python await event.read("target.value", "key")` or an `#!python asyncio.gather` of them is one. A read you never make costs nothing at all.
 
 ## Files: what actually crosses the wire
 
-A file input does not send file contents. It sends file **metadata**. Verified with a real file chooser against a real browser — this is the entire `#!python files` entry that arrived:
+A file input does not send file contents. It sends file **metadata**. Re-verified in Chrome against a real `#!html <input type="file">` — this is the entire `#!python files` entry that arrived for a 12-byte `#!python upload.txt`:
 
 ```python linenums="0"
-{
-    "name": "upload.txt",
-    "lastModified": 1791523914968,
-    "lastModifiedDate": {},
-    "webkitRelativePath": "",
-    "type": "text/plain",
-}
+[
+    {
+        "name": "upload.txt",
+        "lastModified": 1792302335371,
+        "lastModifiedDate": "2026-10-18T05:45:35.371Z",
+        "webkitRelativePath": "",
+        "size": 12,
+        "type": "text/plain",
+    }
+]
 ```
 
-No bytes. `#!python File` exposes its content through methods, which are functions, and functions are skipped by the walk. There is no `#!python FormData` in the client and no chunked upload path. If you expected `#!python event["target"]["files"][0]["content"]`, it does not exist and never will from this mechanism.
+No bytes. `#!python File` exposes its content through methods, and the client hands methods over as references rather than values, so there is nothing to read. There is no `#!python FormData` in the client and no chunked upload path. If you expected `#!python (await event.target.files)[0]["content"]`, it does not exist and never will from this mechanism.
 
 ### Reading real bytes
 
@@ -169,7 +177,7 @@ Verified: the first patch says `#!python rendering...`, the next says `#!python 
 
 ## Client-only data
 
-The mirror problem: something in the browser that Python cannot see. Computed style, scroll position, canvas pixels, `#!python localStorage`, geolocation, the clipboard — none of it is in the payload, because the walk copies data properties and skips everything callable.
+The mirror problem: something in the browser that Python cannot see. The proxy narrowed this considerably — anything reachable from the event object is now readable, so `#!python await event.target.scrollTop`, `#!python await event.target.className`, or a value a canvas put on its own element are ordinary awaits. What is still out of reach is anything the page will not hand over from that starting point: computed style of an element you never got an event from, `#!python localStorage`, geolocation, the clipboard. The client refuses the paths which would lead there anyway (`#!python window`, `#!python document`, `#!python localStorage`), so a handler cannot walk off the event and into the page — see [Protocol Structure](../reference/protocol-structure.md#the-event-proxy-round-trip).
 
 Your options, in order of preference:
 
@@ -184,14 +192,14 @@ There is no `#!python use_ref`-style handle to a DOM node, and `#!python {"ref":
 
 -   Only two channels exist: the model down, events up. An arbitrary server→client message is logged as `#!python Received message without handler` and dropped.
 -   Server push means `#!python use_async_effect` plus a state setter — loop, handle `#!python CancelledError`, and remember the dependency array infers by default.
--   Event payloads are serialized snapshots: an input arrives as the whole `#!python HTMLInputElement`, and `#!python submit` gives you a **list** of named controls.
+-   Events are live proxies, not snapshots: each `#!python await` is a round trip to the browser, a read you never make costs nothing, and `#!python submit` hands back the form as a **list** of controls.
 -   File inputs send metadata only, never bytes. Read the file in the browser, put the text in a named hidden input, and submit.
 -   Use `#!python asyncio.to_thread` for blocking work. Calling a setter from a raw thread fails with `#!python no running event loop` and no visible symptom — marshal with `#!python call_soon_threadsafe`.
 -   State never lives on the component function object; that is a leak across connections.
 
 ## Related
 
--   [Protocol Structure](../reference/protocol-structure.md) — both message types, `#!python target`, and `#!python seq`
+-   [Protocol Structure](../reference/protocol-structure.md) — the message types, `#!python target`, and `#!python seq`
 -   [Use Async Effect](../reference/use-async-effect.md) and [Use Effect](../reference/use-effect.md) — the push mechanism, and its traps
 -   [Creating VDOM Event Handlers](./creating-vdom-event-handlers.md) — payload shape, inline JavaScript, bytecode detection
 -   [User Connection](../reference/use-connection.md) — the read-only connection view

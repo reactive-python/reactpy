@@ -302,7 +302,7 @@ Put it in the ASGI app's startup, or in the module that builds the `#!python Rea
 An Effect is not the place for something that must happen exactly once per user action, because you cannot promise how many times an Effect runs — dependencies change, components unmount, processes restart. Charging a card belongs in an event handler, where a click is the only trigger:
 
 ```python linenums="0"
-def handle_buy(event):
+async def handle_buy(event):
     set_status("buying...")
     order = place_order(sku)
     set_status(f"ordered {order.id}")

@@ -222,13 +222,13 @@ Now make a square fill itself when clicked. Add a handler inside `square` and re
 ```python linenums="0"
 @component
 def square():
-    def handle_click(event):
+    async def handle_click(event):
         print("clicked!")
 
     return html.button({"className": "square", "onClick": handle_click})
 ```
 
-A handler is any callable, and ReactPy calls it with exactly one argument — the event payload. Name it `event`, even if you ignore it.
+A handler is a coroutine, and ReactPy calls it with exactly one argument — the event. Name it `event`, even if you ignore it.
 
 Unlike React, there is no browser console to open: ReactPy components run on the server, so `#!python print` lands in the terminal running your app, next to the URL. Click a square several times and you will see the line repeat there.
 
@@ -300,13 +300,22 @@ Note the spelling distinction, because both forms are correct in different place
 
 Two details are worth pausing on.
 
-First, the handler needs to know *which* square was clicked, but ReactPy hands a handler exactly one argument: the event. The usual answer is a factory, as `#!python handle_click(i)` does here — it returns the handler that closes over `#!python i`. You will also see this written as a lambda:
+First, the handler needs to know *which* square was clicked, but ReactPy hands a handler exactly one argument: the event. The answer is a factory, as `#!python handle_click(i)` does here — it returns the handler that closes over `#!python i`:
 
 ```python linenums="0"
-html.button({"onClick": lambda event: handle_click(i)}, squares[i])
+def handle_click(i):
+    async def inner(event):
+        ...
+
+    return inner
+
+
+html.button({"onClick": handle_click(i)}, squares[i])
 ```
 
-That works when written out per square. It has a sharp edge inside a loop, which [Picking a key](#picking-a-key) demonstrates.
+A `#!python lambda` is not available for this. It cannot be a coroutine, so ReactPy refuses it as a handler; `#!python functools.partial(handle_click, i)` over a two-parameter handler is the other shape which works — but prefer the factory. ReactPy unwraps a `#!python partial` before reading your code, yet it then looks for `#!python preventDefault()` and friends on your function's **first** parameter, and a `#!python partial` has already filled that one in. So a `#!python preventDefault()` inside a `#!python partial`-bound handler goes undetected and has to be declared with `#!python @event(prevent_default=True)`. The factory has no such problem: its inner `#!python async def inner(event)` still leads with the event, so detection finds what you wrote.
+
+The factory has a sharp edge inside a loop — the closure captures the variable, not the value — which [Picking a key](#picking-a-key) demonstrates.
 
 Second, `board` renders three rows by hand, so `square(...)` appears nine times with nine different indices. A loop is shorter, and once you write one you will need keys — see [Rendering Lists](./rendering-lists.md).
 
@@ -381,7 +390,7 @@ Squares now alternate `X` and `O`, and the status line above the board tracks th
 One defect remains: click a filled square and the other player overwrites it. That happens because the handler never checks whether the square is already taken. Return early instead of playing over it:
 
 ```python linenums="0"
-def inner(event):
+async def inner(event):
     if squares[i]:
         return
     next_squares = squares.copy()
@@ -591,7 +600,7 @@ For the move list, the move's index is a legitimate key: moves are never reorder
 
 ```python linenums="0"
 def jump_to(move):
-    def inner(event):
+    async def inner(event):
         set_current_move(move)
 
     return inner

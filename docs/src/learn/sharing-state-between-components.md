@@ -116,13 +116,19 @@ When the `#!python active_index` is `#!python 0`, the first panel is active, and
 Clicking the "Show" button in either `#!python panel()` needs to change the active index in `#!python accordion()`. A `#!python panel()` can't set the `#!python active_index` state directly because it's defined inside the `#!python accordion()`. The `#!python accordion()` component needs to _explicitly allow_ the `#!python panel()` component to change its state by [passing an event handler down as a prop](./responding-to-events.md#passing-event-handlers-as-props):
 
 ```python linenums="0"
+async def show_about(event):
+    set_active_index(0)
+
+
 panel(
     "About",
     active_index == 0,
-    lambda event: set_active_index(0),
+    show_about,
     ...
 )
 ```
+
+A handler must be a coroutine, and a coroutine cannot be a `#!python lambda`, so each panel gets a named handler. That is what the real example below does, twice.
 
 The `#!python html.button()` inside the `#!python panel()` will now use the `#!python on_show` prop as its click event handler:
 

@@ -96,7 +96,7 @@ Even though you called `#!python set_number(number + 1)` three times, in _this r
 You can also visualize this by mentally substituting state variables with their values in your code. Since `#!python number` is `#!python 0` for _this render_, its event handler effectively reads:
 
 ```python linenums="0"
-def handle_click(event):
+async def handle_click(event):
     set_number(0 + 1)
     set_number(0 + 1)
     set_number(0 + 1)

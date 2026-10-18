@@ -173,7 +173,7 @@ Two handlers should do the same thing on input. There is no reason for this to i
 
 Verified: type in the shipping field and the billing readout changes with it, in one render, because both setters were called from one handler.
 
-Event handlers are ordinary functions. Call one from the other, extract the shared part into a plain function, or pass the other setter as a parameter. Whatever React's docs tell you here transfers unchanged, because none of it is rendering work.
+Event handlers are ordinary functions — ordinary `#!python async def`s, which is to say the coroutine ReactPy requires of anything in a handler slot. Call one from the other (with `#!python await`, since it is a coroutine), extract the shared part into a plain function, or pass the other setter as a parameter. Whatever React's docs tell you here transfers unchanged, because none of it is rendering work.
 
 ### Sending a POST request
 

@@ -80,7 +80,7 @@ Every value in the component body belongs to one render. Logic placed in the com
 ### Logic inside event handlers is not reactive
 
 ```python linenums="0"
-def submit(event):
+async def submit(event):
     print(f"submitting {city}, {country}")   # reads one render's values
     send(city, country)
 ```
@@ -113,13 +113,13 @@ def calculate_shipping(city, country):
 def shipping_form():
     ...
 
-    def submit(event):
+    async def submit(event):
         set_shipping_info(calculate_shipping(city, country))
 ```
 
 No hook needed. A function that only *reads* values and *returns* something does not need to be a hook, and making it one costs a render.
 
-ReactPy has no `#!python useEffectEvent`, no `#!python useOptimistic`, and no `#!python useTransition` — verified against `reactpy` 2.0.0b13. That is not a gap to route around with an Effect: the handler-is-not-reactive property that Effect Events exist to give you in React is what you already have here for free.
+ReactPy has no `#!python useEffectEvent`, no `#!python useOptimistic`, and no `#!python useTransition` — verified against `reactpy` at `main`. That is not a gap to route around with an Effect: the handler-is-not-reactive property that Effect Events exist to give you in React is what you already have here for free.
 
 ## Which handler actually runs
 
@@ -163,9 +163,9 @@ So the handler-staleness story in ReactPy is narrower than in React, and it is w
 -   You generally do **not** need `#!python use_callback` to "get fresh values" in a handler — the handler that runs is the current one.
 -   You **do** need the functional updater form whenever an update depends on the current state and two events can arrive in the same round trip.
 
-### Async handlers
+### Handlers which await
 
-A handler may be `#!python async def`, and it may set state after an `#!python await`:
+Every handler is a coroutine, and it may set state after an `#!python await`:
 
 ```python linenums="0"
 async def submit(event):

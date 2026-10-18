@@ -126,10 +126,15 @@ Settings are ordinary keyword arguments, and they reach the browser-side client:
 | `reconnect_backoff_multiplier` | `1.25` | Growth factor between attempts. |
 | `async_rendering` | `True` | Allow renders to overlap. |
 | `debug` | `False` | Server-side checks and richer error text — see the note below. |
-| `max_queue_size` | `1000` | Bound on the pending event queue per connection. |
+| `max_queue_size` | `1000` | Bound on the pending events of each handler target — the layout keeps a queue per target (`core/layout.py`, `_event_queues`), not one per connection. |
+| `event_proxy_timeout` | `5.0` | Seconds to wait for the browser to answer one live event read before `EventProxyTimeout`. |
+| `event_proxy_max_depth` | `10` | How deep one resolution may expand nested objects before they come back as references. |
+| `event_proxy_max_timeouts` | `3` | Consecutive unanswered round trips tolerated before live access is switched off for the connection. |
 | `tests_default_timeout` | `15.0` | Default timeout for `reactpy.testing`. **Not settable this way** — see the note below. |
 
-Verified: setting `#!python path_prefix="/apps/reactpy/"` moves asset serving to that prefix, and the reconnect values appear in the generated mount call.
+Verified: setting `#!python path_prefix="/apps/reactpy/"` moves asset serving to that prefix, and the reconnect values appear in the generated mount call. The three `#!python event_proxy_*` settings were verified by constructing an executor with them and reading the matching `#!python reactpy.config` options back.
+
+They belong to a handler which reads the browser rather than to the client bootstrap: they bound the round trips behind `#!python await event.target.value`. Reach for them only when a handler is timing out or a deeply nested read comes back as references — see [Protocol Structure](protocol-structure.md#the-event-proxy-round-trip).
 
 !!! warning "These keywords are process-wide, not per-app"
 

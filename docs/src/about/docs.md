@@ -55,7 +55,7 @@ Things that do not survive a rename:
 
 !!! warning "Pitfall"
 
-    A page can pass every automated check while teaching something false, because the checks are syntactic. The ReactJS FIXME that sat in `thinking-in-react.md` claiming `event["target"]["checked"]` does not work was wrong — a checkbox `onChange` receives `checked=True`. The only defence is running the example and reading what the client actually sent.
+    A page can pass every automated check while teaching something false, because the checks are syntactic. The ReactJS FIXME that sat in `thinking-in-react.md` claiming `checked` was not delivered was wrong — a checkbox `onChange` handler reads it back as `#!python await event.target.checked`. The only defence is running the example against a real layout and reading what the client actually answered.
 
 ## Page structure
 

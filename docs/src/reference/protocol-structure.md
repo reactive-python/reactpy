@@ -2,14 +2,18 @@
 
 <p class="intro" markdown>
 
-ReactPy renders on the server and paints in the browser. A single websocket carries two message types: the server sends `#!python "layout-update"` patches, the client sends `#!python "layout-event"` interactions.
+ReactPy renders on the server and paints in the browser. A single websocket carries four message types: the server sends `#!python "layout-update"` patches, the client sends `#!python "layout-event"` interactions, and a handler which wants to read the browser goes back and forth over `#!python "event-proxy-request"` / `#!python "event-proxy-response"`.
 
 </p>
 
 ```text linenums="0"
-server --{"type": "layout-update", "path": ..., "model": ...}-->  client
-server <--{"type": "layout-event", "target": ..., "data": [...]}--  client
+server --{"type": "layout-update", "path": ..., "model": ...}--------------->  client
+server <--{"type": "layout-event", "target": ..., "data": [...]}------------  client
+server --{"type": "event-proxy-request", "eventId": ..., "path": ...}------->  client
+server <--{"type": "event-proxy-response", "requestId": ..., "value": ...}-  client
 ```
+
+The last two are new, and they change what an event is. Nothing about the DOM event is serialized at all: the client keeps the live object in a registry of its own and sends the server a handle. What the server can do with that handle — and what happens when the browser never answers — is the subject of [The event proxy round trip](#the-event-proxy-round-trip).
 
 ---
 
@@ -57,7 +61,7 @@ One message type goes down the wire. Its keys are fixed (`reactpy.types.LayoutUp
 | `#!python "path"` | `#!python str` | A JSON Pointer into the client's copy of the model. `#!python ""` means *replace everything*. |
 | `#!python "model"` | `#!python dict` | The value to place at that pointer. |
 
-The model is JSON, not a `#!python VdomDict`. Six key names are legal (`core/vdom.py`, `VDOM_JSON_SCHEMA`), and only `#!python tagName` is required:
+The model is JSON, not a `#!python VdomDict`. Six key names are legal (`reactpy/types.py`, `ALLOWED_VDOM_KEYS`), and only `#!python tagName` is required:
 
 | Key | Value | Notes |
 | --- | --- | --- |
@@ -68,11 +72,13 @@ The model is JSON, not a `#!python VdomDict`. Six key names are legal (`core/vdo
 | `#!python "inlineJavaScript"` | `#!python dict` | Handler name to JavaScript source string. |
 | `#!python "importSource"` | `#!python dict` | Marks an element as coming from a JavaScript module. |
 
-Any other key name is rejected while the element is being built:
+Any other key name is rejected by `#!python VdomDict` while the element is being built (`reactpy/types.py`):
 
 ```text linenums="0"
 ValueError: Invalid keys: {'bogus'}.
 ```
+
+The wire schema in `core/vdom.py`, `VDOM_JSON_SCHEMA` is a looser thing: it lists these six plus `#!python "error"` (which the layout injects when a component raises), and it is only consulted when `#!python REACTPY_CHECK_VDOM_SPEC` or `#!python REACTPY_DEBUG` is on.
 
 Here is a real mount message for a counter, captured off the wire:
 
@@ -185,7 +191,7 @@ One message type goes up (`reactpy.types.LayoutEventMessage`):
 | --- | --- | --- |
 | `#!python "type"` | `#!python "layout-event"` | Always this literal. |
 | `#!python "target"` | `#!python str` | The handler's `#!python target`, copied from the model. |
-| `#!python "data"` | `#!python list` | The arguments for the handler. Usually one event dict. |
+| `#!python "data"` | `#!python list` | The arguments for the handler. Usually one event handle. |
 | `#!python "seq"` | `#!python int` | Optional. A client-assigned counter, per element. |
 
 A real click on the button above:
@@ -194,33 +200,77 @@ A real click on the button above:
 {
   "type": "layout-event",
   "target": "/0/0/0/1:onClick",
-  "data": [{"type": "click", "target": {"tagName": "BUTTON"}}],
+  "data": [{"__reactpy_event__": {"id": "lzk4q1-0"}, "type": "click"}],
   "seq": 1
 }
 ```
 
 ### How `data` is built
 
-The browser serializes the DOM event by walking it: enumerable properties, plus `#!python value`, `#!python checked`, `#!python files`, `#!python type` and `#!python name` read off the element even though they are accessors, plus `#!python dataset`, plus every named control of a form on `#!python submit`. Functions, DOM nodes, and anything else unserializable are skipped; a cycle or an object nested too deep is cut rather than raising.
+The client does not serialize the DOM event. It stores the live object in a registry and sends a handle — `#!python {"__reactpy_event__": {"id": ...}}` — plus `#!python "type"`, the one plain value the client attaches because the server needs it to name the event and it is too cheap to be worth a round trip (`vdom.tsx`). Anything else the handler wants is fetched, per property, over the proxy messages described below.
 
-That is why the handler receives a `#!python dict` and not a live event, and why it cannot call into the page. It also means the contents depend on what the walk happened to reach: an `#!html <input>` arrives as the whole element, hundreds of fields of which you read one. Index `#!python data` positionally rather than counting on a specific key surviving.
+That replaced the old `#!js event-to-object` package, which walked the event and its target: enumerable properties, plus `#!python value`, `#!python checked`, `#!python files`, `#!python type` and `#!python name` read off the element even though they are accessors, plus `#!python dataset`, plus every named control of a form on `#!python submit`. A single `#!html <input>` used to put the whole element on the wire — around ninety keys, of which a handler reads one. What goes over the wire for an event now is a handle and a type: on the order of a hundred and fifty bytes.
+
+The consequence for you: the second element of `#!python data` is whatever the event was dispatched with, and the first is the handle — a dict of the marker and nothing but the id, never a copy of the event. Handlers are still free to take more than one argument — `#!js vdom.tsx` builds the list from the event plus any extra values the dispatch supplied — so index `#!python data` positionally rather than counting on a specific key surviving.
 
 ### Unpacking, and why the two handler forms differ
 
 `Layout._process_event_queue` turns `#!python data` into arguments and calls the handler — but not the same way for both kinds of handler (`core/events.py`, `to_event_handler_function`):
 
 ```python linenums="0"
-function(*data)   # a plain callable: the list is unpacked
+function(*data)   # a plain coroutine: the list is unpacked
 function(data)    # an EventHandler: the list itself
 ```
 
-So `#!python def f(event)` receives the event dict when passed directly, while `#!python def f(data)` must index into the list once wrapped in `#!python EventHandler`. Converting a working handler just to add `#!python prevent_default` breaks it in a way the traceback does not explain. [Common Props](./common-props.md#event-handlers) shows both shapes side by side.
+So `#!python async def f(event)` receives the event when passed directly, while `#!python async def f(data)` must index into the list once wrapped in `#!python EventHandler`. Converting a working handler just to add `#!python prevent_default` breaks it in a way the traceback does not explain. Both forms are coroutines: `#!python EventHandler.__init__` and `#!python to_event_handler_function` each run the value through `check_is_async_handler`, so a sync function or a `#!python lambda` raises at element-build time. [Common Props](./common-props.md#event-handlers) shows both shapes side by side.
+
+### The event proxy round trip
+
+A handler which reads `#!python await event.target.value` makes the server ask the browser. `Layout.set_event_proxy_sender` wires the backend to the connection, and the request that goes down is one per property (`_event_proxy.py`):
+
+```json linenums="0"
+{
+  "type": "event-proxy-request",
+  "requestId": "f5a9b645f0a145e984b7c2d8e19f753c",
+  "eventId": "lzk4q1-0",
+  "path": ["target", "value"],
+  "call": false,
+  "args": [],
+  "reply": true,
+  "maxDepth": 10
+}
+```
+
+The two ids come from different sides and mean different things. `#!python "requestId"` is a fresh `#!python uuid4().hex` per request, minted by the server so it can match the answer to whoever asked. `#!python "eventId"` is the client's own registry key for the object behind the handle — an opaque string such as `#!python "lzk4q1-0"` from `#!js EventProxyRegistry.register`, never a handler `#!python target` — so build it from the handle you were given and do not try to guess one.
+
+The client answers with the value, or with a failure it can name:
+
+```json linenums="0"
+{
+  "type": "event-proxy-response",
+  "requestId": "f5a9b645f0a145e984b7c2d8e19f753c",
+  "ok": true,
+  "value": "typed text",
+  "error": null,
+  "code": null
+}
+```
+
+Two requests raised in the same synchronous stretch — a batch via `#!python await event.read(...)`, or an `#!python asyncio.gather` of reads — are flushed together as `#!python {"type": "event-proxy-request", "requests": [ ... ]}` and answered the same way with a `#!python "responses"` array. Requests which genuinely depend on each other (`#!python await` one, then the next) cost one round trip each.
+
+A client that never answers does not hang the handler. After `#!python REACTPY_EVENT_PROXY_TIMEOUT` seconds the read raises `EventProxyTimeout`. Strikes are counted by the connection's `#!python EventProxyBackend` — one backend per layout, so one per connection — and one unanswered message costs one strike however many properties it was asking for; after `#!python REACTPY_EVENT_PROXY_MAX_TIMEOUTS` consecutive unanswered round trips, live access is switched off for that connection and every later read raises `EventProxyUnavailable` at once rather than stalling. Binding a new sender — a reconnect — clears the strikes and gives the client another chance. `#!python REACTPY_EVENT_PROXY_MAX_DEPTH` bounds how deep a returned object is expanded. See [Configuring ReactPy](./reactpy.md#configuration).
+
+The client is the one that decides what may be read. It refuses the members that would let a server reach outside the event — `#!python window`, `#!python document`, `#!python parentNode`, `#!python eval`, `#!python setTimeout`, and friends (`BLOCKED_MEMBERS` in `event-proxy.ts`) — and it also refuses `#!python __reactpy_event__`, `#!python __reactpy_ref__`, and anything matching `#!js /^on[a-z]/i`, so a handler cannot read the handle back off its own event or fish for another one. A refusal is an error on the response, not a value.
+
+The client also decides how long an event stays readable, and it enforces that two different ways. An event which the server never once asked about is forgotten after `#!js LIVE_OBJECT_TTL_MS` (60 s); one the server *has* read is exempt, because the handler may simply be slow. What bounds the page overall is `#!js MAX_LIVE_OBJECTS` (512): past that, the event the server has gone longest without reading is dropped. Either way the id keeps working as an address and keeps explaining why it failed — `#!python "not-found"` for one that aged out unread, `#!python "evicted"` for one dropped to make room while this side was still reading it — which is the difference between `EventProxyNotFound` and `EventProxyEvicted`. An `#!python "evicted"` points at the page rather than at your handler.
+
+Build a non-Python client from this page and you must implement both proxy message types as well, or every `#!python await` on an event raises. The stock client does, which is why a handler written against it works.
 
 ### The `target` string
 
 `#!python "/0/0/0/1:onClick"` is two parts joined by a colon:
 
--   Before the colon, the element's position: child index, then child index, walking down from the root. It indexes the same tree the patch `#!python path` does, so the two line up.
+-   Before the colon, the element's **key path**: one segment per level, where each segment is that child's `#!python key` if it has one and its index otherwise (`core/layout.py`, `_get_children_info` and `_make_element_model_state`). Patch `#!python path`\ s, by contrast, are always positional (`.../children/<index>`). The two line up only while nobody sets a key — give a child `#!python {"key": "row-3"}` and its target segment becomes `#!python row-3` while its patch path stays `#!python children/2`.
 -   After the colon, the attribute name the handler was declared under. It is whatever key you used, which is why `#!python {"onMyThing": f}` produces a target ending in `#!python :onMyThing`.
 
 Treat the whole thing as an opaque handle. It is generated per render and is not meant to be constructed by hand; two structurally identical elements get distinct targets because their index paths differ.
@@ -237,7 +287,7 @@ Treat the whole thing as an opaque handle. It is generated per render and is not
 
 ### `seq` and typed input
 
-Typing needs a protocol answer that a plain request/response does not give. Each keystroke sends an event carrying a counter the client incremented for that element. The server records the highest number seen per target, and on the next render of an `#!html <input>`, `#!html <select>`, or `#!html <textarea>` stamps the largest one into the element's attributes under `_reactpy_ack_seq`:
+Typing needs a protocol answer that a plain request/response does not give. Each keystroke sends an event carrying a counter the client incremented for that element. The server records the highest number it has finished handling, **per event name** for that target, and on the next render of an `#!html <input>`, `#!html <select>`, or `#!html <textarea>` stamps that whole mapping into the element's attributes under `_reactpy_ack_seq` — not one number for the element, because a single counter would let one event's progress stand in for another's (`core/layout.py`, `_inject_event_ack_seq`):
 
 ```json linenums="0"
 {
@@ -248,7 +298,7 @@ Typing needs a protocol answer that a plain request/response does not give. Each
     "children": [
       {
         "tagName": "input",
-        "attributes": {"value": "hello world", "_reactpy_ack_seq": 1},
+        "attributes": {"value": "hello world", "_reactpy_ack_seq": {"onInput": 1}},
         "eventHandlers": {
           "onInput": {
             "target": "/0/0/0:onInput",
@@ -284,6 +334,8 @@ The value lives in a dedicated attribute rather than among your own so it cannot
 
     Both are omitted entirely when `#!python None`, which is what keeps the common case minimal. On arrival the client validates each with `#!js isValidDebounce` — finite, non-negative integer — and an invalid one is dropped with a `#!js console.warn` naming the handler rather than an error, leaving the handler live but un-debounced. Build a non-Python client from this page and you must carry these two fields; skipping them silently loses the throttling. See [Common Props](./common-props.md#reactpys-own-options).
 
+    One further key may appear in that entry, and it is new with this release: `#!js "stopImmediatePropagation"`. It is a boolean like its two neighbours, but unlike `#!python preventDefault` and `#!python stopPropagation` — which are always sent — it is **omitted rather than sent as `#!python false`**: `_serialize_event_handler` in `core/layout.py` adds the key only when the handler asked for it, so read its absence as `#!python false`. `#!python @event(stop_immediate_propagation=True)`, or a detected `#!python event.stopImmediatePropagation()` in the handler's body, is what puts it there. The client then calls `#!js stopImmediatePropagation()` on the event before running the handler, so the other listeners on that same element are skipped too (`#!js vdom.tsx`).
+
 ---
 
 ## Watching it yourself
@@ -316,11 +368,13 @@ Then read the mount message, send a click, and read the patch:
     # TODO
     ```
 
-Both were run against each other to produce every JSON block on this page. Nothing about the protocol is private to ReactPy's client — given a mount element and a correct `#!python target`, you can drive a server-rendered component from any language.
+Both were run against each other, which is where the mount message, the `#!python target`, and the patch above come from. The counter's handler only calls a setter, so it never reads a property and the proxy messages never appear — the observer answers them, and gets nothing to answer, which is the "a read you never make costs nothing" rule from [Responding to Events](../learn/responding-to-events.md#the-event-object) showing up on the wire. The two proxy frames further up the page were captured from a handler which does read, against the same middleware. Nothing about the protocol is private to ReactPy's client — given a mount element and a correct `#!python target`, you can drive a server-rendered component from any language.
 
 !!! danger "The server trusts the client completely"
 
-    Nothing checks that `#!python target` names a real handler, that `#!python data` describes a real event, or that the sender is the page that mounted the component. Whatever your handler reads out of `#!python data`, it read because the browser asserted it. Treat it as user input: `#!python event["target"]["value"]` is a string an attacker chose, at any length. The one thing the client cannot forge is the ASGI scope, which is server-side — see [Use Connection](./use-connection.md).
+    Nothing checks that `#!python target` names a real handler, that `#!python data` describes a real event, or that the sender is the page that mounted the component. Whatever your handler reads out of `#!python data`, it read because the browser asserted it. Treat it as user input: `#!python await event.target.value` is a string an attacker chose, at any length. The one thing which does not travel in the message at all is the ASGI scope: the server built that itself when the socket was accepted, which is why [Use Connection](./use-connection.md) and [User Scope](./use-scope.md) are the trusted side of the picture — even there, remember that the headers and peer address it reports are what the client chose to send.
+
+    The proxy did not weaken this; it moved the trust question rather than answering it. `EventProxyBackend._route` takes `#!python "value"` from a response verbatim — no schema, no type check — so a crafted client can make any read return anything, including a `#!python list` where a `#!python str` was expected. And a `#!js call: true` request runs a method **in the page**, which is why the client, not the server, holds the veto: `BLOCKED_MEMBERS` and the `#!js /^on[a-z]/i` rule are the page's defence against a hostile *server*. Read that as what it is — the two sides do not trust each other, and only the page defends the page. Anything the client volunteers without being asked (`#!python "type"`) is the same kind of assertion as the rest of `#!python data`.
 
 ---
 
@@ -330,7 +384,7 @@ Both were run against each other to produce every JSON block on this page. Nothi
 | --- | --- |
 | Handshake refused, `#!python [ReactPy] Failed to connect!` | Missing trailing slash in `#!python componentPath`, or a `#!python path_prefix` that differs between the bootstrap and the server. |
 | Socket opens then closes; server logs `#!python RuntimeError: Attempting to use an unregistered root component <path>.` | The dotted path is not in `#!python root_components`. The socket is accepted *before* the component is resolved, so the failure is visible only in the server log. |
-| Server log: `#!python Unknown message type: <type>` | Anything other than `#!python "layout-event"`. The server accepts that one type and drops the rest, leaving the connection open. |
+| Server log: `#!python Unknown message type: <type>` | Anything other than `#!python "layout-event"` or `#!python "event-proxy-response"`. The server accepts those two and drops the rest, leaving the connection open. |
 | Server log: `#!python Ignored event - handler ... does not exist or its component unmounted` | Stale or wrong `#!python target`. |
 | Console: `#!python Received message without type` or `#!python Received message without handler` | A frame the client has no handler for. Ignored; the connection stays up. |
 | A `#!html <pre>` with an exception message appears in the page | The component raised. See [Errors arrive as a model](#errors-arrive-as-a-model). |

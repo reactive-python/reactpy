@@ -98,7 +98,7 @@ age, set_age = use_state(42)
 To update a number based on its current value, use a function:
 
 ```python linenums="0"
-def handle_add(event):
+async def handle_add(event):
     set_step(lambda step: step + 1)
 ```
 
@@ -122,11 +122,11 @@ A controlled input reads its `#!python "value"` from state and writes back throu
 
 Type into the field and the heading follows. Note the key names: `#!python "value"` and `#!python "onChange"` are DOM attribute names inside the attributes dictionary, while the Python names around them are `snake_case`.
 
-There is no `#!python e.target.name`, because the client does not send DOM attributes — bind extra context with a `#!python lambda` instead. See [Responding to Events](../learn/responding-to-events.md).
+Reading which field an event came from is possible — `#!python await event.target.name` asks the page for it — but it costs a round trip, so when the handler already knows which field it belongs to, bind that in Python instead: a named handler per field, a closure, or a `#!python functools.partial`. See [Responding to Events](../learn/responding-to-events.md).
 
 #### Checkbox (boolean)
 
-`#!python event["target"]["checked"]` tells you whether the box is ticked:
+`#!python await event.target.checked` tells you whether the box is ticked:
 
 === "app.py"
 
@@ -140,7 +140,7 @@ There is no `#!python e.target.name`, because the client does not send DOM attri
     # TODO
     ```
 
-Tick the box and the status line flips. The client deliberately re-reads `#!python value`, `#!python checked`, `#!python files`, `#!python type`, and `#!python name` from the element, which is why they arrive even though most element properties are stripped to keep payloads small.
+Tick the box and the status line flips. `#!python checked` is fetched from the live element when the handler awaits it, in the same message as any other property would be — nothing arrives up front, so a handler which never reads it never pays for it.
 
 #### Form (two variables)
 
@@ -211,8 +211,12 @@ set_first_name("Ada")
 Pass a **new** object; there is no merge. For dicts use unpacking, for lists use a comprehension or slicing:
 
 ```python linenums="0"
-set_person({**person, "firstName": event["target"]["value"]})
-set_items([*items, {"id": next_id, "text": text}])
+async def handle_first_name(event):
+    set_person({**person, "firstName": await event.target.value})
+
+
+async def handle_add(event):
+    set_items([*items, {"id": next_id, "text": text}])
 ```
 
 Full treatment, including nested updates and the silent-drop failure mode, is on [Updating Objects in State](../learn/updating-objects-in-state.md) and [Updating Arrays in State](../learn/updating-arrays-in-state.md).

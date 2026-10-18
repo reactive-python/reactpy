@@ -87,7 +87,7 @@ index, set_index = use_state(0)
 This is how they work together in `#!python handle_next`:
 
 ```python linenums="0"
-def handle_next(event):
+async def handle_next(event):
     set_index(index + 1)
 ```
 
@@ -96,7 +96,7 @@ def handle_next(event):
     If you keep the plain-variable version, the assignment inside the nested function is not legal Python without a declaration:
 
     ```python linenums="0"
-    def handle_next(event):
+    async def handle_next(event):
         nonlocal index
         index = index + 1
     ```

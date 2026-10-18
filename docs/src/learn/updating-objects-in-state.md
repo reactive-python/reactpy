@@ -40,8 +40,8 @@ In ReactPy, treat state as **read-only**. Every time your code renders, you work
 Consider a form that lets the user change their profile. This handler reaches into the state object and assigns a field directly:
 
 ```python linenums="0"
-def handle_first_name(event):
-    person["firstName"] = event["target"]["value"]   # 🚩 Mutate!
+async def handle_first_name(event):
+    person["firstName"] = await event.target.value   # 🚩 Mutate!
     set_person(person)                                # same object -> ignored
 ```
 
@@ -50,8 +50,8 @@ def handle_first_name(event):
 The fix is to always create a **new** object for the next state:
 
 ```python linenums="0"
-def handle_first_name(event):
-    set_person({**person, "firstName": event["target"]["value"]})
+async def handle_first_name(event):
+    set_person({**person, "firstName": await event.target.value})
 ```
 
 That is the pattern for every state update in ReactPy: build a new value, pass it to the setter.
@@ -70,7 +70,7 @@ A pointer-tracking dot shows the same rule with no form in sight. The handler bu
     # TODO
     ```
 
-The `#!python "onPointerMove"` handler is on the grey container, and the dot is positioned from the coordinates it receives. Move the pointer anywhere inside the box and the dot follows. `#!python event["clientX"]` and `#!python event["clientY"]` are part of what the client sends for pointer events — verified against a real browser, which reported `clientX`/`clientY` matching the synthesized pointer position — so React's pointer and drag demos port across unchanged.
+The `#!python "onPointerMove"` handler is on the grey container, and the dot is positioned from the coordinates it reads. Move the pointer anywhere inside the box and the dot follows. `#!python await event.clientX` and `#!python await event.clientY` are ordinary proxy reads — the value is fetched from the browser at the `#!python await`, not shipped up front — so React's pointer and drag demos port across unchanged.
 
 !!! warning "There is no automatic merge"
 
@@ -142,7 +142,7 @@ Repeating a near-identical handler per field gets tedious. One handler can take 
     # TODO
     ```
 
-Note how the field name is supplied by the `#!python lambda`. ReactPy invokes every event handler with the event as its **single** positional argument — verified, a handler declaring two required parameters fails with `TypeError: ... missing 1 required positional argument: 'event'`. There is no `#!js e.target.name` to read either, because the client does not send DOM attributes; any extra context has to be bound on the Python side.
+Note how the field name is bound by the thin per-field handler, not delivered by the client. ReactPy invokes every event handler with the event as its **single** positional argument — verified, a handler declaring two required parameters fails with `TypeError: ... missing 1 required positional argument: 'event'`. There is no `#!js e.target.name` shortcut either: `#!python name` is readable, but reading it costs a round trip to the page, and it has to be read from the element which fired the event. Any extra context which is already known on the server is cheaper bound in Python — by a named handler, a closure, or a `#!python functools.partial`.
 
 !!! tip "Reach for `use_reducer` when handlers multiply"
 

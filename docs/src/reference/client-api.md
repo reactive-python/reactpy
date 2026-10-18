@@ -217,8 +217,11 @@ Serve it with `#!bash uvicorn main:my_app`. Verified in a browser: the counter r
 | Member | Purpose |
 | --- | --- |
 | `#!js onMessage(type, handler)` | Register a handler for a message `#!js type`. Returns an unsubscribe function. |
-| `#!js handleIncoming(message)` | Dispatch to the handlers for `#!js message.type`. |
+| `#!js handleIncoming(message)` | Dispatch to the handlers for `#!js message.type` — except live event reads, which it answers itself. |
+| `#!js eventProxy` | The `#!js EventProxyRegistry` created with the client, which holds the live objects behind event handles. |
 | `#!js ready` | Promise, resolved by the first `#!js onMessage` call. Gates the connection. |
+
+One type never reaches a registered handler. `#!js handleIncoming` routes `#!js "event-proxy-request"` straight to the client's own `#!js eventProxy` registry (`client.ts`), which is why live event reads work even in a binding that registered no handler for them — and why `#!js Received message without handler` is never logged for one. Build a client that does not extend `#!js BaseReactPyClient` and you must answer those requests yourself, or every `#!python await` on an event ends in `#!python EventProxyTimeout` — see [Protocol Structure](protocol-structure.md#the-event-proxy-round-trip).
 
 Messages with no `#!js type`, or with one nobody registered for, are logged and dropped — the connection is never closed over a bad message:
 
