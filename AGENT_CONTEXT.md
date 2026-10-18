@@ -453,7 +453,7 @@ All settable by env var (`reactpy/config.py`).
 
 ---
 
-## 11. Docs house style (this repo, `new-docs` branch)
+## 11. Docs house style
 
 - Pages live in `docs/src/`; `docs/mkdocs.yml` `nav:` lists them. Add `🚧` to the nav
   entry of any page not yet migrated — and **remove `🚧` when you finish a page**.

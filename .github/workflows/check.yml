@@ -48,3 +48,23 @@ jobs:
         with:
             job-name: "{1}"
             run-cmd: "hatch run javascript:check"
+    docs:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: 3.x
+            - name: Install Python Dependencies
+              run: pip install --upgrade pip hatch uv
+            - name: Check documentation links
+              run: hatch run docs:linkcheck
+            - name: Check docs build
+              run: hatch run docs:build
+            - name: Check docs examples
+              run: hatch fmt docs --check

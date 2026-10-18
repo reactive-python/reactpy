@@ -15,6 +15,8 @@ Using the following categories, list your changes in this order:
 Don't forget to remove deprecated code on each major release!
 -->
 
+<!--changelog-start-->
+
 ## [Unreleased]
 
 ### Added

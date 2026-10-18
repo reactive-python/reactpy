@@ -1,3 +1,7 @@
+# --- DOCS ---
+
+docs/site
+
 # --- Build Artifacts ---
 src/reactpy/static/*.js*
 src/reactpy/static/morphdom/

@@ -12,9 +12,6 @@ There are two test suites in this project, and they live in different places. Th
     -   How to run the documentation build checks yourself, since no CI runs them for you
     -   Which command failures are yours and which are environmental
 
-!!! abstract "Note"
-
-    The ReactPy package and its `tests/` directory live on the [`main`](https://github.com/reactive-python/reactpy) branch. This documentation site is authored on the [`new-docs`](https://github.com/reactive-python/reactpy/tree/new-docs) branch, which contains only `docs/` — running a test command there collects zero tests rather than failing, which reads like a pass and is not one. If `hatch test` reports `no tests ran`, you are on the wrong branch, not on a clean tree.
 
 ## Prerequisites
 
@@ -101,11 +98,6 @@ Formatting is Ruff at a line length of 88. The rules that bite most in this repo
 ## Documentation checks
 
 Run these from the repository root before you commit.
-
-!!! warning "Pitfall"
-
-    Nothing checks the documentation for you. The only workflow on `new-docs` installs the requirements and runs `mkdocs gh-deploy --force` on push — which does *not* pass `--strict`, so a broken internal link exits 0 and deploys anyway. The commands below are the gate only because you run them; there is no CI to catch a miss, and the live site is where an uncaught one appears.
-
 
 ```bash
 hatch fmt --check docs/             # formatting and lint

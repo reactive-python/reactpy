@@ -18,11 +18,8 @@ This documentation site and the library are separate bodies of work, and the com
 
 | Change | Repository / branch |
 | --- | --- |
-| Library code, hooks, layout, backends | [`reactive-python/reactpy` → `main`](https://github.com/reactive-python/reactpy) |
+| Documentation, library code, hooks, layout, backends | [`reactive-python/reactpy` → `main`](https://github.com/reactive-python/reactpy) |
 | JavaScript client (`src/js/`) | Same, `main` |
-| These documentation pages (`docs/src/`, `docs/examples/`) | [`reactive-python/reactpy` → `new-docs`](https://github.com/reactive-python/reactpy/tree/new-docs) |
-
-The `new-docs` branch holds only `docs/` — the package and `tests/` were removed from it. A test command run there reports success without running anything.
 
 !!! warning "Pitfall"
 
@@ -44,20 +41,9 @@ git checkout -b fix-my-change main
 
 Name the branch for the change, not for you. `fix-key-not-resetting-on-provider` beats `patch-1` and survives a month of review.
 
-Match the convention of the branch you are landing on; they differ. Documentation commits on `new-docs` use [Conventional Commits](https://www.conventionalcommits.org/) subjects — `docs(learn): author X for ReactPy v2`, `docs(examples): fix include-marker cropping`. Library history on `main` instead uses plain sentence subjects, because pull requests there are squash-merged and the summary is written at merge time — `Fix PyScript root component not hiding after render error (#1347)`. In both cases the subject is the thing a reader scans to find the functional change in a long history, so write it for that reader.
-
-One commit per logical change. If a commit only makes sense next to a later one, squash them before you push rather than asking the reviewer to mentally reassemble them.
-
 ## The checklist
 
 The repository ships a pull request template; fill it in rather than deleting it.
-
--   [ ] Tests have been developed for bug fixes or new functionality.
--   [ ] The changelog has been updated, if necessary.
--   [ ] Documentation has been updated, if necessary.
--   [ ] GitHub Issues closed by this pull request have been linked.
-
-By submitting, you agree that your contribution complies with the project's open source licenses.
 
 Tests are not optional for a behaviour change. A bug fix should arrive with the test that reproduces the bug — write it first and watch it fail, then fix and watch it pass. A test that has never failed proves nothing about the thing it claims to protect.
 
@@ -86,8 +72,6 @@ hatch test -k the_test_you_touched
 
 CI retries flaky tests, which is a mercy and a trap: a genuinely racy test can go green on the third attempt and stay in the tree. If a test fails once and passes on retry, that is a bug in the test — usually a bare `asyncio.sleep` where `poll(...)` belongs.
 
-A pull request into `new-docs` gets no CI at all, for two independent reasons. GitHub runs `pull_request` workflows from the **base** branch, and the only workflow that exists on `new-docs` is the docs deploy, which triggers on `push` — so nothing matches a PR. And the `test-documentation` job in `check.yml` on `main` is disabled outright with `if: 0` (temporarily, while the Sphinx-to-MkDocs transition finishes), so even a PR targeting `main` runs lint and Python tests but never builds the docs. A docs change is verified by you or by nobody — run the `mkdocs build --strict` set from [Running Tests](./running-tests.md) and read its exit code. The one thing that does run: pushing to `new-docs` deploys with `mkdocs gh-deploy --force`, no `--strict` — expect a change to be live the moment it merges, whether or not it builds cleanly.
-
 ## Working with reviewers
 
 Respond to every comment, including the ones you are not acting on. "Not taking this because X" is a complete reply and saves a round trip; silence invites a re-review of something you already considered.
@@ -102,13 +86,13 @@ If a review asks for something you believe is wrong, say so once, with evidence,
 
 ## After merge
 
-Documentation changes on `new-docs` deploy to the live site on push, so a mistake there is visible immediately rather than at the next release. That is a reason to run the build check locally, not a reason to be nervous about contributing.
+Documentation changes deploy to the live site's `develop` documentation on push to `main`, so a mistake there is visible immediately rather than at the next release. That is a reason to run the build check locally, not a reason to be nervous about contributing.
 
 Library changes reach users only through a release, which the maintainers cut. Do not ask when your fix will ship, and do not close a closed-issue loop by demanding a release — the tag is a maintainer's call.
 
 ## Recap
 
--   Library work on `main`; documentation work on `new-docs`. Check the branch first.
+-   Library and documentation work on `main`.
 -   Start from a discussion; a one-sentence redirect beats a rejected pull request.
 -   Conventional Commit subjects, one logical change per commit, branch named for the change.
 -   Tests accompany behaviour changes, and they must have failed first.

@@ -28,16 +28,6 @@ The [ReactPy repository on GitHub](https://github.com/reactive-python/reactpy) i
 
 Discussions is the front door, not Issues. The repository's issue-template configuration disables blank issues and points new visitors at Discussions instead, so a question opened as an issue gets redirected rather than answered. Open an issue once a defect is confirmed and someone has reproduced it — the discussion that came first usually becomes the link inside it.
 
-## Chat
-
-There is a [Discord server](https://discord.gg/uNb5P4hA9X) for ReactPy, announced in [Discussion #997](https://github.com/reactive-python/reactpy/discussions/997) and linked from the repository README. It is the fastest place to get an answer to a "why is this doing that" question, and quiet enough that nobody minds a beginner question.
-
-!!! abstract "Note"
-
-    An invite URL is mutable third-party state. If `discord.gg/uNb5P4hA9X` ever stops resolving, read the current invite from the README badge or from Discussion #997 — those two are maintained together — rather than trusting a search result, which may point at a cloned server.
-
-Discord is good for conversation and bad for searchability. A solution that exists only in chat is invisible to the next person with the same problem. If a chat thread solves something real, post it to Discussions afterwards; if it exposes an error on this site, that is a [documentation contribution](./docs.md).
-
 ## Code of conduct
 
 Participation is governed by the [Contributor Covenant code of conduct](https://github.com/reactive-python/reactpy/blob/main/CODE_OF_CONDUCT.md), which lives at the repository root. It applies everywhere the project is discussed — Discussions, Issues, pull requests, Discord, and any other space where ReactPy maintainers show up.

@@ -8,7 +8,6 @@ Most of these pages were ported from the ReactJS documentation, and the port is 
 
 !!! summary "You will learn"
 
-    -   What makes a ported page "done", and how the `🚧` marker works
     -   The page structure, admonitions, and link conventions this site uses
     -   Why snippets live in `docs/examples/` instead of inside the markdown
 
@@ -34,11 +33,7 @@ A page is authored, not migrated. Concretely:
 -   Every code sample is ReactPy that runs. No JSX, no `className=` outside an attribute dict, no hook that does not exist.
 -   Every behavioural claim has been checked against the package or its tests — by reading the source, and for anything about rendering or events, by running it.
 -   React-only sections are removed or rewritten, not translated.
--   The `🚧` badge is gone from its `nav:` entry.
 
-!!! abstract "Note"
-
-    `🚧` in the navigation means "this is still a ReactJS page with the React names swapped". It is a promise to the reader that the content is unreliable, so removing it is the meaningful act — the badge should never come off before the checks above are true. `🚫` means the page is blocked on something outside this project and is parked; commented-out `nav:` entries work the same way.
 
 ## Port, do not rename
 
@@ -46,12 +41,12 @@ The pages derive from [react.dev](https://react.dev/learn). Editing means deleti
 
 Things that do not survive a rename:
 
--   **Hooks that do not exist.** ReactPy has twelve hooks. There is no `use_id`, `use_transition`, `use_deferred_value`, `use_layout_effect`, `use_insertion_effect`, `use_imperative_handle`, or `use_sync_external_store`. Some of the react.dev pages for them are parked as `🚫`; `use_id` has no page at all, because the upstream issue was closed as not planned. Never port a page that depends on one as if it worked.
+-   **Hooks that do not exist.** ReactPy has twelve hooks. There is no `use_id`, `use_transition`, `use_deferred_value`, `use_layout_effect`, `use_insertion_effect`, `use_imperative_handle`, or `use_sync_external_store`.
 -   **Naming rules.** Components are snake_case and lowercase — `my_button`, not `MyButton`. React's capital-letter rule does not apply, because ReactPy distinguishes a component from a tag by the call, not the case. Attribute keys stay camelCase (`className`, `onClick`), because those pass through to the DOM untouched.
 -   **JSX mechanics.** Children are positional arguments after an optional attribute dict. There is no JSX, and no PSX in this release.
 -   **StrictMode and `memo`.** Neither exists. React's double-invoke warnings and its "skip re-rendering unchanged children" optimisation have no ReactPy equivalent, so port those sections as a warning that ReactPy will not catch the problem for you.
 -   **`&&` rendering.** `{cond && <X/>}` has no safe Python spelling — `False and X` leaks the word `False` into the page, since only `None` renders nothing. Rewrite such examples rather than transliterating them.
--   **Dependency arrays.** `use_effect`, `use_memo`, and `use_callback` infer dependencies from the closure when you omit the argument. React's "omit the array to run after every render" is simply wrong here.
+-   **Dependency arrays.** `use_effect`, `use_memo`, and `use_callback` infer dependencies from the closure when you omit the argument. React's "omit the array to run after every render" is slightly different from ReactPy's behaviour.
 
 !!! warning "Pitfall"
 
@@ -136,25 +131,12 @@ cd docs && mkdocs build --strict; echo "exit=$?"
 
 Then run the examples themselves and open the built page in a browser. `mkdocs build --strict` catches broken internal links and unresolvable includes — both abort the build with a nonzero exit. Two things it does **not** catch: a page missing from `nav:` (an `INFO` line, exit 0), and a link whose `#anchor` does not exist in an otherwise valid target file (also exit 0), so check both by eye. And it cannot catch a snippet that renders nothing.
 
-You are the only gate. The single workflow on `new-docs` runs `mkdocs gh-deploy --force` on push, and `gh-deploy` does not pass `--strict` — a build with broken links exits 0 and publishes. A miss does not fail a pipeline; it goes live.
-
 !!! warning "Pitfall"
 
     Do not trust a component that renders without error. Set `REACTPY_DEBUG=1` when probing: with debug off, a component that raised produces `{"tagName": "", "error": ""}` — a blank region and a 200 response. See [Running Tests](./running-tests.md) for the harness traps that make a broken example look green.
 
-## Process
-
-Branch from `new-docs`, one page per branch, and use the same Conventional Commit subjects as the history there — `docs(learn): author X for ReactPy v2`. A commit that removes a `🚧` badge from `nav:` should be the same commit that authored the page, never a separate "mark done" commit that could be cherry-picked alone.
-
-No `CHANGELOG.md` entry: documentation work is not user-facing in the sense the changelog means. See [Changelog](./changelog.md).
-
-!!! abstract "Note"
-
-    `docs/src/dictionary.txt` exists for the spellcheck plugin, which is currently commented out in `mkdocs.yml`. New domain words belong there if the plugin is ever re-enabled; nothing fails while it stays off.
-
 ## Recap
 
--   A page is done when it runs and every claim is verified — then remove its `🚧` badge.
 -   Port, do not rename: delete JSX, non-existent hooks, StrictMode, `memo`, `&&` rendering, and React's dependency-array semantics.
 -   Fixed structure: Overview, intro paragraph, `You will learn`, sections, Recap, Related.
 -   Relative `.md` links; admonitions instead of ReactJS's JSX tags.
