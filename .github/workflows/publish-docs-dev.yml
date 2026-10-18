@@ -1,0 +1,28 @@
+name: Publish Develop Docs
+on:
+    push:
+        branches:
+            - main
+jobs:
+    docs:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: 3.x
+            - name: Install dependencies
+              run: pip install --upgrade pip hatch uv
+            - name: Configure Git
+              run: |
+                  git config user.name github-actions
+                  git config user.email github-actions@github.com
+            - name: Publish Develop Docs
+              run: hatch run docs:deploy_develop
+        concurrency:
+            group: publish-docs
