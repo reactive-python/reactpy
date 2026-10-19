@@ -40,10 +40,6 @@ Here the shipping quote is computed by an Effect watching a flag that only a cli
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 This is where the ReactJS version of this example stops matching reality. Verified behaviour: type a city and country, then press **Get quote** three times.
 
 -   Click 1 logs `#!python quoted Portland, US — $20`.
@@ -60,10 +56,6 @@ This is where the ReactJS version of this example stops matching reality. Verifi
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 No trigger state, no Effect, no `#!python use_effect` import. Verified: every click logs `#!python quoted Portland, US — $20`, at the same one-render-per-click cost as a plain button.
 
@@ -145,10 +137,6 @@ added item, discount=20
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified with two clicks delivered back-to-back:
 
 | | Handler log | Final list |
@@ -190,10 +178,6 @@ But if the component unmounts during the `#!python await`, the update is **disca
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: pressing **Theme** (not a dependency) reports `#!python handler reused on this render`; pressing **Count** (a dependency) reports `#!python handler recreated`.
 
 Be clear about what that buys you. ReactPy has **no render bailout**: there is no `#!python memo` (absent from both `reactpy` and `reactpy.reactjs`), and a child re-renders whenever its parent does. Measured — a child whose props and handler never changed ran its body **4 times** across one mount and three parent re-renders. So a stable callback does not make anything re-render less. What it does is keep a value out of an Effect's or `#!python use_memo`'s dependency list without re-triggering it.
@@ -208,10 +192,6 @@ There is no `#!python useEvent`, so the nearest equivalent to React's Effect Eve
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: **Apply coupon** logs the value currently in the box even though the callback is pinned to `#!python dependencies=[]` and is never re-created.
 
 !!! warning "A callback pinned to a local function never updates"
@@ -225,10 +205,6 @@ Verified: **Apply coupon** logs the value currently in the box even though the c
         ```
 
     === ":material-play: Run"
-
-        ```python
-        # TODO
-        ```
 
     Verified: type `#!python shoes`, press **Run**, type `#!python shoes2`, press **Run** again. The page shows the new query both times; the console says `#!python handler sees query=''` both times. The counter keeps counting (`#!python Run (2)`), which is what makes this so easy to miss — the callback looks alive while reading a snapshot from mount.
 

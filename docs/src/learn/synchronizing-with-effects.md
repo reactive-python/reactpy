@@ -82,10 +82,6 @@ Here is a working component. Open the server console and press **Re-check**: the
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Two things about timing are worth stating precisely, because they differ from what a React tutorial will tell you:
 
 -   An Effect is scheduled **after your component's render is complete**, not after the browser has painted. The task is created at the end of the render (`core/_life_cycle_hook.py`, `affect_layout_did_render`), and the update message has not necessarily reached the socket yet. Measured directly, an Effect's first line ran *before* `#!python layout.render()` returned to the backend. So never assume the user can already see the result.
@@ -124,10 +120,6 @@ That last row is the one that bites people porting code from React. In React, om
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Press Rename twice and no new log line appears; press Add 1 and one appears per increment. Verified.
 
 !!! warning "Dependencies are not compared by identity"
@@ -159,10 +151,6 @@ Return a function from the Effect. ReactPy runs it **before the next run of that
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Switch rooms and the server log reads `#!python connect lobby`, `#!python close lobby`, `#!python connect dev` — the teardown for the old room runs before the new one starts. Press **Leave** and the last connection closes. Verified.
 
 This matters more in ReactPy than in React because of process lifetime. A closed browser tab destroys everything with it. A ReactPy server does not: a subscription you forgot to release is still live after the user went home, still holding your component, still firing callbacks into a view nobody can see. The counter-proof, measured in a `#!python Layout`:
@@ -192,10 +180,6 @@ The fix is to keep the value in a [ref](./referencing-values-with-refs.md), assi
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Toggle the threshold from 50 to 10 and alerts start appearing; toggle back and they stop. The single long-lived task never restarts and always reads the current number. Verified.
 
 The alternative — usually the better one — is to put the value in the dependency list so a change tears the Effect down and builds a new one with fresh values. Use the ref when restarting is expensive: an open socket, a loop with accumulated state.
@@ -214,9 +198,11 @@ Third-party objects are imperative: you construct them, call setters, destroy th
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
+    ```reactpy-run
+    props: name="Q3 Report"
     ```
+
+
 
 Two Effects, two dependency lists: one creates and destroys the object when `#!python name` changes, the other pushes `#!python page_size` into it. Verified against the object's own log: `#!python created q3`, `#!python set_page_size letter`, `#!python set_page_size a4`, `#!python destroyed q3` on unmount — one instance, kept in step, cleaned up.
 
@@ -234,10 +220,6 @@ The shape is always the same: subscribe inside the Effect, unsubscribe in the cl
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified through the bus's own log: `#!python subscribe news`, `#!python unsubscribe news`, `#!python subscribe sports`, `#!python unsubscribe sports`, `#!python subscribe news`, `#!python unsubscribe news` across a full switch-and-leave cycle — exactly one subscriber live at any moment.
 
 Note that the callback is defined *inside* the Effect, so it closes over this Effect's values and the subscription is rebuilt when the dependencies change. Defining it in the component body instead would leave the subscription holding the first version of it.
@@ -253,10 +235,6 @@ Fetching belongs in `#!python use_async_effect`, and cancellation is what makes 
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 The example is deliberately lopsided: `#!python orders` takes 0.8 s and `#!python users` takes 0.05 s. Press **Toggle report** while the slow one is in flight and the screen settles on `#!python users: 500 rows` and stays there. The data source recorded that it computed **only** the `#!python users` answer — the `#!python orders` task was cancelled inside its `#!python await` and never reached its `#!python set_rows`. Verified.
 
@@ -280,10 +258,6 @@ Report a page view when the page changes, not when the component happens to rend
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 The Effect depends on `#!python path` only. Type into the field and the report count stays put; press **Navigate** and it climbs by one. Verified: two typing re-renders produced zero reports, two navigations produced two.
 
@@ -321,10 +295,6 @@ An Effect belongs to the render that created it. Its closure holds that render's
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Press **Type !** twice, then **Switch room**. The log gains `#!python lobby <- hello` from the mount, and then `#!python dev <- hello!!` — the Effect that ran for `#!python dev` was created by the render whose `#!python message` was already `#!python 'hello!!'`. Verified. No entry ever records an intermediate message, because only the renders whose dependencies changed created an Effect.
 

@@ -39,12 +39,6 @@ When your app starts, you need to mount a root component. Unlike React, where yo
     {% include "../../examples/render_and_commit/initial_render/app.py" start="# start" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 `#!python ReactPy(image)` is the line that matters. It registers `#!python image` as the root component and, when a browser connects, calls it and sends the result down. There is no DOM node to hand in — the executor owns the mount point (`#!python <div id="app">` in the page it generates).
 
 The other executors mount differently: `#!python ReactPyMiddleware` takes dotted paths to components so a URL can select one, and `#!python ReactPyCsr` mounts a component from a Python file that the browser runs itself. See [Creating a Standalone React App](./creating-a-react-app.md) for those.
@@ -60,10 +54,6 @@ Once the component has been initially rendered, you can trigger further renders 
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Note the difference from a browser-only React app: the state lives on the server. Calling `#!python set_now(...)` schedules a render *on the server*, and the new VDOM reaches the browser a websocket message later. That is why an interaction in ReactPy feels slightly laggy compared to the same UI written in JavaScript, and why holding a lock or sleeping inside an event handler stalls the whole connection.
 
@@ -117,10 +107,6 @@ That is the practical payoff of the "controlled vs uncontrolled" distinction:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Type into the field, then click **Re-render**. The text stays. ReactPy re-runs `#!python app()`, produces a new tree, and the diff for the untouched input is empty — so the browser never touches it, and neither the user's text nor their cursor position is disturbed.
 

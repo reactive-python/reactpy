@@ -146,6 +146,9 @@ markdown_extensions:
     - md_in_html
     - pymdownx.keys
 
+hooks:
+    - plugins/reactpy_run.py
+
 plugins:
     - search
     - include-markdown

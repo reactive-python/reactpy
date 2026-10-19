@@ -62,10 +62,6 @@ Press **Add task** twice, **task 1**, then **Clear done**, and watch the reducer
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Three things to notice in `#!python todos_reducer`. It is at module level, so the closure trap above never arises. Every branch builds a new dict with `#!python {**state, ...}` — none of them mutate. And the fallback `#!python return state` makes an unhandled action a deliberate no-op rather than a crash.
 
 ### The reducer must not mutate
@@ -79,10 +75,6 @@ This is the failure mode most likely to cost you an afternoon, and it is silent.
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Return `#!python {**state, "count": state["count"] + 1}`, not `#!python state["count"] += 1; return state`. The same applies one level down: `#!python {**state, "items": state["items"] + [new]}`, never `#!python state["items"].append(new)`. See [Updating Objects in State](../learn/updating-objects-in-state.md) and [Updating Arrays in State](../learn/updating-arrays-in-state.md).
 
@@ -100,10 +92,6 @@ Run this, press **Add step** twice, then **Bump step**, then **Add step** again:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 `#!python step` goes to 2 on screen, but the total keeps rising by 1. The reducer still holds the `#!python step` from the render that created it. Two ways out: keep the reducer at module level and put `#!python step` in the state, or send it in the action — `#!python dispatch({"type": "add", "amount": step})`.
 
 ### Avoiding recreating the initial state
@@ -117,10 +105,6 @@ Pass a function and ReactPy calls it once; pass a call and it runs on every rend
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 ---
 

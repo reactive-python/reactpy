@@ -66,10 +66,6 @@ A pointer-tracking dot shows the same rule with no form in sight. The handler bu
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The `#!python "onPointerMove"` handler is on the grey container, and the dot is positioned from the coordinates it reads. Move the pointer anywhere inside the box and the dot follows. `#!python await event.clientX` and `#!python await event.clientY` are ordinary proxy reads — the value is fetched from the browser at the `#!python await`, not shipped up front — so React's pointer and drag demos port across unchanged.
 
 !!! warning "There is no automatic merge"
@@ -108,10 +104,6 @@ Here the form keeps the other fields intact while replacing one:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Type in any field and watch the heading update. Each handler spreads the current `#!python person` into a fresh dict and overrides exactly one key.
 
 !!! warning "An unpacked dict is a shallow copy"
@@ -138,10 +130,6 @@ Repeating a near-identical handler per field gets tedious. One handler can take 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Note how the field name is bound by the thin per-field handler, not delivered by the client. ReactPy invokes every event handler with the event as its **single** positional argument — verified, a handler declaring two required parameters fails with `TypeError: ... missing 1 required positional argument: 'event'`. There is no `#!js e.target.name` shortcut either: `#!python name` is readable, but reading it costs a round trip to the page, and it has to be read from the element which fired the event. Any extra context which is already known on the server is cheaper bound in Python — by a named handler, a closure, or a `#!python functools.partial`.
 
 !!! tip "Reach for `use_reducer` when handlers multiply"
@@ -159,10 +147,6 @@ State often contains nested objects. To update a deeply nested value, copy the o
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Two copies are required:
 

@@ -96,10 +96,6 @@ To keep work running across renders, loop and honour cancellation. This is what 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The clock advances on its own — verified, one update per second. When `#!python dependencies` change or the component unmounts, ReactPy cancels the task and the loop exits through `#!python CancelledError`.
 
 !!! warning "Do not wait for a `stop` event"

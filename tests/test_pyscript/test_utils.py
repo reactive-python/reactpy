@@ -157,8 +157,115 @@ def test_extend_pyscript_config_string_values():
     assert result["packages_cache"] == "always"
 
 
-def test_reactpy_pkg_string_prefers_packaged_wheel():
-    wheel_file = _current_wheel_path()
+def test_extend_pyscript_config_relocates_static_assets_and_caches_wheel():
+    wheel = Path("reactpy-2.0.0-py3-none-any.whl")
+    with mock.patch.object(utils, "_ensure_local_reactpy_wheel", return_value=wheel):
+        result = orjson.loads(
+            utils.extend_pyscript_config(
+                [],
+                {},
+                {},
+                asset_prefix="/docs/assets/reactpy-runtime/static/",
+                packages_cache="normal",
+            )
+        )
+
+    assert result["packages"][0] == (
+        "/docs/assets/reactpy-runtime/static/wheels/reactpy-2.0.0-py3-none-any.whl"
+    )
+    assert list(result["js_modules"]["main"]) == [
+        "/docs/assets/reactpy-runtime/static/morphdom/morphdom-esm.js"
+    ]
+    # Only safe because the URL changes when the wheel's bytes do.
+    assert result["packages_cache"] == "normal"
+
+
+def test_extend_pyscript_config_defaults_are_unchanged():
+    wheel = Path("reactpy-2.0.0-py3-none-any.whl")
+    with mock.patch.object(utils, "_ensure_local_reactpy_wheel", return_value=wheel):
+        result = orjson.loads(utils.extend_pyscript_config([], {}, {}))
+
+    assert result["packages"][0] == (
+        f"{REACTPY_PATH_PREFIX.current}static/wheels/{wheel.name}"
+    )
+    assert list(result["js_modules"]["main"]) == [
+        f"{REACTPY_PATH_PREFIX.current}static/morphdom/morphdom-esm.js"
+    ]
+    assert result["packages_cache"] == "never"
+
+
+def test_extend_pyscript_config_declares_reactpy_dependencies():
+    """ReactPy's own dependencies belong in ``packages``, not just the wheel.
+
+    micropip resolves a wheel's dependencies on a cold boot only; a reload
+    reuses the cached install and ``import fastjsonschema`` then raises
+    ``ModuleNotFoundError``, which reads as "the Run tabs broke after I
+    refreshed". Declaring them puts them on PyScript's declarative load path.
+    """
+    wheel = Path("reactpy-2.0.0-py3-none-any.whl")
+    requirements = [
+        "anyio>=3",
+        "fastjsonschema>=2.14.5",
+        "lxml>=4",
+        "requests>=2",
+        "uvicorn[standard]; extra == 'all'",
+        "jinja2>=3; extra == 'jinja'",
+    ]
+
+    with (
+        mock.patch.object(utils, "_ensure_local_reactpy_wheel", return_value=wheel),
+        mock.patch.object(utils.metadata, "requires", return_value=requirements),
+    ):
+        result = orjson.loads(utils.extend_pyscript_config([], {}, {}))
+
+    # Bare names, in requirement order, after the wheel and jsonpointer.
+    assert result["packages"][1:] == [
+        "jsonpointer==3.*",
+        "anyio",
+        "fastjsonschema",
+        "lxml",
+        "requests",
+    ]
+
+
+def test_extend_pyscript_config_does_not_invent_deps_for_a_given_wheel():
+    """A caller passing its own wheel knows its own dependencies better."""
+    wheel_url = "https://cdn.example/reactpy-2.0.0-py3-none-any.whl"
+
+    result = orjson.loads(
+        utils.extend_pyscript_config([], {}, {}, reactpy_pkg_string=wheel_url)
+    )
+
+    assert result["packages"] == [wheel_url, "jsonpointer==3.*"]
+
+
+def test_reactpy_runtime_requirements_strip_specifiers_and_markers():
+    requirements = ["anyio>=3", "orjson", "anyio<5", "playwright; extra == 'testing'"]
+
+    with mock.patch.object(utils.metadata, "requires", return_value=requirements):
+        assert utils._reactpy_runtime_requirements() == ["anyio", "orjson"]
+
+
+def test_content_hashed_wheel_name_follows_the_wheels_bytes(tmp_path):
+    wheel_file = _write_file(tmp_path / _current_wheel_name(), "wheel a")
+
+    hashed_name = utils._content_hashed_wheel_name(wheel_file)
+    assert hashed_name == utils._content_hashed_wheel_name(wheel_file)
+    assert hashed_name.startswith(f"reactpy-{utils.reactpy.__version__}+")
+    assert hashed_name.endswith("-py3-none-any.whl")
+    # A content-named wheel is still recognized as the local version.
+    assert utils._wheel_matches_local_version(Path(hashed_name))
+
+    wheel_file.write_text("wheel b", encoding="utf-8")
+    assert utils._content_hashed_wheel_name(wheel_file) != hashed_name
+
+    # Names that are not wheels are left alone.
+    assert utils._with_local_label("not-a-wheel.txt", "deadbeef") == "not-a-wheel.txt"
+
+
+def test_reactpy_pkg_string_prefers_packaged_wheel(tmp_path):
+    wheel_file = _write_file(tmp_path / _current_wheel_name(), "packaged wheel")
+    expected_name = utils._content_hashed_wheel_name(wheel_file)
 
     with (
         mock.patch(
@@ -174,7 +281,7 @@ def test_reactpy_pkg_string_prefers_packaged_wheel():
         ) as rebuild_wheel,
     ):
         assert utils._reactpy_pkg_string() == (
-            f"{REACTPY_PATH_PREFIX.current}static/wheels/{wheel_file.name}"
+            f"{REACTPY_PATH_PREFIX.current}static/wheels/{expected_name}"
         )
         rebuild_wheel.assert_not_called()
 
@@ -235,8 +342,9 @@ def test_reactpy_pkg_string_reconstructs_installed_wheel_when_needed():
         rebuild_wheel.assert_called_once_with()
 
 
-def test_ensure_local_reactpy_wheel_keeps_current_source_checkout_wheel():
-    wheel_file = _current_wheel_path()
+def test_ensure_local_reactpy_wheel_keeps_current_source_checkout_wheel(tmp_path):
+    wheel_file = _write_file(tmp_path / _current_wheel_name(), "checkout wheel")
+    expected_name = utils._content_hashed_wheel_name(wheel_file)
 
     with (
         mock.patch(
@@ -255,7 +363,10 @@ def test_ensure_local_reactpy_wheel_keeps_current_source_checkout_wheel():
             "reactpy.executors.pyscript.utils._build_reactpy_wheel_from_source"
         ) as build_wheel,
     ):
-        assert utils._ensure_local_reactpy_wheel() == wheel_file
+        # The wheel is kept, and named after the bytes it holds.
+        assert utils._ensure_local_reactpy_wheel() == wheel_file.with_name(
+            expected_name
+        )
 
     build_wheel.assert_not_called()
 
@@ -646,12 +757,14 @@ def test_copy_reactpy_wheel_to_static_dir_replaces_previous_wheels(tmp_path):
     ):
         static_wheel = utils._copy_reactpy_wheel_to_static_dir(source_wheel)
 
-    assert static_wheel == static_wheels_dir / source_wheel.name
+    assert static_wheel == static_wheels_dir / utils._content_hashed_wheel_name(
+        source_wheel
+    )
     assert static_wheel.read_text(encoding="utf-8") == "new wheel"
     assert not (static_wheels_dir / "reactpy-1.0.0-py3-none-any.whl").exists()
 
 
-def test_copy_reactpy_wheel_to_static_dir_replaces_same_name_wheel(tmp_path):
+def test_copy_reactpy_wheel_to_static_dir_replaces_unhashed_wheel(tmp_path):
     source_wheel = _write_file(
         tmp_path / "dist" / _current_wheel_name(),
         "new wheel",
@@ -665,16 +778,21 @@ def test_copy_reactpy_wheel_to_static_dir_replaces_same_name_wheel(tmp_path):
     ):
         static_wheel = utils._copy_reactpy_wheel_to_static_dir(source_wheel)
 
-    assert static_wheel == static_wheels_dir / source_wheel.name
+    assert static_wheel == static_wheels_dir / utils._content_hashed_wheel_name(
+        source_wheel
+    )
     assert static_wheel.read_text(encoding="utf-8") == "new wheel"
+    assert not (static_wheels_dir / source_wheel.name).exists()
 
 
 def test_copy_reactpy_wheel_to_static_dir_returns_existing_static_wheel(tmp_path):
     static_wheels_dir = tmp_path / "static" / "wheels"
-    source_wheel = _write_file(
+    unhashed_wheel = _write_file(
         static_wheels_dir / _current_wheel_name(),
         "existing wheel",
     )
+    source_wheel = static_wheels_dir / utils._content_hashed_wheel_name(unhashed_wheel)
+    unhashed_wheel.replace(source_wheel)
 
     with (
         mock.patch(
@@ -754,8 +872,11 @@ def test_rebuild_installed_reactpy_wheel_recreates_distribution_wheel(tmp_path):
     ):
         wheel_path = utils._rebuild_installed_reactpy_wheel()
 
-    assert wheel_path == static_wheels_dir / (
-        f"reactpy-{utils.reactpy.__version__}-py3-none-any.whl"
+    assert wheel_path.parent == static_wheels_dir
+    assert wheel_path.name.startswith(f"reactpy-{utils.reactpy.__version__}+")
+    assert wheel_path.name.endswith("-py3-none-any.whl")
+    assert wheel_path.name == utils._with_local_label(
+        _current_wheel_name(), utils._wheel_content_digest(wheel_path)
     )
 
     with ZipFile(wheel_path) as wheel_zip:
@@ -814,8 +935,11 @@ def test_rebuild_installed_reactpy_wheel_skips_generated_script_entries(tmp_path
     ):
         wheel_path = utils._rebuild_installed_reactpy_wheel()
 
-    assert wheel_path == static_wheels_dir / (
-        f"reactpy-{utils.reactpy.__version__}-py3-none-any.whl"
+    assert wheel_path.parent == static_wheels_dir
+    assert wheel_path.name.startswith(f"reactpy-{utils.reactpy.__version__}+")
+    assert wheel_path.name.endswith("-py3-none-any.whl")
+    assert wheel_path.name == utils._with_local_label(
+        _current_wheel_name(), utils._wheel_content_digest(wheel_path)
     )
 
     with ZipFile(wheel_path) as wheel_zip:

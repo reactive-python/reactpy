@@ -26,10 +26,6 @@ Think of an Effect as a synchronization process between a value your component h
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified against the server's own log: mount produces `#!python connect lobby`; pressing **Leave lobby** produces `#!python close lobby` then `#!python connect dev`; and the last connection closes on unmount. The open-connection count never climbs above 1.
 
 Read the pair as a single unit — "be connected to this room". Setup and clean-up are not two independent callbacks: **ReactPy runs the clean-up of a run right before that run's successor sets up**, using the same captured state. So switching rooms means *leave the old room, join the new one*, in that order, and the process is complete no matter how many times the inputs change.
@@ -91,10 +87,6 @@ Here an Effect reports an error flag but leaves it out of the dependency list:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: pressing **Toggle error** re-renders the component and runs the Effect **zero** times — the list says `#!python dependencies=[count]`, so nothing happens. Press **Add 1** and the Effect runs, and this time it reports the *new* value of the flag, because a brand-new Effect was created by that render.
 
 That is the precise meaning of "stale": the Effect reports values from the render that created it. It does not freeze at mount, and it does not read the latest — it reads whichever render it was born in. Adding the missing value to the list is the fix.
@@ -110,10 +102,6 @@ That is the precise meaning of "stale": the Effect reports values from the rende
         ```
 
     === ":material-play: Run"
-
-        ```python
-        # TODO
-        ```
 
     Verified: press **Add 1** twice and **Rename** once — the heading shows `#!python count!!: 2`, yet the Effect has run exactly once and `#!python describe()` still returns `#!python 'count=0'`. The Effect is permanently frozen on its first closure, and nothing warns you.
 
@@ -195,10 +183,6 @@ def poller(topic):
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: **Stop** runs `#!python unsubscribe news`; while stopped, switching topics logs **nothing** (correct — there is nothing to synchronize); and **Start** then runs `#!python subscribe sports` for the new topic. The hook call always happens; only the setup is conditional. Note the dependency list includes `#!python enabled` — leaving it out would mean toggling did nothing at all.
 
 !!! warning "Do not omit a dependency to dodge a loop"
@@ -254,10 +238,6 @@ panel: my own effect
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Three rules, and nothing else:
 
@@ -335,10 +315,6 @@ This is the section that saves the most hours. An Effect body that raises is **i
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Measured with a log handler attached to the `#!python reactpy` logger: after mount, after three dependency changes, and after half a second idle, **zero** log records. The single `#!python ERROR Error in effect` record appears only when the component unmounts — because `core/_life_cycle_hook.py`, `affect_component_will_unmount` is where the Effect tasks are finally awaited and their exceptions gathered (`core/hooks.py` parks each task on `#!python stop.wait()`, so nobody looks at its result before then).
 

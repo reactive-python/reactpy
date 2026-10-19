@@ -113,10 +113,6 @@ A table of rows is where most of these rules meet at once — `#!python key` in 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Rendering this through `#!python Layout` gives rows whose attributes are exactly what was written:
 
 ```python linenums="0"

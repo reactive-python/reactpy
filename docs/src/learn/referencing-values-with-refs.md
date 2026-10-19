@@ -45,10 +45,6 @@ Here, a button will increment `#!python clicks.current` on every click:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The ref points to a number, but, like [state](./state-a-components-memory.md), you could point to anything: a string, an object, or even a function. Unlike state, a ref is a plain Python object with a `#!python current` attribute that you can read and modify.
 
 Note that **the component doesn't re-render with every increment.** Like state, refs are retained by ReactPy between re-renders. However, setting state re-renders a component. Changing a ref does not! Watch the server console: each click prints a new count, yet the page never redraws.
@@ -80,10 +76,6 @@ Now the awkward part. That coroutine runs for a long time, and it needs to know 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Press Start and the counter climbs; press Stop and it freezes at the exact final value. The `#!python started_at` ref is the same object on every render, so the button handlers and the long-lived ticking coroutine all see whatever the others wrote into it.
 
 Note what the ref is *not* doing here: it is not holding the `#!python asyncio.Task`. The ticking coroutine is owned by `#!python use_async_effect`, which cancels it when `#!python running` flips to `#!python False` and when the component unmounts. Storing a manually created task in a ref is tempting — `#!python tick_task.current = asyncio.create_task(keep_ticking())` — but nothing ever cancels it. Measure it by unmounting the component while it runs and the loop keeps rendering forever. Reach for an effect to own background work, and use the ref for the plain values the handlers need to share.
@@ -111,10 +103,6 @@ Here is a counter button that's implemented with state:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Because the `#!python count` value is displayed, it makes sense to use a state value for it. When the counter's value is set with `#!python set_count()`, ReactPy re-renders the component and the screen updates to reflect the new count.
 
 If you tried to implement this with a ref, ReactPy would never re-render the component, so you'd never see the count change! See how clicking this button **does not update its text**:
@@ -126,10 +114,6 @@ If you tried to implement this with a ref, ReactPy would never re-render the com
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 This is why reading `#!python ref.current` during render leads to unreliable code. If you need that, use state instead.
 

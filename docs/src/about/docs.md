@@ -101,10 +101,6 @@ Snippets are not typed into the markdown. They are real files under `docs/exampl
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 ```
 
 The rules that make this work:
@@ -113,9 +109,31 @@ The rules that make this work:
 -   A `# start` marker on its own line is what the include begins after; `# end` stops it. Crop at the marker so the marker itself never renders on the page.
 -   A file with no marker is included whole.
 -   Multiple variants of one idea go in sibling directories (`task_state_props/`, `task_context/`, `task_wiring/`), one tabbed group per example.
--   The `:material-play: Run` tab is a standing placeholder. Keep it.
+-   The `:material-play: Run` tab is left **empty**, and `docs/plugins/reactpy_run.py` fills it in. It reads the demo off the include directives in the tab set's sibling tabs, so the tab runs exactly the code the reader can already see — in the browser, through the same PyScript runtime ReactPy ships. Opening the tab is what executes the demo, so there is no Run button and nothing to type. Keep the tab.
 
 Because the file is included, a snippet cannot drift from a runnable example — but nothing in the build proves the example *behaves*. Mount it and check the DOM before you write "this renders a list". When a page compares several versions, drive all of them through the same click sequence and assert the same observable output; "it looks the same" is how two versions of an example quietly disagree.
+
+### When Run has to be told
+
+Inference covers a tab set that shows one demo's files. It gives up, and says why inside the tab, when the sibling tabs name two example directories, or when the component to mount takes required props. Give the tab a `reactpy-run` fence as its body to answer:
+
+```markdown
+=== ":material-play: Run"
+
+    ```reactpy-run
+    dir: rules_of_react/impure_render
+    files: app.py
+    root: counter
+    props: symbol="BTC"
+    ```
+```
+
+-   `dir:` — which example directory, when the sibling tabs name two.
+-   `files:` — which files make up the demo, relative to that directory.
+-   `root:` — which component to mount, when the outermost one is not the one nothing else renders.
+-   `props:` — arguments for a component whose parameters have no defaults.
+
+A demo that needs a filesystem, a server, or threads cannot run under Pyodide at all. Delete its Run tab instead of leaving a tab that opens onto nothing — `docs/examples/manually_register_a_client/badge_module/` is the precedent.
 
 Also list children of a component with `key=` when they come from a list — `html.ul([row(item, key=item["id"]) for item in items])`. Omitting it renders fine and emits a debug-mode warning, which is exactly the lesson the page about keys is trying to teach.
 

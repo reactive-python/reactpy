@@ -83,10 +83,6 @@ Pass the setup function directly:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Or use it as a decorator, which is equivalent:
 
 ```python linenums="0"
@@ -113,10 +109,6 @@ Pass a dependency list to re-run only when something relevant changes:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Switching topic tears down the old subscription before creating the new one — verified, the subscriber count stays at `#!python 1` across switches and drops to `#!python 0` on unmount.
 
 #### Omitting the dependencies argument
@@ -134,10 +126,6 @@ The example below makes inference visible. The effect reads `#!python count` but
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Pressing Rename twice adds no new log line — verified. Be aware this works because of which names the closure reads; it is implicit, so many teams prefer to spell the list out.
 
@@ -168,10 +156,6 @@ Return a function from the effect. ReactPy calls it before the next run of that 
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Connecting and disconnecting runs the pair in order — verified: `#!python connected`, `#!python disconnected`, `#!python connected` across connect / disconnect / reconnect.
 

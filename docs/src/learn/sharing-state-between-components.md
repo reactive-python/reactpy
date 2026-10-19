@@ -38,10 +38,6 @@ Press the Show button for both panels:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Notice how pressing one panel's button does not affect the other panel — they are independent.
 
 **But now let's say you want to change it so that only one panel is expanded at any given time.** With that design, expanding the second panel should collapse the first one. How would you do that?
@@ -95,10 +91,6 @@ In this example, it's the `#!python accordion()` component. Since it's above bot
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Try editing the hardcoded `#!python is_active` values in the `#!python accordion()` component and see the result on the screen.
 
 ### Step 3: Add state to the common parent
@@ -145,10 +137,6 @@ The `#!python html.button()` inside the `#!python panel()` will now use the `#!p
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 This completes lifting state up! Moving state into the common parent component allowed you to coordinate the two panels. Using the active index instead of two "is shown" flags ensured that only one panel is active at a given time. And passing down the event handler to the child allowed the child to change the parent's state.
 

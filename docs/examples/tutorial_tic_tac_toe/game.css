@@ -10,6 +10,7 @@ body {
 
 .square {
     background: #fff;
+    color: #000;
     border: 1px solid #999;
     float: left;
     font-size: 24px;

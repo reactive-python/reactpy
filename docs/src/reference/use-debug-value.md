@@ -78,10 +78,6 @@ Pressing a button that leaves the cart alone logs nothing, because the message d
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 ### Passing a function as the message
 
 If producing the message is more than string formatting, pass a function and let ReactPy memoize it. The report below finds the highest score to build its label; that walk happens once per distinct `#!python rows`, not once per render.
@@ -101,10 +97,6 @@ report(7f7ef6f0da80) 3 rows, best=ada:91
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Keep the message honest about what it reads. A function that reads no state is computed once and then logs nothing ever again, which usually reads as "the hook stopped working" rather than as correct memoization.
 

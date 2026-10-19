@@ -40,10 +40,6 @@ Give it an element, or a component that has already been called:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 There is no formatting option, no `#!python indent`, no doctype. You get the tags and the attributes and nothing else.
 
 ### What it renders
@@ -73,10 +69,6 @@ This is the sharpest edge on the page, and it is silent. On the way out, every a
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 `#!python htmlFor` becomes `#!python htmlfor` and `#!python className` becomes `#!python classname` — neither of which is a real HTML attribute, so the browser ignores both. The label stops labelling and the class stops styling, with no error anywhere.
 
 **Write the HTML name when the string is the destination.** `#!python {"for": "email"}` and `#!python {"class": "card"}` produce correct markup; `#!python {"htmlFor": ...}` and `#!python {"className": ...}` do not. There is no single spelling that satisfies both this and live rendering — see [Common Props](../reference/common-props.md) for why `#!python className` is what the browser-side path wants.
@@ -102,10 +94,6 @@ Note what did **not** happen to the `#!python 3`: no unit is inferred. `#!python
 
     === ":material-play: Run"
 
-        ```python
-        # TODO
-        ```
-
     `#!python checked` renders as `#!html <input type="checkbox" checked>` even though you said `#!python False`. Names outside that list get `#!python str(value)` instead, which leaks the word `#!python False` into your markup as in `#!html <div hidden="False">`. Which names fall in which group depends on your `#!python lxml` build, so test the attribute you care about. The safe form for a server-rendered string is to omit the key entirely rather than set it to `#!python False`.
 
 ## HTML to VDOM: `string_to_reactpy()`
@@ -117,10 +105,6 @@ Note what did **not** happen to the `#!python 3`: no unit is inferred. `#!python
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Parsing is done by `#!python lxml.html`, then each node is rebuilt through the normal `#!python html.*` constructors (`utils.py`, `_etree_to_vdom`), which means what comes back is a genuine `#!python VdomDict` you can render, patch, and send over the socket.
 
@@ -223,10 +207,6 @@ A parsed model is an ordinary element, so a component can return it directly:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 That is exactly how ReactPy builds its own document head: `#!python ReactPy(pyscript_setup=True)` parses a block of PyScript markup with `#!python string_to_reactpy()` and splices it into `#!python html_head` (`executors/asgi/standalone.py`).
 

@@ -81,10 +81,6 @@ Press **Switch to dark**: the provider gets a new value, and the component far b
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 ### Choosing a default
 
 The default is what a component sees when no provider is above it, which is exactly the situation in a unit test or a standalone render. Make it something the component can handle.
@@ -98,10 +94,6 @@ The default is what a component sees when no provider is above it, which is exac
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Note the type annotation on `#!python Cart`. Because the default is `#!python None`, without the annotation a type checker infers the value type as `#!python None` and rejects `#!python Cart(shop(), value=["widget", ...])`.
 
@@ -156,10 +148,6 @@ Effects run in their own task, outside any component render, so no hook is activ
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Putting `use_context(Config)` inside `#!python on_mount` instead raises `RuntimeError: No life cycle hook is active. Are you rendering in a layout?` — and since an effect error is logged only on the server, it is easy to miss.
 

@@ -198,12 +198,6 @@ The map ReactPy writes maps all four React specifiers onto its own preact files 
     {% include "../../examples/reference_client_api/import_map/main.py" start="# start" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 Serve it with `#!bash uvicorn main:my_app`. Verified in a browser: the counter rendered and logged `#!js [ReactPy] Connected!`, and no request for `#!js preact.js` reached the server — confirming the client never consulted the map.
 
 ---
@@ -260,12 +254,6 @@ Nothing is required beyond an element and the call. Both files below were run to
 
     ```python
     {% include "../../examples/reference_client_api/hand_written_bootstrap/main.py" start="# start" %}
-    ```
-
-=== ":material-play: Run"
-
-    ```python
-    # TODO
     ```
 
 The component is registered with `#!python root_components`, and the `#!js componentPath` in the page — `#!python "main.counter/"` — is that dotted path with a slash appended.

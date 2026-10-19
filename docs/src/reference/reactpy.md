@@ -76,12 +76,6 @@ An ASGI application.
     {% include "../../examples/reference_reactpy/standalone/app.py" start="# start" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 Serve it with `#!python uvicorn main:my_app`. The name you assign matters, because it is what `#!python uvicorn module:name` refers to.
 
 ### Page metadata and headers
@@ -90,12 +84,6 @@ Serve it with `#!python uvicorn main:my_app`. The name you assign matters, becau
 
     ```python
     {% include "../../examples/reference_reactpy/head_and_lang/app.py" start="# start" %}
-    ```
-
-=== ":material-play: Run"
-
-    ```python
-    # TODO
     ```
 
 Verified against a running server: `#!python lang="fr"`, the custom `#!html <title>`, the custom response header, and the `#!python prepend_body` markup all appear in the initial HTML.
@@ -108,12 +96,6 @@ Settings are ordinary keyword arguments, and they reach the browser-side client:
 
     ```python
     {% include "../../examples/reference_reactpy/config/app.py" start="# start" %}
-    ```
-
-=== ":material-play: Run"
-
-    ```python
-    # TODO
     ```
 
 | Setting | Default | Meaning |

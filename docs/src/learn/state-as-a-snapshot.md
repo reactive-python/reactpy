@@ -32,10 +32,6 @@ In this example, when you press "send", `#!python set_is_sent(True)` tells React
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Here's what happens when you click the button:
 
 1. The `#!python onSubmit` event handler executes.
@@ -73,10 +69,6 @@ Here's a little experiment to show you how this works. Clicking the "+3" button 
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Notice that `#!python number` only increments once per click — verified by dispatching a click and reading the result.
 
@@ -122,10 +114,6 @@ Try to guess what this button's second column will show.
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Using the substitution method, `#!python number` is `#!python 0`, so the first click records `#!python 0` — even though `#!python set_number(number + 5)` ran one line earlier. Click again and it records `#!python 5`, because in _that_ render `#!python number` is `#!python 5`.
 
 But what if you delay that read, so it only happens _after_ the component re-renders? Would it say `#!python 0` or `#!python 5`? Have a guess!
@@ -137,10 +125,6 @@ But what if you delay that read, so it only happens _after_ the component re-ren
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Surprised? If you use the substitution method, you can see the "snapshot" of the state that was captured.
 
@@ -177,10 +161,6 @@ What do you expect the status line to display? Would it display, "You said Hello
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 If you press Send and then change "To" before the five seconds elapse, you still get **"You said Hello to Alice"**. Verified: pressing Send and changing the recipient to `#!python "Bob"` mid-flight produced exactly that string.
 

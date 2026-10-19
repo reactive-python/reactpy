@@ -25,10 +25,6 @@ Here is a list of places, and each row is coloured by the current theme. Only th
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 `#!python app` holds the theme. `#!python section` receives it, `#!python list_of_places` receives it, `#!python place_list` receives it, and only `#!python place_label` reads it. Three components mention a value they never use, and adding a row to `#!python list_of_places` means threading `#!python theme` through one more signature.
 
 That is the shape worth replacing: **a prop that a component only forwards**. If a component would use a prop itself, pass it as a prop — that is easier to trace.
@@ -71,10 +67,6 @@ No parameter, no forwarding. The components in between never learn the value exi
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 `#!python place_label` calls `#!python use_context`, and `#!python place_list`, `#!python list_of_places`, and `#!python section` no longer mention `#!python theme` at all. Verified: this version and the prop-drilling version above render the same five rows with the same colours, and both respond to the toggle identically.
 
 Without any provider at all, every reader gets the default:
@@ -86,10 +78,6 @@ Without any provider at all, every reader gets the default:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Both labels read `#!python theme=light` — the value from `#!python create_context`, not `#!python None`. This is what makes it safe to reuse a component in a page that never sets the theme up.
 
@@ -113,10 +101,6 @@ A provider only covers **its own children**. A sibling rendered after it sees th
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified readouts: `#!python outside` and `#!python after` see `#!python light` (the default), `#!python deep` — three levels below `#!python outer` — sees `#!python outer`, `#!python inner` sees `#!python middle-provider`, and `#!python deepest`, inside the nested provider, sees `#!python innermost`. The nearest provider wins; the search walks up and stops.
 
 !!! warning "Pitfall"
@@ -134,10 +118,6 @@ A component cannot read the context it provides. The provider applies to its chi
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 The child reads `#!python child sees: dark` while the component that rendered the provider reads `#!python section itself sees: light` — the default, before and after the toggle. If the component needs the value too, read the state it comes from: `#!python theme` is right there in `#!python section`, so use it directly.
 
@@ -163,10 +143,6 @@ A provider is a component, so *adding* or *removing* one changes the shape of th
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified sequence. Type `#!python hello`: the readout shows `#!python draft='hello'`. Press **change value**: `#!python draft='hello' ... theme=light`, and the component's own render counter keeps counting, which is how you can tell it is the same instance — a changed `#!python value` does not disturb the tree. Press **toggle provider**: the counter resets to `#!python renders=1` and `#!python draft=''`. The leaf was unmounted and a fresh one mounted, so its state is not stale, it is *new*.
 
 Flipping the conditional back does not restore it either — that is a third instance.
@@ -184,10 +160,6 @@ The version that works moves the condition *inside* `#!python value`, expressing
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Type `#!python hello`, press **toggle provider**: `#!python draft='hello' ... theme=light`, and the render counter keeps counting. Same buttons, same user-visible behaviour as the broken version, state intact.
 

@@ -58,10 +58,6 @@ The constructors copy the top level, so the containers you passed in are not ali
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The same applies to child elements: pass a model you built earlier and the parent stores *that object*, not a copy. Mutating the child later changes the parent. This is convenient for builders that assemble a tree in stages, and dangerous for anything that outlives the render — which is the subject of the next section.
 
 ## Mutating after the render
@@ -92,10 +88,6 @@ A model built at **module level** is one object shared by every connection to th
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified in a real browser with two separate tabs and two separate websockets against one server: tab A clicks `#!python mutate`, then `#!python bump`; tab B, which never clicked anything, then clicks `#!python bump` and sees `#!python mutated by visitor 0` in **its own** page. Neither user can make it go away, because the mutated module-level dict is now the source of truth for every future render.
 
 !!! danger "Module-level elements are shared across all connections"
@@ -109,10 +101,6 @@ Verified in a real browser with two separate tabs and two separate websockets ag
         ```
 
     === ":material-play: Run"
-
-        ```python
-        # TODO
-        ```
 
     Module-level constants are still fine when they are genuinely inert — a style dict, a list of option labels, an `#!python html.head()` passed once to `#!python ReactPy(html_head=...)` — because nothing writes to them. The bug needs a write. If nothing in your program assigns into it, module scope is safe.
 

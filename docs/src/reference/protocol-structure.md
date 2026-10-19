@@ -348,24 +348,12 @@ The protocol is plain JSON text frames, so an ordinary websocket client is a suf
     {% include "../../examples/reference_protocol_structure/counter_app/main.py" start="# start" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 Then read the mount message, send a click, and read the patch:
 
 === "client.py"
 
     ```python
     {% include "../../examples/reference_protocol_structure/observe_protocol/client.py" start="# start" %}
-    ```
-
-=== ":material-play: Run"
-
-    ```python
-    # TODO
     ```
 
 Both were run against each other, which is where the mount message, the `#!python target`, and the patch above come from. The counter's handler only calls a setter, so it never reads a property and the proxy messages never appear — the observer answers them, and gets nothing to answer, which is the "a read you never make costs nothing" rule from [Responding to Events](../learn/responding-to-events.md#the-event-object) showing up on the wire. The two proxy frames further up the page were captured from a handler which does read, against the same middleware. Nothing about the protocol is private to ReactPy's client — given a mount element and a correct `#!python target`, you can drive a server-rendered component from any language.

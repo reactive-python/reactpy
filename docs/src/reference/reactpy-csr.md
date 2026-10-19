@@ -73,10 +73,11 @@ Two files: the ASGI app, and the root component.
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
+    ```reactpy-run
+    files: csr_root/root.py
     ```
+
+
 
 Serve with `#!python uvicorn main:my_app`. The served page carries the `#!python Loading...` placeholder, the PyScript bootstrap, and your component source.
 

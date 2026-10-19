@@ -40,10 +40,6 @@ If the `#!python is_packed` prop is `#!python True`, this code **returns a diffe
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Try editing what gets returned in either case, and see how the result changes!
 
 Notice how you're creating branching logic with Python's `#!python if` and `#!python return` statements. In ReactPy, control flow (like conditions) is handled by Python.
@@ -73,10 +69,6 @@ If `#!python is_packed` is true, the component will return nothing, `#!python No
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 In practice, returning `#!python None` from a component isn't common because it might surprise a developer trying to render it. More often, you would conditionally include or exclude the component in the parent component. Here's how to do that!
 
@@ -139,10 +131,6 @@ Now let's say you want to wrap the completed item's text into another HTML tag, 
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 This style works well for simple conditions, but use it in moderation. If your components get messy with too much nested conditional markup, consider extracting child components to clean things up. In ReactPy, markup is a part of your code, so you can use tools like variables and functions to tidy up complex expressions.
 
@@ -230,10 +218,6 @@ This style is the most verbose, but it's also the most flexible:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Like before, this works not only for text, but for arbitrary markup too.
 

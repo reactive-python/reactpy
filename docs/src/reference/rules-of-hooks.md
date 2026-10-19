@@ -119,10 +119,6 @@ That traceback names the event handler, not the hook — so the hunt starts in t
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 In `broken_toggle`, **Add 1** works, then **Toggle** makes the heading read `#!python NOT-A-NUMBER`, and the next **Add 1** does nothing at all — the handler raised `TypeError` on the server. `fixed_toggle` is the same component with the hooks moved out of the condition: both of its buttons keep working through every toggle.
 
 ### A hook in a loop: frozen values, then a crash

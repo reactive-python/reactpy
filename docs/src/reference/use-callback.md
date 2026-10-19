@@ -78,10 +78,6 @@ Press **Re-render** three times. `handlers registered` stays at `1`, because the
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Note the `#!python heard` updater: `#!python set_heard(lambda previous: previous + 1)`. It reads no state, which is what lets this handler keep an empty dependency list honestly — an updater function gets the current value at the moment the setter runs, so the handler does not need to close over anything.
 
 ### A cached handler sees stale values
@@ -96,10 +92,6 @@ The notes app below caches a handler with `#!python dependencies=[]` while the h
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Type something and press **Add note**: the list gains `(blank)`. The handler is working perfectly — on the render it was created on.
 
 ### Listing what the handler reads
@@ -113,10 +105,6 @@ The fix is to name the values the function reads. Now the cached function is rep
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Type something and press **Add note**: the text lands. These two files differ by one line; the behaviour difference is the whole point.
 

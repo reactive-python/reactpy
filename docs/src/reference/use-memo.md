@@ -70,10 +70,6 @@ Press **Change highlight**: the component re-renders, the sort does not run, and
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The counter (`#!python sorts`) and both buttons exist only to make the caching observable. In real code you would keep the `use_memo` call and drop the rest.
 
 ### How expensive is "expensive"?
@@ -107,10 +103,6 @@ The word count below reads `#!python text` but not `#!python upper`, so toggling
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Two catches. Inference only sees *closure* variables, so a module-level name, or anything reached through an object, is invisible to it. And inference is a convenience for a function defined inside the component — pass the list explicitly when the function comes from elsewhere.
 
 ### Recomputing on every render
@@ -126,10 +118,6 @@ The label below reads `#!python config`, which lives at module scope. Inference 
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 ---
 
@@ -155,10 +143,6 @@ Because nothing checks. The example below omits `#!python tax_rate` from the lis
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 This is the failure mode to watch for: a stale value that eventually arrives, so it reads as lag rather than as a bug. List everything the function reads, or omit `dependencies` and let ReactPy infer them.
 

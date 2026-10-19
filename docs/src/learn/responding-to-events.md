@@ -25,10 +25,6 @@ To add an event handler, you first define a function and then [pass it as a prop
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 You can make it show a message when a user clicks by following these three steps:
 
 1. Declare a function called `#!python handle_click` _inside_ your `#!python def button()` component.
@@ -48,10 +44,6 @@ You can make it show a message when a user clicks by following these three steps
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 You defined the `#!python handle_click` function and then [passed it as a prop](./passing-props-to-a-component.md) to `#!python html.button`. `#!python handle_click` is an **event handler.** Event handler functions:
 
@@ -150,10 +142,6 @@ Because event handlers are declared inside a component, they have access to the 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 This lets the two buttons show different messages. Try changing the messages passed to them.
 
 Note the `#!python set_shown(message)` line: the handler closes over the `#!python message` **prop**, which is a plain function parameter, so this behaves like any other Python closure.
@@ -171,10 +159,6 @@ To do this, pass a prop the component receives from its parent as the event hand
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Here, `#!python toolbar()` renders a `#!python play_button()` and an `#!python upload_button()`:
 
@@ -198,10 +182,6 @@ By convention, name them `#!python on_` followed by the interaction:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 In this example `#!python {"onClick": on_smash}` shows that the browser button still needs the key `#!python "onClick"`, but the prop name received by your own `#!python button()` component is up to you.
 
@@ -286,10 +266,6 @@ This `#!html <div>` contains a button. Both the `#!html <div>` _and_ the button 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 If you click the button, its `#!python "onClick"` runs first, followed by the parent `#!html <div>`'s. Two messages appear. If you click the toolbar itself, only the parent's handler runs.
 
 !!! warning "Scroll does not bubble"
@@ -313,10 +289,6 @@ To prevent an event from reaching parent components, call `#!python event.stopPr
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Now clicking the button produces only `"Playing!"`.
 
@@ -353,10 +325,6 @@ Call `#!python event.preventDefault()` the same way to stop the browser's built-
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 The same detection rules — and the same `#!python @event(prevent_default=True)` escape hatch — apply.
 

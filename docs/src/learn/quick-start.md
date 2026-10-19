@@ -41,10 +41,6 @@ Have a look at the result:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 <!-- ## Writing markup with JSX
 
 The markup syntax you've seen above is called _JSX_. It is optional, but most React projects use JSX for its convenience. All of the [tools we recommend for local development](/learn/installation) support JSX out of the box.
@@ -116,10 +112,6 @@ You can fetch data from a variety of sources and directly embed it into your com
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 ## Conditional rendering
 
 In React, there is no special syntax for writing conditions. Instead, you'll use the same techniques as you use when writing regular Python code. For example, you can use an `#!python if` statement to conditionally include components:
@@ -169,10 +161,6 @@ Notice how `#!html <li>` has a `#!python key` attribute. For each item in a list
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 ## Responding to events
 
@@ -225,10 +213,6 @@ If you render the same component multiple times, each will get its own state. Cl
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Notice how each button "remembers" its own `#!python count` state and doesn't affect other buttons.
 
@@ -289,10 +273,6 @@ When you click the button, the `#!python on_click` handler fires. Each button's 
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 ## Next Steps
 

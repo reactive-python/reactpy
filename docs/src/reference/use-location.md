@@ -56,12 +56,6 @@ It is mutable and compares by value. Import the type with `#!python from reactpy
     {% include "../../examples/reference_use_location/query_params/app.py" start="# start" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 With `#!python ?tab=sales&sort=price` this renders "Products — sales", sorted by price. With no query string at all it falls back to the defaults.
 
 ### Building navigation from the current path
@@ -72,12 +66,6 @@ Splitting the path gives you the trail from the site root to wherever the visito
 
     ```python
     {% include "../../examples/reference_use_location/breadcrumb/app.py" start="# start" %}
-    ```
-
-=== ":material-play: Run"
-
-    ```python
-    # TODO
     ```
 
 On `#!python /reports/2024/q1` this produces links to `#!python /reports`, `#!python /reports/2024`, and `#!python /reports/2024/q1`. Build the URLs yourself rather than pasting path segments in raw if they can contain anything you did not choose.

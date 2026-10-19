@@ -26,10 +26,6 @@ When you call `#!python html.button({...}, ...)`, ReactPy walks the attribute di
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The rules, exactly:
 
 | Value | Lands in | Note |
@@ -99,10 +95,6 @@ Second, and this is the trap: an `#!python EventHandler` receives the **list its
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The failure when you get it backwards differs by direction, and the layout swallows either one into a server-side `#!python Failed to execute event handler` line — nothing appears in the browser console, so the UI merely stops responding. Hand the list to a handler written for the event and the first property read raises `#!python AttributeError: 'EventArguments' object has no attribute 'target'` — the list is an `#!python EventArguments`, a `#!python list` subclass, not the event. Hand the unpacked event to a handler written for the list and you get `#!python TypeError: 'Event' object is not subscriptable`. Prefer the plain-coroutine form unless you specifically need to hand-build a handler; `#!python @event` gives you the same options with the friendlier argument shape.
 
 ## Setting the five options
@@ -152,10 +144,6 @@ ReactPy also reads your function's bytecode looking for three specific statement
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 This is a source-parsing hack, not a runtime mechanism, and it has limits you should know before relying on it. Detection requires all of the following:
 
 -   The call is written **literally in the handler's own body.** `#!python event.preventDefault()` inside a helper the handler calls is invisible to the inspector — it does not follow calls.
@@ -175,10 +163,6 @@ The second rule produces the sharpest bug, so it deserves its own call-out:
         ```
 
     === ":material-play: Run"
-
-        ```python
-        # TODO
-        ```
 
     Attach a plain function defined inside the component instead, or pass `#!python @event(prevent_default=True)` explicitly over the method. A `#!python functools.wraps` decorator is fine — the inspector follows `#!python __wrapped__` to the function you wrote, first parameter and all. A `#!python functools.partial` is unwrappable too, but only half-fixed: once the leading argument is bound, the first parameter the inspector reads is yours, not the event's, so the same silent `#!python False` appears. Same escape hatch: declare the option with `#!python @event`.
 

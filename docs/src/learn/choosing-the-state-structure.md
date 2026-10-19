@@ -66,10 +66,6 @@ Technically either works. But **if two state variables always change together, p
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Press **Move (forgot y)**: the dot travels horizontally and the readout confirms the split — `#!python x=44  y=20`. Every later move compounds it, because each handler builds on the state it already has.
 
 With one object, the mistake has nowhere to live:
@@ -81,10 +77,6 @@ With one object, the mistake has nowhere to live:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Two presses of **Move diagonally** give `#!python x=68  y=68`. There is no second setter to omit: one `#!python set_position` call carries both axes, and the dict you build has to say something about each one.
 
@@ -101,10 +93,6 @@ A feedback form tracks its send with two booleans:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 The code works — and it permits a state that should be impossible. Press **Send (buggy)**, which sets `#!python is_sent` without clearing `#!python is_sending`, and the readout reports:
 
@@ -123,10 +111,6 @@ Since the flags can never both be true, replace them with one variable holding o
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 `#!python status` passes through `#!python "sending"` and ends at `#!python "sent"`, which swaps the form for a thank-you. There is no way to be in two states at once, because there is only one variable.
 
@@ -151,10 +135,6 @@ A check-in form shows a full name built from two fields:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 It has three state variables, and one is redundant — `#!python full_name` is derivable from the other two at any moment. That is not merely wasteful; it is a second place every writer must remember. Press **Rename first**: `#!python first_name` becomes `#!python "Grace"`, and the ticket still reads `#!python Ada Lovelace`.
 
 Remove the state variable and calculate it:
@@ -166,10 +146,6 @@ Remove the state variable and calculate it:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Now **Rename first** followed by **Rename last** gives `#!python Grace Hopper`. The same two buttons cannot go wrong, because there is only one copy of the name.
 
@@ -191,10 +167,6 @@ A snack menu lets you choose one item and edit the titles. This version stores t
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Press **Choose** on `#!python pretzels`, then edit that input to `#!python chips`. The input updates; the line below it does not:
 
 ```text linenums="0"
@@ -212,10 +184,6 @@ Hold the *id* instead and look the item up during render:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Editing the selected row now updates the line below it, because `#!python selected_item` is a `#!python next(...)` over `#!python items`, re-evaluated on every render. The state went from:
 
@@ -251,10 +219,6 @@ A travel plan is planets, then continents, then countries. The tempting shape mi
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Marking one country visited calls `#!python mark_visited`, which copies the root, copies `#!python Earth`, copies the continent, and copies every sibling along the way — a new object for every node between the root and the leaf. Correct, and also easy to get wrong: miss one `#!python {**node, ...}` and you have mutated shared state, which in ReactPy means the update may compare equal and never render.
 
 Flatten the tree into one dict keyed by id, with child lists of ids:
@@ -272,10 +236,6 @@ Flatten the tree into one dict keyed by id, with child lists of ids:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 The same update now adds one entry to one set, and finding a place is a dict lookup rather than a recursion. The rendering component still walks the tree by id, so the display is unchanged — only the update path got shorter.
 

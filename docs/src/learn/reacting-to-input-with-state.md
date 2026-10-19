@@ -109,10 +109,6 @@ Replace the `#!python form()` component with a mock that returns the right UI ba
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The `#!python status` prop is a "mock" of the state inside the component, and controls which visual states the user will see. This mock is controlled by a prop called `#!python status` with a default value of `#!python "empty"`.
 
 You could call that prop anything you like, the naming is not important. Try changing the default to `#!python status="success"` to see the success message appear. **Mocking lets you quickly iterate on the UI before you wire up any logic.**
@@ -142,10 +138,6 @@ And the error state deliberately keeps the form enabled. A state that showed an 
         ```
 
     === ":material-play: Run"
-
-        ```python
-        # TODO
-        ```
 
     Because the mock is driven by a prop, all five states mount side by side and can be compared without a single click. Each `#!python html.section()` carries a `#!python "key"` because they are children of a list.
 
@@ -231,10 +223,6 @@ Finally, connect the event handlers to the `#!python set` functions from Step 4:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Three things are worth noticing.
 

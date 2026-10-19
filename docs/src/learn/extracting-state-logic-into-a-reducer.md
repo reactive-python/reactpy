@@ -25,10 +25,6 @@ This component holds a list of tasks and updates it from three handlers:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Each handler knows how to rebuild the list. That is fine at three handlers and one field. It stops being fine when a fourth handler appears, when a second field has to change alongside `#!python tasks`, or when you are debugging which of the four produced a wrong list — and here `#!python handle_add_task` already has to keep two state variables in step.
 
 Managing state with a reducer inverts it. Instead of telling ReactPy *what to do*, each handler says *what just happened*, and one function decides what that means:
@@ -40,10 +36,6 @@ Managing state with a reducer inverts it. Instead of telling ReactPy *what to do
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Both examples are verified to behave identically — add twice, toggle, delete produces the same readouts and the same single flipped row in each. The difference is where the knowledge lives. The handlers now read as a list of user intentions:
 
@@ -73,10 +65,6 @@ Swapping the reducer at runtime does nothing at all:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Press **Switch reducer** — the readout shows `#!python version=2`, so the component body really did pick `#!python add_by_hundred` — then press **Add**: `#!python by=add_by_one`. Every later action still runs the original function.
 
 The same mechanism is subtler, and much more common, when the reducer is defined *inside* the component:
@@ -88,10 +76,6 @@ The same mechanism is subtler, and much more common, when the reducer is defined
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Press **Add** once: `#!python count=1 total=10`. Then **Raise price**, which takes the displayed price to `#!python 50` — and press **Add** again. You get `#!python total=20`, not `#!python 60`. The line reads `#!python price=50` while the arithmetic used `#!python 10`.
 
@@ -106,10 +90,6 @@ The fix is the same instinct as always: keep the reducer pure *and* self-contain
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Same buttons: **Add**, **Raise price**, **Add** now gives `#!python count=2 total=60 price=50`. `#!python cart_reducer` sits at module level with no enclosing scope to freeze, and `#!python dispatch({"type": "add", "price": item_price})` supplies the live value.
 
@@ -143,10 +123,6 @@ That last one is the most common reducer bug in ReactPy, and it is silent:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Press **Add task** three times. The rendered count stays at `#!python 2 tasks rendered` and the component body never runs again — verified at zero renders. The list did grow; the returned state compared equal to the old one, so ReactPy decided nothing had changed. Return new objects (`#!python {**state, "tasks": [*state["tasks"], task]}`), exactly as you would with `#!python use_state`.
 

@@ -43,10 +43,6 @@ This Effect writes a summary into state but lists only `#!python topic`:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: press **Count** twice and **Theme** once, and the page reads
 
 ```text linenums="0"
@@ -104,10 +100,6 @@ One Effect connecting a socket *and* loading rows means each job inherits the ot
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: press **Toggle online** and the log shows `#!python disconnect news page=2` before `#!python offline — nothing to do`. Going offline tears down a connection by way of a page number. Split the Effect in two and each list shrinks to what its own job reads.
 
 ### Are you reading some state to calculate the next state?
@@ -121,10 +113,6 @@ Then that state is not a dependency — it is an input to the next value. Take a
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified: each topic change appends exactly one entry; changing **Show** does not append anything.
 
@@ -156,10 +144,6 @@ The version that lists the delay:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The version that keeps it in a ref:
 
 === "app.py"
@@ -169,10 +153,6 @@ The version that keeps it in a ref:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified with the same script on both — two delay adjustments, half a second of ticking, then a topic change:
 
@@ -199,10 +179,6 @@ Sometimes the dependency is correct and the value is the problem.
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: typing in the box re-renders the component and the Effect does **not** run; only the topic change logs `#!python load topic=newsx page_size=20 headers={'Accept': 'application/json'}`.
 
 **Read primitive values out of objects.** `#!python user.id` is a dependency; `#!python user` is a wider promise than you need, and any unrelated field change re-runs the Effect. Depend on the scalars you actually use.
@@ -218,10 +194,6 @@ Verified: typing in the box re-renders the component and the Effect does **not**
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified: press **Re-render** three times, which rebuilds `#!python options` every time — the Effect runs zero extra times. Press **Page** and it runs, because `#!python page` is a real dependency.
 

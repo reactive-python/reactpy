@@ -33,10 +33,6 @@ Here `#!python counter()` is rendered at two different positions:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Click both counters and notice they don't affect each other. Each position gets its own state, so `#!python counter()` is really two separate components here.
 
 It makes no difference whether you build the child once and reuse it, or call it twice:
@@ -66,10 +62,6 @@ In this example a checkbox flips a prop on the counter, but there is always exac
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Raise the score, then toggle "Use fancy styling". **The score survives**, because the same component stayed at the same position — only its `#!python is_fancy` prop changed.
 
 This is the default, and usually what you want.
@@ -91,10 +83,6 @@ Now switch the child to something else entirely:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Raise the score, tick "Take a break", then untick it. The counter comes back at **zero**. Replacing the child with an `#!python html.p()` destroyed the old state, and the returning `#!python counter()` is a brand new one.
 
@@ -130,10 +118,6 @@ Give each player a container that always exists:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 -   At first the first `#!python html.div()` holds Taylor's counter and the second is empty.
 -   After "Next player!" the first is empty and the second holds Sarah's.
 
@@ -167,10 +151,6 @@ You have seen `#!python "key"` when [rendering lists.](./rendering-lists.md#keep
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The two counters no longer share state, even though they appear in the same place. Give `#!python "key"` a value that identifies *what* the component is — the contact id, the player name — not where it sits.
 
 !!! info "Keys are only unique within their parent"
@@ -202,10 +182,6 @@ Keying is most useful for forms. In this chat app, `#!python chat()` holds the h
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Type a draft, then pick another contact. Without the key the draft would follow you over, because `#!python chat()` never left its position. With `#!python key=f"chat-{to['id']}"` the draft belongs to the conversation rather than the slot.
 

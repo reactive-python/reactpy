@@ -50,10 +50,6 @@ ReactPy is designed around this concept. **ReactPy assumes that every component 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 When you pass `#!python drinkers=2` to `#!python recipe()`, it will return VDOM containing `#!python 2 cups of water`. Always.
 
 If you pass `#!python drinkers=4`, it will return VDOM containing `#!python 4 cups of water`. Always.
@@ -75,10 +71,6 @@ Here is a component that breaks this rule:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 This component is reading and writing a `#!python guest` variable declared outside of it. This means that **calling this component multiple times will produce different VDOM!** And what's more, if _other_ components read `#!python guest`, they will produce different VDOM, too, depending on when they were rendered! That's not predictable.
 
@@ -110,10 +102,6 @@ You can fix this component by [passing `#!python guest` as a prop instead](./pas
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Now your component is pure, as the VDOM it returns only depends on the `#!python guest` prop.
 
 In general, you should not expect your components to be rendered in any particular order. It doesn't matter if you call `#!python y = 2 * x` before or after `#!python y = 5 * x`: both formulas will resolve independently of each other. In the same way, each component should only "think for itself", and not attempt to coordinate with or depend upon others during rendering. Rendering is like a school exam: each component should calculate VDOM on their own!
@@ -141,10 +129,6 @@ However, **it's completely fine to change variables and objects that you've _jus
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 If the `#!python cups` variable or the `#!python []` list were created outside the `#!python tea_gathering()` function, this would be a huge problem! You would be changing a _preexisting_ object by appending items to that list.
 
 However, it's fine because you've created them _during the same render_, inside `#!python tea_gathering()`. No code outside of `#!python tea_gathering()` will ever know that this happened. This is called **"local mutation"**—it's like your component's little secret.
@@ -162,10 +146,6 @@ In ReactPy, **side effects usually belong inside [event handlers.](./responding-
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 If you've exhausted all other options and can't find the right event handler for your side effect, you can still attach it to your returned VDOM with a `#!python use_effect` or `#!python use_async_effect` call in your component. This tells ReactPy to execute it later, after rendering, when side effects are allowed. **However, this approach should be your last resort.**
 

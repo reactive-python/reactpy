@@ -75,10 +75,6 @@ The two counters below start together and then drift apart, because only one of 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The usual split:
 
 | You need...                                                | Use                                   |
@@ -101,10 +97,6 @@ Because the box is the same object across renders, it is the natural place for s
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 If the value should be rebuilt when some input changes, a ref is the wrong tool — that is what a `dependencies` list is for. See `use_memo`.
 
 ### Sharing a value with a long-lived effect
@@ -121,10 +113,6 @@ The stopwatch below keeps the start timestamp in a ref. The ticking effect reads
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 ### Writing where an expression is required
 
 `#!python box.current = value` is an assignment, which is a statement, so it cannot appear where an expression is required — inside a comprehension, or as a value. `set_current` is the call-shaped form of the same write, and it hands back what you replaced.
@@ -136,10 +124,6 @@ The stopwatch below keeps the start timestamp in a ref. The ticking effect reads
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 `pick` is a factory: it returns a fresh coroutine per button, so each button gets its own handler and the theme it belongs to is bound by the closure. `swap_back` is where `set_current` earns its place — `#!python set_theme(previous.set_current(theme))` exchanges the two in one expression, which an assignment could not do because an assignment is not a value. The re-render still comes from `set_theme`, not from the write to the ref.
 

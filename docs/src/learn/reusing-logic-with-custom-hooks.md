@@ -26,10 +26,6 @@ Consider a shopping list where each row can be selected. The selection logic is 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: pressing **apple**, **cheese**, **bread**, then **apple** again walks the counter `1 → 2 → 3 → 2` and the total follows it. Nothing about `#!python use_cart` is registered, exported, or declared — it is an ordinary function that happens to call `#!python use_state`.
 
 Two rules make it a Hook rather than a helper:
@@ -57,10 +53,6 @@ A common fear is that a Hook is a singleton. It is not: state is stored per **ca
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified: pressing **left** gives `#!python left ON right off`; pressing **right** gives `#!python left ON right ON`; pressing **left** again gives `#!python left off right ON`. Same function, same arguments, two unrelated pieces of state — and `#!python both on` only when both are flipped.
 
@@ -93,10 +85,6 @@ What you cannot do is pass a *callback* in and list it as a dependency.
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: press **Topic** once so the page reads `#!python Topic newsx`, and the line still says `#!python handler saw topic=news`. The poll counter keeps climbing, so it looks alive — but it is calling the handler from the *first* render, forever.
 
 The reason is in `core/hooks.py`, `#!python strictly_equal`: a `#!python def` nested in a component is compared by its `#!python co_*` bytecode attributes, not by identity. `#!python on_result` re-created on the next render compares code-equal, so the dependency never changes and the Effect is never replaced.
@@ -110,10 +98,6 @@ The fix is to keep the callback in a ref that is refreshed during render, and le
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified: after changing the topic, the same line reads `#!python (topic was newsx)`. The Effect still has exactly one dependency; only the ref's contents changed.
 
@@ -133,10 +117,6 @@ ReactPy matches Hooks to their state slots **by call order**. Nothing names them
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: press **bio=** twice, then **toggle nickname**. The page prints
 
 ```text linenums="0"
@@ -155,10 +135,6 @@ The corrected version calls every Hook unconditionally and makes only the *retur
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified with the same script: `#!python bio=bio!!` before and after the toggle. The toggle now changes only what is displayed.
 

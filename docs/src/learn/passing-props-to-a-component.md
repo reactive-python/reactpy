@@ -32,10 +32,6 @@ Props are the information that you pass to a tag. For example, `#!python classNa
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The props you can pass to an `#!python html.img` tag are predefined (the browser conforms to [the HTML standard](https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element)), and they keep their familiar camelCase spelling because they are handed straight to the DOM. But you can pass any props to _your own_ components, such as `#!python avatar()`, to customize them. Here's how!
 
 ## Passing props to a component
@@ -96,10 +92,6 @@ Now you can configure `#!python avatar()` to render in many different ways with 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Props let you think about parent and child components independently. For example, you can change the `#!python person` or the `#!python size` props inside `#!python profile()` without having to think about how `#!python avatar()` uses them. Similarly, you can change how `#!python avatar()` uses these props, without looking at `#!python profile()`.
 
 You can think of props like "knobs" that you can adjust. They serve the same role as arguments serve for functions—in fact, props _are_ the only argument to your component! A component is nothing but a Python function, and a function can only accept arguments.
@@ -142,10 +134,6 @@ The default value is used only when the caller omits the argument entirely. If y
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 ## Forwarding props with keyword argument unpacking
 
@@ -191,10 +179,6 @@ This forwards all of `#!python profile()`'s props to the `#!python avatar()` wit
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 ## Passing children to a component
 
 It is common to nest built-in browser tags:
@@ -225,10 +209,6 @@ Anything you pass positionally lands in a `#!python *args` parameter of the pare
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Try replacing the `#!python avatar()` inside `#!python card()` with some text to see how the `#!python card()` component can wrap any nested content. It doesn't need to "know" what's being rendered inside of it. You will see this flexible pattern in many places.
 
 You can think of a component with a `#!python *children` parameter as having a "hole" that can be "filled in" by its parent components with arbitrary markup. You will often use children for visual wrappers: panels, grids, etc.
@@ -258,10 +238,6 @@ Try changing the color in the select box below:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 This example illustrates that **a component may receive different props over time.** Props are not always static! Here, the `#!python time` prop changes every second, and the `#!python color` prop changes when you select another color. Props reflect a component's data at any point in time, rather than only in the beginning.
 

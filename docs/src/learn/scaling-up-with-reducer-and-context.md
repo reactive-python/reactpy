@@ -24,10 +24,6 @@ Start with the version where state and dispatch travel as props. Only `#!python 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Read the signatures: `#!python task_list(state, dispatch)` receives both and reads neither — it only builds children and passes both along. `#!python task` forwards `#!python state` untouched to `#!python task_form`, which uses only `#!python dispatch`. Every new layer in the middle copies the same two parameters.
 
 The reducer is already correct for ReactPy: module-level, reading nothing but its two arguments, returning new objects, and raising on an unknown action type. See [Extracting State Logic into a Reducer](./extracting-state-logic-into-a-reducer.md) for why each of those matters here.
@@ -49,10 +45,6 @@ One context carries both halves — the state to read and the dispatch to change
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Two things to notice in `#!python tasks.py`.
 
@@ -114,10 +106,6 @@ Once the UI reads everything from context, the reducer, the context object, and 
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 The UI file now imports only `#!python task_store` and `#!python use_tasks`. It never mentions `#!python use_reducer`, `#!python create_context`, `#!python tasks_reducer`, or `#!python TaskContext`. Two consequences worth having:
 

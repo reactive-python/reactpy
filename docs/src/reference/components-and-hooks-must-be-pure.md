@@ -55,10 +55,11 @@ The pair below is the difference, side by side. Both render identically on the f
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
+    ```reactpy-run
+    dir: reference_rules_of_react/impure_render
     ```
+
+
 
 ---
 

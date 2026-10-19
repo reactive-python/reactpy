@@ -78,10 +78,6 @@ You can either build "top down" by starting with building the components higher 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 (If this code looks intimidating, go through the [Quick Start](../learn/quick-start.md) first!)
 
 After building your components, you'll have a library of reusable components that render your data model. Because this is a static app, the components will only return non-interactive HTML. The component at the top of the hierarchy (`#!python filterable_product_table`) will take your data model as a prop. This is called _one-way data flow_ because the data flows down from the top-level component to the ones at the bottom of the tree.
@@ -184,10 +180,6 @@ You can start seeing how your application will behave. Edit the `#!python filter
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Notice that editing the form doesn't work yet.
 
 In the code above, `#!python product_table` and `#!python search_bar` read the `#!python filter_text` and `#!python in_stock_only` props to render the table, the input, and the checkbox. For example, here is how `#!python search_bar` populates the input value:
@@ -231,10 +223,6 @@ Now the application fully works!
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 You can learn all about handling events and updating state in the [Adding Interactivity](../learn/responding-to-events.md) section.
 

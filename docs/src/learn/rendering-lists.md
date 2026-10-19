@@ -70,10 +70,6 @@ Here is the result:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 If you run this with `#!bash REACTPY_DEBUG=1`, ReactPy prints a warning for each child:
 
 ```text linenums="0"
@@ -126,10 +122,6 @@ list_items = [html.li(person["name"]) for person in chemists]
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 !!! warning "A helper that forgets `#!python return` renders nothing"
 
     The JavaScript "`=>` with a block body needs a `#!js return`" trap has a direct Python twin that is *worse*, because Python fails silently. If a helper used inside a comprehension forgets its `#!python return`, it evaluates to `#!python None` — and ReactPy skips `#!python None` children instead of raising:
@@ -180,10 +172,6 @@ Rather than generating keys on the fly, you should include them in your data:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 ### Displaying several DOM nodes for each list item
 
 What do you do when each item needs to render not one, but several DOM nodes?
@@ -214,10 +202,6 @@ A plain `#!python html(...)` fragment takes no positional attributes, but it doe
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Fragments disappear from the DOM, so this produces a flat list of `#!html <h1>`, `#!html <p>`, `#!html <h1>`, `#!html <p>`, and so on.
 

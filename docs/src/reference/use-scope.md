@@ -71,12 +71,6 @@ Which extras appear depends on the server: `#!python "state"` and that `#!python
     {% include "../../examples/reference_use_scope/client_headers/app.py" start="# start" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 `#!python header()` exists because the ASGI scope hands you raw bytes: it lower-cases the name, matches on `#!python bytes`, and decodes the value. The component reads `#!python scope["client"]` defensively because a proxy can leave it unset.
 
 ### What belongs here and what does not

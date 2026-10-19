@@ -46,12 +46,6 @@ An ASGI application.
     {% include "../../examples/reference_reactpy_middleware/wrapper/main.py" start="# start" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 The wrapped app is untouched. Verified with Starlette: a plain `#!python /healthz` route still returned its text response through the middleware.
 
 ### What the middleware actually claims
@@ -79,12 +73,6 @@ There is no fourth row. `ReactPyMiddleware.match_extra_paths` is a hook that ret
 
     ```python
     {% include "../../examples/reference_reactpy_middleware/mount_snippet/main.py" start="# start" %}
-    ```
-
-=== ":material-play: Run"
-
-    ```python
-    # TODO
     ```
 
 `#!python server_side_component_html` emits the `#!html <div id="app">`, the import map fallback, and the `#!python mountReactPy(...)` call. Verified in a real browser: the counter rendered into `#!html <div id="app">` with `#!python [ReactPy] Connected!` in the console.

@@ -25,10 +25,6 @@ Every element you write in ReactPy is a function call that returns a dictionary.
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 There is **no allow-list.** ReactPy does not know or care whether `#!html <definitely-not-a-real-tag>` exists; the string travels to the browser and the browser decides. The names spelled out on `#!python HtmlConstructor` exist only so your editor can autocomplete them — the comment in the source says as much. Two practical consequences:
 
 -   A misspelled tag renders as an unknown element with your text inside it, silently. Nothing in ReactPy will tell you that `#!python html.hdeader` is wrong.
@@ -45,10 +41,6 @@ There is **no allow-list.** ReactPy does not know or care whether `#!html <defin
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Read the rules literally, because they are applied blindly:
 
@@ -90,10 +82,6 @@ tag("123456")  # {'tagName': '2fa-code', 'children': ['123456']}
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The discriminator is exact-type, not `#!python isinstance`: `#!python type(values[0]) is dict` (`core/vdom.py`, `separate_attributes_and_children`). Two consequences that bite:
 
 -   A `#!python VdomDict` — which *is* a `#!python dict` subclass — in first position is treated as a **child**, which is what you want when nesting models you built earlier.
@@ -131,10 +119,6 @@ There are no exceptions to this rule on the live path. `#!python class_name` is 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 A fragment accepts `#!python key` and nothing else: a `#!python className`, a `#!python style`, or an event handler all raise `#!python TypeError: Fragments cannot have attributes besides 'key'`. There is no node to put them on, so ReactPy refuses rather than dropping them quietly.
 
 Use a fragment when a component must return siblings and a wrapper `#!html <div>` would break the layout or the CSS. When the children are already in a list, pass the list — you do not need a fragment for that, though you do need keys, covered in [Rendering Lists](./rendering-lists.md).
@@ -150,10 +134,6 @@ Use a fragment when a component must return siblings and a wrapper `#!html <div>
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 The rejecting set is `#!python NO_CHILDREN_ALLOWED_HTML_BODY` (`_html.py`): `#!python area`, `#!python base`, `#!python br`, `#!python col`, `#!python command`, `#!python embed`, `#!python hr`, `#!python img`, `#!python input`, `#!python iframe`, `#!python keygen`, `#!python link`, `#!python meta`, `#!python param`, `#!python portal`, `#!python source`, `#!python track`, `#!python wbr`. The check happens after the model is built, so the message names the tag rather than your mistake — read the name in the error.
 
@@ -182,10 +162,6 @@ The rejecting set is `#!python NO_CHILDREN_ALLOWED_HTML_BODY` (`_html.py`): `#!p
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 It has its own void set (`#!python NO_CHILDREN_ALLOWED_SVG`), and that set is broader and less intuitive than the HTML one — it includes `#!python text`, `#!python tspan`, `#!python title`, `#!python desc`, `#!python path`, `#!python use`, and `#!python foreignObject`. So the element you most need children inside is exactly the one that rejects them:
 

@@ -1,0 +1,69 @@
+/* The "Run" tab's panel.
+
+   It has no chrome of its own: opening the tab is the signal to execute, and
+   the panel reads as one more code block in the same tab set — the same
+   surface and text colours that code.css gives fenced code, so a demo's output
+   is the only thing that draws the eye. The tabbed set already supplies the
+   frame, radius, and shadow, so this adds none of its own. */
+
+.reactpy-run {
+    background-color: var(--md-code-bg-color);
+    color: var(--md-code-fg-color);
+    padding: 0.65rem 1rem;
+}
+
+/* Light mode paints code on white rather than on the translucent grey the
+   rest of the page uses for inline code — the same override code.css makes for
+   ``.highlight > pre > code``. Slate keeps ``--md-code-bg-color`` as is. */
+[data-md-color-scheme="default"] .reactpy-run {
+    background-color: #fff;
+}
+
+/* PyScript writes into this container. Everything inherits the code colours
+   unless the example says otherwise, so demos stay legible in both schemes. */
+.reactpy-run-out {
+    color: inherit;
+    min-height: 1.2rem;
+    overflow: auto;
+}
+
+.reactpy-run-out:empty {
+    min-height: 0.6rem;
+}
+
+.reactpy-run-status {
+    color: var(--md-default-fg-color--lighter);
+    font-size: 0.64rem;
+    padding-top: 0.4rem;
+}
+
+/* A build could not work out what to run. Loud on purpose: it is an authoring
+   bug, and the reason is written right there. */
+.reactpy-run--error {
+    background-color: var(--md-code-bg-color);
+    color: var(--md-code-fg-color);
+    padding: 0.65rem 1rem;
+}
+
+[data-md-color-scheme="default"] .reactpy-run--error {
+    background-color: #fff;
+}
+
+.reactpy-run--error .reactpy-run-msg {
+    color: var(--md-typeset-a-color);
+    font-family: var(--md-code-font-family);
+    font-size: 0.7rem;
+}
+
+/* PyScript's own chrome is noise, but its *errors* are the lesson in half of
+   these examples ("this is what happens when you mutate shared VDOM"). */
+.reactpy-run pyscript-stderr {
+    border-top: 0.05rem solid var(--md-default-fg-color--lightest);
+    color: var(--md-code-fg-color);
+    display: block;
+    font-family: var(--md-code-font-family);
+    font-size: 0.64rem;
+    margin: 0.65rem -1rem -0.65rem;
+    padding: 0.6rem 1rem;
+    white-space: pre-wrap;
+}

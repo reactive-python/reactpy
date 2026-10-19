@@ -35,10 +35,6 @@ You will build an interactive tic-tac-toe game. Here is the finished result:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 If the code does not make sense yet, do not worry — that is the point of the tutorial. Play the game before you read it. You will notice a list to the right of the board that records every move and lets you jump back to any of them. That list is what the last section builds toward.
 
 !!! abstract "Note"
@@ -62,10 +58,6 @@ The code below is your starting point: a single square, with no interactivity.
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 It should render one empty-looking square containing an `X`.
 
@@ -145,10 +137,6 @@ Now copy-paste your way to nine squares and... they come out in a single line, n
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 You now have a tic-tac-toe board. But you have a naming problem: the component is called `square` and renders a whole board. Rename it to `board`.
 
 At this point your code should look like this:
@@ -166,10 +154,6 @@ At this point your code should look like this:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 !!! abstract "Note"
 
@@ -206,10 +190,6 @@ Update `board` to call `square` nine times, passing a different letter each time
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Notice how `#!python board` and `#!python square` are both called the same way, with no ceremony, while `#!python html.div` and `#!python html.button` are calls into the `html` object. Components are just functions you wrote; tags are functions ReactPy provides.
 
@@ -252,10 +232,6 @@ Next, make the square *remember* that it was clicked. ReactPy gives components m
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 `#!python value, set_value = use_state(EMPTY_SQUARE)` unpacks a pair: the state you read and the setter you call. Its argument is the starting value, used only on the component's first render. Calling `#!python set_value` asks ReactPy to render the component again, and that render sees the new `value`.
 
 The value is `#!python None`, meaning "empty", and ReactPy renders `#!python None` as nothing, so a fresh board is blank. It lives in a module-level constant annotated `#!python str | None`, which is what lets a type checker accept both `#!python None` and `"X"` in that square — without it, the type is inferred from `#!python None` alone and assigning a mark is flagged. See [Use State](../reference/use-state.md).
@@ -289,10 +265,6 @@ To detect a winner you need the whole board in one place. The fix is to move the
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 `square` is now stateless: it takes `value` to display and `on_click` to call, and remembers nothing. That is the shape of most components you will write — they take data in and report events out, and the state lives above them.
 
@@ -345,10 +317,6 @@ It copies the list, changes the copy, and hands the copy to the setter. There ar
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Click a square. Nothing happens — no error, no log line, no warning. The handler *runs*; the board just never changes.
 
 Verified against this example: after three clicks on that square, the board is still nine empty cells. The cause is that `#!python set_squares(squares)` passes back the very same object that is already in state. ReactPy compares the new value against the current one, finds them equal, and skips the render — an optimisation that turns an in-place mutation into a silent no-op.
@@ -381,10 +349,6 @@ Players can fill squares, but only with `X`. Add a second piece of state to `boa
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Squares now alternate `X` and `O`, and the status line above the board tracks the next player.
 
 One defect remains: click a filled square and the other player overwrites it. That happens because the handler never checks whether the square is already taken. Return early instead of playing over it:
@@ -410,10 +374,6 @@ async def inner(event):
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified: clicking square 0 twice leaves `X` in place rather than replacing it with `O`, and the other squares still play.
 
@@ -458,10 +418,6 @@ Call it in two places — to stop play after a win, and to write the status line
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Get three in a row and the status changes to `Winner: X`, after which no square responds — the guard returns early because `#!python calculate_winner(squares)` is truthy.
 
@@ -530,10 +486,6 @@ def game():
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The game plays exactly as it did before — only now the whole history lives in one component that can see all of it.
 
 ### Showing the past moves
@@ -562,10 +514,6 @@ Then render `#!python html.ol(moves)` inside the `game-info` div. Add a `#!pytho
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Make a few moves and the list grows: `Go to game start`, `Go to move #1`, `Go to move #2`. Clicking one does nothing, because `#!python jump_to` is still the placeholder — that is the next step.
 
@@ -638,10 +586,6 @@ The slice `#!python history[: current_move + 1]` keeps everything up to and incl
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified against this file: play three moves to put `X` in the corners, click **Go to game start**, and the board is empty again with `Next player: X`. Jump to `Go to move #1`, play a different square, and the list retracts to two entries — the abandoned branch is gone.
 

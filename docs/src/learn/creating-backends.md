@@ -36,12 +36,6 @@ This is a complete, working backend: no framework, no executor. It was run, and 
     {% include "../../examples/creating_backends/custom_backend/main.py" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 Run it with anything that speaks ASGI:
 
 ```bash linenums="0"

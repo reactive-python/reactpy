@@ -30,10 +30,6 @@ You might expect that clicking the "+3" button will increment the counter three 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 It lands on `#!python 1`, not `#!python 3`. Two things combine to produce that.
 
 First, as you may recall from [State as a Snapshot](./state-as-a-snapshot.md#rendering-takes-a-snapshot-in-time), each render's state values are fixed. Inside this render's event handler `#!python number` is always `#!python 0`, no matter how many times you call the setter, so all three lines evaluate to the same call:
@@ -81,10 +77,6 @@ It is an uncommon use case, but if you would like to update the same state varia
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 This time the counter reaches `#!python 3`, because each updater receives whatever the previous one produced.
 
 ### What happens if you update state after replacing it
@@ -98,10 +90,6 @@ What does this handler produce?
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Step by step, starting from `#!python number == 0`:
 
@@ -125,10 +113,6 @@ One more:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 1. `#!python set_number(number + 5)` — `#!python number` is `#!python 0`, so state becomes `#!python 5`.
 2. `#!python set_number(lambda n: n + 1)` — updater, so `#!python 5 + 1 = 6`.

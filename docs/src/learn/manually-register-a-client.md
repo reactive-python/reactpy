@@ -150,12 +150,6 @@ if (typeof bind !== "function") {
     {% include "../../examples/manually_register_a_client/badge_module/main.py" start="# start" end="# end" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 The registration call gives you a normal constructor:
 
 ```python linenums="0"

@@ -61,12 +61,6 @@ Each field answers a different question, and mixing them up is the usual source 
     {% include "../../examples/reference_use_connection/inspect_client/app.py" start="# start" %}
     ```
 
-=== ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
-
 `#!python scope['client']` is what the *server* saw when the websocket opened. `#!python location.path` is what the *browser* reported. They are independent sources, which is why the page path is not in the scope — see [`use_location`](./use-location.md) for why that matters.
 
 ### Injecting a connection in tests

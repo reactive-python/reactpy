@@ -69,10 +69,6 @@ Traditionally when creating web pages, web developers marked up their content an
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 And here's how to build a component:
 
 ### Step 1: Import what you need
@@ -133,10 +129,6 @@ Now that you've defined your `#!python profile` component, you can nest it insid
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 ### What the browser sees
 

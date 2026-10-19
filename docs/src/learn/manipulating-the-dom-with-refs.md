@@ -64,10 +64,6 @@ If the input should be focused when it first appears, that is declarative — us
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 No ref, no effect, no JavaScript. The attribute dict is the DOM.
 
 To focus *later*, in response to a click, there is no server-side way to reach a node — but ReactPy has an escape hatch for exactly this. When the value of an `#!python on*` key is a **string**, it runs as JavaScript in the browser (see [Responding to Events](./responding-to-events.md)). Give the element an `#!python "id"` and reach it by id:
@@ -79,10 +75,6 @@ To focus *later*, in response to a click, there is no server-side way to reach a
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 This is the honest equivalent of `#!python myRef.current.focus()`. The trade-off is that the code doing the focusing now lives in a string, on the server, unchecked by your linter and invisible to your type checker. Keep it to one-line calls.
 
@@ -114,10 +106,6 @@ The React version of this example keeps three refs, one per image, and calls `#!
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Note the f-string building the JavaScript: the id is interpolated server-side, so each button gets its own literal `#!python scrollIntoView` call. That is also the risk — the interpolation is not escaped. Interpolating anything a user controls into that string is an injection hole; interpolate your own integer keys, like `#!python person["id"]` above, and nothing else.
 
 ## Showing and hiding
@@ -131,10 +119,6 @@ Toggling visibility is the case where React's ref example and ReactPy agree on t
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Pressing the button flips `#!python shown`, the `#!python "hidden"` attribute changes, and the client updates the element. Any style you would have set by hand goes in the attribute dict the same way — `#!python "style"` accepts a dict of camelCased CSS properties:
 

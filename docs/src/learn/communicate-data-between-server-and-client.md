@@ -49,8 +49,8 @@ Anything you can `#!python await` on the server becomes a render, and a render r
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
+    ```reactpy-run
+    props: symbol="BTC"
     ```
 
 Verified end to end: the first patch carried `#!python ["loading..."]`, and about a second later a second patch arrived with `#!python ["BTC: 42.10"]` — no client event in between. The client applied it like any other update.
@@ -115,10 +115,6 @@ The route is: read the file **in the browser** with JavaScript, put the text int
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The mechanics, each of which matters:
 
 -   The `#!python onChange` value is a **string**, which routes it to `#!python inlineJavaScript` instead of `#!python eventHandlers` — that is what makes it run in the page ([Creating VDOM Event Handlers](./creating-vdom-event-handlers.md#inline-javascript)).
@@ -144,8 +140,8 @@ Everything a component does runs on the connection's event loop. A synchronous, 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
+    ```reactpy-run
+    props: width=300
     ```
 
 Verified: the first patch says `#!python rendering...`, the next says `#!python rendered 300px`, and the loop stayed responsive across the 0.4 s call. Note that the setter is called from inside the effect, which is already on the loop.

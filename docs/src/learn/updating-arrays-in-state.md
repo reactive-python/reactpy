@@ -64,10 +64,6 @@ The common case is adding an item. The handler creates a new list ending with th
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Type a task and submit; it appends while the existing ones stay put. Note that the new id is computed from the existing items rather than from a module-level counter. A global counter is shared by every visitor to the server, so two users would collide on the same key — derive ids from the state you already have, or use `#!python uuid4()`.
 
 ### Removing from a list
@@ -82,10 +78,6 @@ The most common removal is filtering out one item:
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 `#!python [item for item in items if item["id"] != id_to_keep]` produces a brand-new list containing everything except the deleted item, and the original is left alone.
 
 ### Transforming every item
@@ -99,10 +91,6 @@ To apply a change to every item, build a new list by transforming each element:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Each item becomes a **new dict**, because mutating `#!python item["text"]` in place would leave the previous state pointing at the same mutated object.
 
@@ -122,10 +110,6 @@ Unlike most languages, Python has no `#!python setAt(i, x)` method, and the obvi
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 `#!python [{"id": 0, "text": text}, *items[1:]]` replaces the first item and copies the rest. For an arbitrary index, `#!python [*items[:i], new_item, *items[i + 1:]]` is the general form.
 
 ### Inserting into a list
@@ -140,10 +124,6 @@ To insert an item somewhere other than the end, slice around the insertion point
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 `#!python [*items[:1], new_item, *items[1:]]` puts the new item at index `#!python 1`. This is how React's "insert into an array" example translates; `#!python list.insert()` mutates and is unusable here.
 
 ### Making other changes to a list
@@ -157,10 +137,6 @@ The rule is uniform: **copy first, then operate on the copy**, or use a function
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 `#!python reversed()` returns an iterator, so wrap it in `#!python list(...)`; `#!python sorted()` already returns a new list; `#!python items[:2]` is a slice, which is already a new list.
 
@@ -179,10 +155,6 @@ The examples above replaced whole dicts, which is the safe default. When an item
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Tick one checkbox and only that artwork's `#!python "seen"` flips — verified, the pair goes from `#!python [False, False]` to `#!python [True, False]`. The comprehension copies every item, and only the targeted one is rebuilt with the changed field.
 

@@ -129,15 +129,49 @@ def extend_pyscript_config(
     config: dict[str, Any] | str,
     modules: dict[str, str] | str | None = None,
     reactpy_pkg_string: str | None = None,
+    asset_prefix: str | None = None,
+    packages_cache: str | None = None,
 ) -> str:
+    """Build the JSON config string PyScript needs to start ReactPy.
+
+    Parameters:
+        asset_prefix:
+            URL prefix that ``reactpy/static/`` is served from, with no
+            trailing slash. Defaults to ``REACTPY_PATH_PREFIX`` plus
+            ``static/``, which is correct whenever ReactPy serves the page.
+            Pass something else when the assets live elsewhere — a static
+            documentation build, a CDN, or any host that mounts them under a
+            different URL.
+        packages_cache:
+            Force PyScript's wheel caching mode (``"normal"``, ``"always"``,
+            ``"never"``). By default a ``.whl`` entry disables caching, since
+            PyScript keys its cache by URL and a same-named wheel can change
+            underneath it (pyscript/pyscript#2282). Set this only when the URL
+            itself changes whenever the wheel's contents do.
+    """
+    static_root = (
+        f"{REACTPY_PATH_PREFIX.current}static"
+        if asset_prefix is None
+        else asset_prefix.rstrip("/")
+    )
     # Extends ReactPy's default PyScript config with user provided values.
+    packages: list[str] = [
+        reactpy_pkg_string or _reactpy_pkg_string(static_root),
+        "jsonpointer==3.*",
+    ]
+    if reactpy_pkg_string is None:
+        # micropip resolves a wheel's dependencies on a cold boot only: a
+        # reload reuses the cached install and ``import fastjsonschema`` then
+        # raises ``ModuleNotFoundError``. Declaring them puts ReactPy's own
+        # dependencies on PyScript's declarative load path, which runs on
+        # every boot. A caller supplying its own wheel string knows its own
+        # dependencies better than we do, so this is skipped in that case.
+        packages.extend(_reactpy_runtime_requirements())
+
     pyscript_config: dict[str, Any] = {
-        "packages": [reactpy_pkg_string or _reactpy_pkg_string(), "jsonpointer==3.*"],
+        "packages": packages,
         "js_modules": {
-            "main": modules
-            or {
-                f"{REACTPY_PATH_PREFIX.current}static/morphdom/morphdom-esm.js": "morphdom"
-            }
+            "main": modules or {f"{static_root}/morphdom/morphdom-esm.js": "morphdom"}
         },
     }
     pyscript_config["packages"].extend(extra_py)
@@ -157,14 +191,43 @@ def extend_pyscript_config(
         pyscript_config.update(json.loads(config))
     elif config and isinstance(config, dict):
         pyscript_config.update(config)
+
+    if packages_cache is not None:
+        pyscript_config["packages_cache"] = packages_cache
+
     return json.dumps(pyscript_config)
 
 
-def _reactpy_pkg_string() -> str:
+def _reactpy_runtime_requirements() -> list[str]:
+    """ReactPy's own dependencies as bare package names PyScript can fetch.
+
+    Taken from the installed distribution's metadata, so the list follows
+    ``pyproject.toml`` instead of duplicating it. Requirements carrying a
+    marker (``extra == 'asgi'`` and friends) are for server-side installs and
+    are dropped, as are version specifiers: PyScript resolves bare names
+    against the Pyodide lockfile, which pins its own builds.
+    """
+    try:
+        required = metadata.requires("reactpy") or []
+    except metadata.PackageNotFoundError:  # pragma: no cover
+        _logger.warning("Could not read ReactPy's requirements for PyScript.")
+        return []
+
+    names: list[str] = []
+    for requirement in required:
+        if ";" in requirement:
+            continue
+        name = re.split(r"[<>=!~\[;\s]", requirement.strip(), maxsplit=1)[0]
+        if name and name not in names:
+            names.append(name)
+    return names
+
+
+def _reactpy_pkg_string(static_root: str | None = None) -> str:
     wheel_file = _ensure_local_reactpy_wheel()
-    return (
-        f"{REACTPY_PATH_PREFIX.current}static/{_PYSCRIPT_WHEELS_DIR}/{wheel_file.name}"
-    )
+    if static_root is None:
+        static_root = f"{REACTPY_PATH_PREFIX.current}static"
+    return f"{static_root}/{_PYSCRIPT_WHEELS_DIR}/{wheel_file.name}"
 
 
 def _ensure_local_reactpy_wheel() -> Path:
@@ -172,7 +235,7 @@ def _ensure_local_reactpy_wheel() -> Path:
 
     if _source_checkout_exists():
         if packaged_wheel and not _wheel_is_stale_for_source(packaged_wheel):
-            return packaged_wheel
+            return _name_wheel_by_contents(packaged_wheel)
 
         if built_wheel := _build_reactpy_wheel_from_source():
             return _copy_reactpy_wheel_to_static_dir(built_wheel)
@@ -183,7 +246,7 @@ def _ensure_local_reactpy_wheel() -> Path:
         )
 
     if packaged_wheel:
-        return packaged_wheel
+        return _name_wheel_by_contents(packaged_wheel)
 
     if rebuilt_wheel := _rebuild_installed_reactpy_wheel():
         return rebuilt_wheel
@@ -222,9 +285,56 @@ def _wheel_matches_local_version(path: Path) -> bool:
     return (
         len(name_parts) >= _WHEEL_FILENAME_PART_COUNT
         and name_parts[0].replace("_", "-").lower() == "reactpy"
-        and _normalize_wheel_part(name_parts[1])
+        and _normalize_wheel_part(name_parts[1].split("+")[0])
         == _normalize_wheel_part(reactpy.__version__)
     )
+
+
+def _content_hashed_wheel_name(wheel_file: Path) -> str:
+    """Append a content hash to a wheel's version, as a PEP 440 local label.
+
+    Static hosts cache by URL, and ``reactpy-<version>-py3-none-any.whl`` stays
+    identical while the source behind it changes — which is exactly how
+    PyScript ends up installing a stale wheel (pyscript/pyscript#2282). A hash
+    in the filename makes the URL change with the bytes, so the wheel can be
+    cached normally.
+    """
+    return _with_local_label(wheel_file.name, _wheel_content_digest(wheel_file))
+
+
+def _with_local_label(wheel_name: str, digest: str) -> str:
+    name = wheel_name.removesuffix(".whl").split("-")
+    if len(name) < _WHEEL_FILENAME_PART_COUNT or "+" in name[1]:
+        return wheel_name
+    name[1] = f"{name[1]}+{digest}"
+    return "-".join(name) + ".whl"
+
+
+def _wheel_content_digest(wheel_file: Path) -> str:
+    return hashlib.sha256(wheel_file.read_bytes()).hexdigest()[:10]
+
+
+def _name_wheel_by_contents(wheel_file: Path) -> Path:
+    """Rename a wheel in place so its URL changes along with its bytes.
+
+    Wheels packaged under the plain name are renamed rather than rebuilt, so
+    adopting this scheme never requires a build toolchain to be present.
+    """
+    hashed_wheel = wheel_file.with_name(_content_hashed_wheel_name(wheel_file))
+    if hashed_wheel == wheel_file:
+        _prune_wheels(wheel_file.parent, hashed_wheel)
+        return wheel_file
+
+    wheel_file.replace(hashed_wheel)
+    _prune_wheels(wheel_file.parent, hashed_wheel)
+    return hashed_wheel
+
+
+def _prune_wheels(directory: Path, keep: Path) -> None:
+    """Leave exactly one ReactPy wheel behind, so its URL is unambiguous."""
+    for existing in directory.glob("reactpy-*.whl"):
+        if existing != keep:
+            existing.unlink()
 
 
 def _normalize_wheel_part(value: str) -> str:
@@ -315,18 +425,19 @@ def _hatch_build_command(repo_root: Path) -> list[str] | None:
 def _copy_reactpy_wheel_to_static_dir(wheel_file: Path) -> Path:
     static_wheels_dir = _packaged_reactpy_wheels_dir()
     static_wheels_dir.mkdir(parents=True, exist_ok=True)
-    static_wheel = static_wheels_dir / wheel_file.name
+    static_wheel = static_wheels_dir / _content_hashed_wheel_name(wheel_file)
 
-    for existing in static_wheels_dir.glob("reactpy-*.whl"):
-        if existing != static_wheel:
-            existing.unlink()
-
-    if wheel_file.resolve() == static_wheel.resolve():
+    if static_wheel.is_file():
+        # Already named after its own contents, so these are the right bytes.
         return static_wheel
 
     temp_wheel = static_wheel.with_suffix(f"{static_wheel.suffix}.tmp")
     shutil.copy2(wheel_file, temp_wheel)
     temp_wheel.replace(static_wheel)
+
+    # Only once the replacement is on disk, so a failed build can never leave
+    # the directory without a wheel.
+    _prune_wheels(static_wheels_dir, static_wheel)
     return static_wheel
 
 
@@ -383,11 +494,19 @@ def _rebuild_installed_reactpy_wheel() -> Path | None:
         record_rows.append((record_name, "", ""))
         wheel_zip.writestr(record_name, _record_text(record_rows))
 
-    temp_wheel_path.replace(wheel_path)
-    _logger.warning(
-        "PyScript will utilize reconstructed local wheel '%s'.", wheel_path.name
+    hashed_wheel_path = static_wheels_dir / _with_local_label(
+        wheel_path.name, _wheel_content_digest(temp_wheel_path)
     )
-    return wheel_path
+    for existing in static_wheels_dir.glob("reactpy-*.whl"):
+        if existing != hashed_wheel_path:
+            existing.unlink()
+
+    temp_wheel_path.replace(hashed_wheel_path)
+    _logger.warning(
+        "PyScript will utilize reconstructed local wheel '%s'.",
+        hashed_wheel_path.name,
+    )
+    return hashed_wheel_path
 
 
 def _installed_wheel_name(

@@ -33,10 +33,6 @@ A component shows a name built from two fields. The tempting version stores the 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Remove the state variable and the Effect, and calculate it during render:
 
 === "app.py"
@@ -46,10 +42,6 @@ Remove the state variable and the Effect, and calculate it during render:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 The difference is measurable, and the first row of each is the part users actually see:
 
@@ -78,10 +70,6 @@ When a calculation genuinely is expensive, the answer is still not state plus an
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The filter records each run so the result is countable. Verified: after two keystrokes the component has rendered three times and the filter has run **once**; pressing **Change filter** adds a render and a second run. The value is recomputed exactly when the inputs it reads change, and never on a render that didn't change them.
 
 Two properties worth knowing, both verified:
@@ -102,10 +90,6 @@ A profile page holds a comment draft. When the user navigates to a different pro
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified: type a draft, press **Next profile**, and the draft is empty on the new profile — in a single extra render.
 
@@ -138,10 +122,6 @@ React throws the discarded render away; ReactPy hands the model to the socket as
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: **Select** costs one render and shows the selection; **Add item** costs one render and the selection is already gone in that same patch — three renders total, no stale frame.
 
 The general shape is a guard on the read rather than a call to the setter:
@@ -167,10 +147,6 @@ Two handlers should do the same thing on input. There is no reason for this to i
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: type in the shipping field and the billing readout changes with it, in one render, because both setters were called from one handler.
 
 Event handlers are ordinary functions — ordinary `#!python async def`s, which is to say the coroutine ReactPy requires of anything in a handler slot. Call one from the other (with `#!python await`, since it is a coroutine), extract the shared part into a plain function, or pass the other setter as a parameter. Whatever React's docs tell you here transfers unchanged, because none of it is rendering work.
@@ -187,10 +163,6 @@ Submitting a form is an event, not a consequence of rendering. Do the work in th
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: fill the field, submit, and the transport recorded exactly one send — `#!python ['ada@example.com']`.
 
 The version to avoid is a flag plus an Effect: `#!python set_pending(True)`, and an Effect that watches `#!python pending`. It costs a state variable, an extra render per submission, and — because Effects re-run on dependency changes and remounts — a way to send twice. `#!python event.preventDefault()` stops the page navigating, and must appear **literally in the handler's body**, since ReactPy detects it by bytecode inspection ([Creating VDOM Event Handlers](./creating-vdom-event-handlers.md)).
@@ -206,10 +178,6 @@ A child should tell its parent something happened. Pass a callback and call it f
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified: type `#!python ada`, submit, and the parent's paragraph reads `#!python searching for 'ada'...`.
 
@@ -254,10 +222,6 @@ Here is the case where the Effect is correct. The value does not live in ReactPy
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Verified: pressing **Tick** once shows `#!python 1 ticks`; pressing **Stop watching** unmounts the view and leaves `#!python 0` listeners registered on the store.
 
 Three things make this one legitimate where the others were not:
@@ -279,10 +243,6 @@ Fetching genuinely needs an Effect — the network is external. Everything you w
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Verified: the Effect stores the raw response; the labels, the per-row formatting, and the total are computed during render. One request per report name (`#!python ['orders', 'users']`), and no `#!python rows` or `#!python total` state variables that could fall out of step with the response.
 

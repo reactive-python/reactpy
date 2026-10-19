@@ -81,10 +81,6 @@ Call `use_state` at the top level of your component, and use the returned value 
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Each state variable gets its own setter, so prefer several narrow variables over one crowded object:
 
 ```python linenums="0"
@@ -116,10 +112,6 @@ A controlled input reads its `#!python "value"` from state and writes back throu
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Type into the field and the heading follows. Note the key names: `#!python "value"` and `#!python "onChange"` are DOM attribute names inside the attributes dictionary, while the Python names around them are `snake_case`.
 
 Reading which field an event came from is possible — `#!python await event.target.name` asks the page for it — but it costs a round trip, so when the handler already knows which field it belongs to, bind that in Python instead: a named handler per field, a closure, or a `#!python functools.partial`. See [Responding to Events](../learn/responding-to-events.md).
@@ -136,10 +128,6 @@ Reading which field an event came from is possible — `#!python await event.tar
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Tick the box and the status line flips. `#!python checked` is fetched from the live element when the handler awaits it, in the same message as any other property would be — nothing arrives up front, so a handler which never reads it never pays for it.
 
 #### Form (two variables)
@@ -153,10 +141,6 @@ Two inputs, two state variables, no interference between them:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 ### Updating state based on the previous state
 
@@ -175,10 +159,6 @@ ReactPy calls your function with the current state and assigns the result.
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Click "+3" and the counter reaches `#!python 3`, because each updater sees what the previous one produced — verified. Had these been `#!python set_count(count + 1)` instead, all three would compute from the same render-time `#!python count` and the result would be `#!python 1`. See [Queueing a Series of State Updates](../learn/queueing-a-series-of-state-updates.md).
 
@@ -233,10 +213,6 @@ ReactPy ignores `initial_value` after the first render, but the *expression* sti
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 `#!python create_expensive_state` is called once, on mount — verified (one call across four renders).
 
 #### Passing the initializer function
@@ -265,10 +241,6 @@ ReactPy normally preserves state between re-renders, matching children by positi
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 Switching accounts resets the counter to zero, because a changed key means a different component as far as ReactPy is concerned. Verified: a keyed child bumped to `#!python 2` came back at `#!python 0` after its key changed, while the identical child rendered *without* a key kept its count.
 
 ### Storing information from previous renders
@@ -282,9 +254,5 @@ To keep a history, read the previous list through an updater so it composes corr
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Clicking twice records `#!python Previous values: 0, 1` — verified. The `#!python history` name in the closure would still be the render-time value, which is exactly why the updater form matters here. For genuinely mutable, non-rendering values, use [`use_ref`](./use-ref.md) instead.

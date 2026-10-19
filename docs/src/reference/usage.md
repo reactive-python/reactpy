@@ -96,10 +96,6 @@ That makes custom elements first-class — no registration step, no wrapper comp
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The `#!python <user-badge>` element reaches the browser as written. Whether it *does* anything is up to whatever defines it — a web component, an external script, or nothing at all. A tag the browser does not know renders as an unknown element: its children show up, its attributes are set, and it is laid out inline by default.
 
 !!! tip "Prefer a component over a mystery tag"
@@ -144,10 +140,6 @@ A complete page reads like the HTML it produces:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 ### Lists of tags
 

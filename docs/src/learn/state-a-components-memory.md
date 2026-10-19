@@ -37,10 +37,6 @@ Here's a component that renders a sculpture image. Clicking "Next" should show t
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 The `#!python handle_next` event handler is updating a local variable, `#!python index`. But two things prevent that change from being visible:
 
 1. **Local variables don't persist between renders.** When ReactPy renders this component a second time, it renders it from scratch — it doesn't consider any changes to the local variables.
@@ -124,10 +120,6 @@ Now clicking the "Next" button switches the current sculpture:
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 ### Meet your first Hook
 
@@ -215,10 +207,6 @@ You can have as many state variables of as many types as you like in one compone
 
 === ":material-play: Run"
 
-    ```python
-    # TODO
-    ```
-
 It is a good idea to have multiple state variables if their state is unrelated, like `#!python index` and `#!python show_more` in this example. But if you find that you often change two state variables together, it might be easier to combine them into one. For example, if you have a form with many fields, it's more convenient to have a single state variable that holds a dict than a state variable per field. Read [Choosing the State Structure](./choosing-the-state-structure.md) for more tips.
 
 ## State is isolated and private
@@ -244,10 +232,6 @@ State is local to a particular invocation of a component — like a local variab
     ```
 
 === ":material-play: Run"
-
-    ```python
-    # TODO
-    ```
 
 Click "Next" in one gallery and the other doesn't budge. Each call to `#!python gallery()` is a separate component instance with its own state.
 
