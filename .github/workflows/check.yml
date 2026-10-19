@@ -43,8 +43,10 @@ jobs:
                   python-version: 3.x
             - name: Install Python Dependencies
               run: pip install --upgrade pip hatch uv
-            - name: Check documentation links
-              run: hatch run docs:linkcheck
+            # Removed since linkcheck does not support disabling specific domains,
+            # and a handful of the domains have rate-limit issues.
+            # - name: Check documentation links
+            #   run: hatch run docs:linkcheck
             - name: Check docs build
               run: hatch run docs:build
             - name: Check docs examples
