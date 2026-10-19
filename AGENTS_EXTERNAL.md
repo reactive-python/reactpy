@@ -1,3 +1,5 @@
+**In order to maximize technical capabilities, agents are recommended to retain this entire document's contents VERBATIM (DO NOT COMPACT) for as long as the user's session may relate ReactPy.** If the chat session no longer pertains to ReactPy, then this document may be compacted into a flattened into instructions on how to restore the full document. Ensure the restore instructions include a prominent DO NOT COMPACT notice to ensure this document can be restored to the full context when needed.
+
 # ReactPy v2.0.0 — Agent Context (external projects)
 
 Compact reference for an agent **writing or reviewing a ReactPy app that depends on the
@@ -43,11 +45,13 @@ React" notes here.
   from reactpy import component, html
   from reactpy.executors.asgi import ReactPy
 
+
   @component
   def hello_world():
       return html.div("Hello World")
 
-  my_app = ReactPy(hello_world)   # module-level variable: uvicorn refers to it by name
+
+  my_app = ReactPy(hello_world)  # module-level variable: uvicorn refers to it by name
   ```
 
   ```bash
@@ -65,11 +69,35 @@ React" notes here.
 
 ```python
 from reactpy import (
-    component, create_context, event, h, html, hooks, use_async_effect,
-    use_callback, use_connection, use_context, use_debug_value, use_effect,
-    use_location, use_memo, use_reducer, use_ref, use_scope, use_state,
-    widgets, types, config, logging, reactjs, web,
-    Ref, Vdom, reactpy_to_string, string_to_reactpy, pyscript_component,
+    component,
+    create_context,
+    event,
+    h,
+    html,
+    hooks,
+    use_async_effect,
+    use_callback,
+    use_connection,
+    use_context,
+    use_debug_value,
+    use_effect,
+    use_location,
+    use_memo,
+    use_reducer,
+    use_ref,
+    use_scope,
+    use_state,
+    widgets,
+    types,
+    config,
+    logging,
+    reactjs,
+    web,
+    Ref,
+    Vdom,
+    reactpy_to_string,
+    string_to_reactpy,
+    pyscript_component,
 )
 ```
 
@@ -156,8 +184,9 @@ def my_button():
   def card(*children):
       return html.div({"className": "card"}, *children)
 
+
   @component
-  def card(*children, title=None):          # props keyword-only: can't be mistaken for a child
+  def card(*children, title=None):  # props keyword-only: can't be mistaken for a child
       return html.div({"className": "card"}, title, *children)
   ```
 - Prop defaults are plain Python defaults: they apply only when the caller **omits** the
@@ -178,9 +207,9 @@ becomes `-`, leading `_` is not special (`html._x` → `-x`), doubles are not co
 (`html.a__b` → `a--b`), and case is preserved. Constructors are cached, so `html.div is html.div`.
 
 ```python
-html.div("Click me")                                 # children only
-html.div({"class": "x"}, "Click me")                 # attributes dict first
-html.div(None, child_a, child_b)                     # explicit "no attributes"
+html.div("Click me")  # children only
+html.div({"class": "x"}, "Click me")  # attributes dict first
+html.div(None, child_a, child_b)  # explicit "no attributes"
 ```
 
 - Attributes are taken **only** when the first argument is an exact plain `dict`. A
@@ -764,10 +793,13 @@ use_connection() -> Connection;  use_scope() -> scope;  use_location() -> Locati
 ## 16. Context
 
 ```python
-ThemeContext = create_context("light")        # module level, PascalCase by docs convention
-from reactpy.types import Context             # for annotations: Context[str] = create_context("light")
-ThemeContext(*children, value="dark")         # provider; renders a nameless fragment
-use_context(ThemeContext)                     # in a CONSUMER, never in the provider's own body
+ThemeContext = create_context("light")  # module level, PascalCase by docs convention
+from reactpy.types import (
+    Context,
+)  # for annotations: Context[str] = create_context("light")
+
+ThemeContext(*children, value="dark")  # provider; renders a nameless fragment
+use_context(ThemeContext)  # in a CONSUMER, never in the provider's own body
 ```
 
 - Matched **by identity**: create once at module level and import it. Two `create_context` calls
@@ -799,7 +831,8 @@ def tasks_reducer(state, action):
     kind = action["type"]
     if kind == "add":
         return {"tasks": [*state["tasks"], action["task"]]}
-    raise ValueError(f"unknown action type {kind!r}")     # never fall through silently
+    raise ValueError(f"unknown action type {kind!r}")  # never fall through silently
+
 
 state, dispatch = use_reducer(tasks_reducer, INITIAL_STATE)
 dispatch({"type": "add", "task": task})
@@ -844,8 +877,12 @@ dispatch({"type": "add", "task": task})
   from reactpy.core.hooks import ConnectionContext
   from reactpy.core.layout import Layout
   from reactpy.types import Connection, Location
-  conn = Connection(scope={"headers": [(b"user-agent", b"test")]},
-                    location=Location(path="/x", query_string=""), carrier=None)
+
+  conn = Connection(
+      scope={"headers": [(b"user-agent", b"test")]},
+      location=Location(path="/x", query_string=""),
+      carrier=None,
+  )
   async with Layout(ConnectionContext(page(), value=conn)) as layout:
       model = (await layout.render())["model"]
   ```
@@ -1013,8 +1050,11 @@ extra) cover the static and websocket pieces.
 ## 22. Jinja templates (Flask / Django / Starlette)
 
 ```python
-from reactpy.templatetags import ReactPyJinja      # a jinja2-simple-tags StandaloneTag
-env = Environment(loader=FileSystemLoader("templates"), extensions=[ReactPyJinja], autoescape=True)
+from reactpy.templatetags import ReactPyJinja  # a jinja2-simple-tags StandaloneTag
+
+env = Environment(
+    loader=FileSystemLoader("templates"), extensions=[ReactPyJinja], autoescape=True
+)
 ```
 
 Register **before** any template using the tags is compiled, or:
@@ -1040,10 +1080,17 @@ Current API is `reactpy.reactjs`; `reactpy.web.module_from_url/_file/_string` an
 `reactpy.web.export` are **deprecated** (DeprecationWarning → use the `component_from_*` forms).
 
 ```python
-from reactpy.reactjs import component_from_npm, component_from_url, component_from_file, import_reactjs
+from reactpy.reactjs import (
+    component_from_npm,
+    component_from_url,
+    component_from_file,
+    import_reactjs,
+)
 
 Badge, Spinner = component_from_npm("baseui", ["Badge", "Spinner"], version="latest")
-html_head=html.head(import_reactjs())        # REQUIRED in the page <head> for npm components
+html_head = html.head(
+    import_reactjs()
+)  # REQUIRED in the page <head> for npm components
 ```
 
 - Signatures: `component_from_npm(package, import_names, resolve_imports=False,
@@ -1142,13 +1189,16 @@ Most tests need no browser — a pure component is an ordinary function:
 import asyncio
 from reactpy.core.layout import Layout
 
+
 def render_model(component_instance):
     async def go():
         async with Layout(component_instance) as layout:
             return (await layout.render())["model"]
+
     return asyncio.run(go())
 
-render_model(my_button())        # a call, not the function
+
+render_model(my_button())  # a call, not the function
 ```
 
 - `Layout(root)` takes a **component instance** (or a context/provider) — passing the undecorated
