@@ -105,7 +105,7 @@ For anything longer, wrap the element in parentheses rather than relying on a ba
 
 ```python linenums="0"
 return html.img(
-    {"src": "https://i.imgur.com/MK3eW3As.jpg", "alt": "Katherine Johnson"}
+    {"src": "../../assets/images/demos/MK3eW3As.jpg", "alt": "Katherine Johnson"}
 )
 ```
 

@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import posixpath
 import re
 import shutil
 import textwrap
@@ -53,6 +54,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, TypedDict
 
+from mkdocs.exceptions import BuildError
 from mkdocs.plugins import event_priority
 
 # ------------------------------------------------------------------ tuning --
@@ -152,6 +154,8 @@ def on_page_markdown(markdown, page, config, files):
 
 
 def on_page_content(html, page, config, files):
+    _check_asset_paths(page, html)
+
     blocks = _state.blocks.get(page.file.src_path) or []
     if not blocks:
         return html
@@ -192,6 +196,37 @@ def on_page_content(html, page, config, files):
         + f'<script type="module" src="{base}assets/js/reactpy-run.js"></script>'
         + "".join(templates)
     )
+
+
+_RELATIVE_ASSET_RE = re.compile(r"\.\./\.\./assets/[A-Za-z0-9_./-]*")
+
+
+def _check_asset_paths(page, html: str) -> None:
+    """Fail the build when a page-relative asset path is off by a level.
+
+    Examples write ``../../assets/images/scientists/`` because every page that
+    shows a demo sits two levels below the site root. Move one to a deeper or
+    shallower page and the same literal points somewhere else — the image
+    breaks on that page alone, which no check that only asks "did the demo
+    render" will ever notice. Resolving it here turns that silent 404 into a
+    build failure that names the page.
+    """
+    directory = posixpath.dirname(page.file.dest_uri)
+    if outside := sorted(
+        {
+            match.group(0)
+            for match in _RELATIVE_ASSET_RE.finditer(html)
+            if not posixpath.normpath(
+                posixpath.join(directory, match.group(0))
+            ).startswith("assets/")
+        }
+    ):
+        depth = len(directory.split("/")) if directory else 0
+        raise BuildError(
+            f"'{page.file.src_path}': '{outside[0]}' resolves outside the site from "
+            f"{depth} level(s) deep. These paths assume two — add or drop a '../' to "
+            "match this page's depth."
+        )
 
 
 def _relative_to_page(page) -> str:

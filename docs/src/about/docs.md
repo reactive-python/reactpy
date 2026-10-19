@@ -109,7 +109,7 @@ The rules that make this work:
 -   A `# start` marker on its own line is what the include begins after; `# end` stops it. Crop at the marker so the marker itself never renders on the page.
 -   A file with no marker is included whole.
 -   Multiple variants of one idea go in sibling directories (`task_state_props/`, `task_context/`, `task_wiring/`), one tabbed group per example.
--   The `:material-play: Run` tab is left **empty**, and `docs/plugins/reactpy_run.py` fills it in. It reads the demo off the include directives in the tab set's sibling tabs, so the tab runs exactly the code the reader can already see — in the browser, through the same PyScript runtime ReactPy ships. Opening the tab is what executes the demo, so there is no Run button and nothing to type. Keep the tab.
+-   The `:material-play: Run` tab is left **empty**, and `docs/plugins/reactpy_run.py` fills it in. It reads the demo off the include directives in the tab set's sibling tabs, so the tab runs exactly the code the reader can already see — in the browser, through the same PyScript runtime ReactPy ships. Opening the tab is what executes the demo, so there is no Run button and nothing to type; while Pyodide boots, the panel reads `Loading...`. Keep the tab.
 
 Because the file is included, a snippet cannot drift from a runnable example — but nothing in the build proves the example *behaves*. Mount it and check the DOM before you write "this renders a list". When a page compares several versions, drive all of them through the same click sequence and assert the same observable output; "it looks the same" is how two versions of an example quietly disagree.
 
@@ -136,6 +136,18 @@ Inference covers a tab set that shows one demo's files. It gives up, and says wh
 A demo that needs a filesystem, a server, or threads cannot run under Pyodide at all. Delete its Run tab instead of leaving a tab that opens onto nothing — `docs/examples/manually_register_a_client/badge_module/` is the precedent.
 
 Also list children of a component with `key=` when they come from a list — `html.ul([row(item, key=item["id"]) for item in items])`. Omitting it renders fine and emits a debug-mode warning, which is exactly the lesson the page about keys is trying to teach.
+
+### Images belong to the docs
+
+Demo images live in `docs/src/assets/images/scientists/`. Every page that shows one sits two levels below the site root — `/learn/rendering-lists/`, `/about/docs/` — so write the path from there, right where the `<img>` needs it:
+
+```python
+html.img({"src": "../../assets/images/demos/yXOvdOSs.jpg", "alt": "Hedy Lamarr"})
+```
+
+Relative rather than absolute, because `hatch run docs:serve` and the deployed site are different origins: an absolute URL to `reactive-python.github.io` makes a locally served page fetch images that were never deployed, so a brand-new image looks broken on your machine and fine in review — the reverse of how bugs usually behave. The two `../` are load-bearing. Move a demo to a page one level deeper or shallower and the same string resolves somewhere else, breaking the image only on that page; `docs/plugins/reactpy_run.py` fails the build when that happens, so fix the base when you move the demo.
+
+Do not hotlink someone else's image host. These files were `i.imgur.com` links copied from the React docs, and imgur answers `403` to a request that carries a `Referer` — so every `<img>` in a demo was a broken placeholder while the very same URL opened in a new tab loaded fine. That asymmetry is why it survived: a plain `curl` passes, and so does an automated check that only asserts the demo rendered. React has since vendored the identical files to its own CDN under the same names, which is where these copies came from.
 
 ## Verifying a page
 

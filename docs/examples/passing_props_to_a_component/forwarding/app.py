@@ -1,9 +1,10 @@
 from reactpy import component, html
 
-
 # start
+
+
 def get_image_url(person, size="s"):
-    return f"https://i.imgur.com/{person['image_id']}{size}.jpg"
+    return f"../../assets/images/demos/{person['image_id']}{size}.jpg"
 
 
 @component

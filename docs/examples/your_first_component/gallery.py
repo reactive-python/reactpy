@@ -1,11 +1,12 @@
 from reactpy import component, html
 
-
 # start
+
+
 @component
 def profile():
     return html.img(
-        {"src": "https://i.imgur.com/MK3eW3As.jpg", "alt": "Katherine Johnson"}
+        {"src": "../../assets/images/demos/MK3eW3As.jpg", "alt": "Katherine Johnson"}
     )
 
 

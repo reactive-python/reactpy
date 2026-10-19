@@ -2,7 +2,7 @@ from reactpy import component, html
 
 user = {
     "name": "Hedy Lamarr",
-    "image_url": "https://i.imgur.com/yXOvdOSs.jpg",
+    "image_url": "../../assets/images/demos/yXOvdOSs.jpg",
     "image_size": 90,
 }
 

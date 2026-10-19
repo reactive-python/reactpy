@@ -31,6 +31,32 @@
     min-height: 0.6rem;
 }
 
+/* Pyodide takes a second or two to boot, and an empty panel during that window
+   reads as a broken page rather than a slow one. The word is generated here
+   rather than written into the markup, so it never lands in the search index
+   the way the old "Booting Python…" chrome did. */
+.reactpy-run[data-reactpy-state="booting"] .reactpy-run-out {
+    min-height: 1.2rem;
+}
+
+.reactpy-run[data-reactpy-state="booting"] .reactpy-run-out::before {
+    animation: reactpy-run-booting 1.4s ease-in-out infinite;
+    color: var(--md-default-fg-color--lighter);
+    content: "Loading...";
+}
+
+@keyframes reactpy-run-booting {
+    50% {
+        opacity: 0.35;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reactpy-run[data-reactpy-state="booting"] .reactpy-run-out::before {
+        animation: none;
+    }
+}
+
 .reactpy-run-status {
     color: var(--md-default-fg-color--lighter);
     font-size: 0.64rem;

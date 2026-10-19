@@ -5,7 +5,9 @@ __all__ = ["gallery", "profile"]
 
 @component
 def profile():
-    return html.img({"src": "https://i.imgur.com/QIrZWGIs.jpg", "alt": "Alan L. Hart"})
+    return html.img(
+        {"src": "../../assets/images/demos/QIrZWGIs.jpg", "alt": "Alan L. Hart"}
+    )
 
 
 @component

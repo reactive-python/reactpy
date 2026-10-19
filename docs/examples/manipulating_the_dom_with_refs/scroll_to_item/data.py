@@ -18,4 +18,4 @@ friends = [
 
 
 def get_image_url(person):
-    return f"https://i.imgur.com/{person['image_id']}.jpg"
+    return f"../../assets/images/demos/{person['image_id']}.jpg"

@@ -68,6 +68,13 @@ function flushQueue() {
 function start(id) {
   if (state.started.has(id)) return;
   state.started.add(id);
+
+  // Say *something* while Pyodide boots: an empty panel reads as a broken
+  // page. The word lives in CSS, not the HTML, so it never reaches the search
+  // index or a screen reader's read of the document.
+  const panel = document.querySelector(`[data-reactpy-run="${id}"]`);
+  if (panel) panel.dataset.reactpyState = 'booting';
+
   state.queue.push(id);
   if (state.booted) flushQueue();
   else loadSharedRuntime();
@@ -76,7 +83,12 @@ function start(id) {
 function injectDemo(id) {
   const template = document.getElementById(`reactpy-src-${id}`);
   const anchor = document.querySelector(`[data-reactpy-run="${id}"]`);
-  if (!template || !anchor) return;
+  if (!template || !anchor) {
+    // A block the build could not fill in says so itself. Don't leave it
+    // claiming to be booting.
+    if (anchor) delete anchor.dataset.reactpyState;
+    return;
+  }
 
   for (const node of [...template.content.children]) {
     const clone = node.cloneNode(true);
@@ -96,6 +108,7 @@ function watchForOutput(id, anchor) {
     if (output.textContent.trim() || output.children.length) {
       observer.disconnect();
       clearTimeout(timeout);
+      anchor.dataset.reactpyState = 'ready';
       if (status) status.hidden = true;
       return true;
     }
@@ -107,7 +120,8 @@ function watchForOutput(id, anchor) {
   // they conclude the page is broken.
   const timeout = setTimeout(() => {
     observer.disconnect();
-    if (status && !done()) {
+    if (!done() && status) {
+      anchor.dataset.reactpyState = 'stalled';
       status.hidden = false;
       status.textContent = 'Still starting — check the browser console for errors.';
     }

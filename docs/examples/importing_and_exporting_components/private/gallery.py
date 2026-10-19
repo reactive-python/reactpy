@@ -6,7 +6,9 @@ __all__ = ["gallery"]
 @component
 def _profile():
     """Used only inside this module, so it stays out of ``__all__``."""
-    return html.img({"src": "https://i.imgur.com/QIrZWGIs.jpg", "alt": "Alan L. Hart"})
+    return html.img(
+        {"src": "../../assets/images/demos/QIrZWGIs.jpg", "alt": "Alan L. Hart"}
+    )
 
 
 @component

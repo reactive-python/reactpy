@@ -29,7 +29,7 @@ export default function Avatar() {
 	return (
 		<img
 			className="avatar"
-			src="https://i.imgur.com/7vQD0fPs.jpg"
+			src="../../assets/images/demos/7vQD0fPs.jpg"
 			alt="Gregorio Y. Zara"
 		/>
 	);
@@ -43,13 +43,13 @@ export default function Avatar() {
 }
 ```
 
-Here, `"https://i.imgur.com/7vQD0fPs.jpg"` and `"Gregorio Y. Zara"` are being passed as strings.
+Here, `"../../assets/images/demos/7vQD0fPs.jpg"` and `"Gregorio Y. Zara"` are being passed as strings.
 
 But what if you want to dynamically specify the `src` or `alt` text? You could **use a value from JavaScript by replacing `"` and `"` with `{` and `}`**:
 
 ```js
 export default function Avatar() {
-	const avatar = "https://i.imgur.com/7vQD0fPs.jpg";
+	const avatar = "../../assets/images/demos/7vQD0fPs.jpg";
 	const description = "Gregorio Y. Zara";
 	return <img className="avatar" src={avatar} alt={description} />;
 }
@@ -172,7 +172,7 @@ export default function TodoList() {
 			<h1>{person.name}'s Todos</h1>
 			<img
 				className="avatar"
-				src="https://i.imgur.com/7vQD0fPs.jpg"
+				src="../../assets/images/demos/7vQD0fPs.jpg"
 				alt="Gregorio Y. Zara"
 			/>
 			<ul>
@@ -252,7 +252,7 @@ export default function TodoList() {
 			<h1>{person}'s Todos</h1>
 			<img
 				className="avatar"
-				src="https://i.imgur.com/7vQD0fPs.jpg"
+				src="../../assets/images/demos/7vQD0fPs.jpg"
 				alt="Gregorio Y. Zara"
 			/>
 			<ul>
@@ -304,7 +304,7 @@ export default function TodoList() {
 			<h1>{person.name}'s Todos</h1>
 			<img
 				className="avatar"
-				src="https://i.imgur.com/7vQD0fPs.jpg"
+				src="../../assets/images/demos/7vQD0fPs.jpg"
 				alt="Gregorio Y. Zara"
 			/>
 			<ul>
@@ -352,7 +352,7 @@ export default function TodoList() {
 			<h1>{person.name}'s Todos</h1>
 			<img
 				className="avatar"
-				src="https://i.imgur.com/7vQD0fPs.jpg"
+				src="../../assets/images/demos/7vQD0fPs.jpg"
 				alt="Gregorio Y. Zara"
 			/>
 			<ul>
@@ -386,7 +386,7 @@ Move the image URL into a property called `person.imageUrl` and read it from the
 ```js
 const person = {
 	name: "Gregorio Y. Zara",
-	imageUrl: "https://i.imgur.com/7vQD0fPs.jpg",
+	imageUrl: "../../assets/images/demos/7vQD0fPs.jpg",
 	theme: {
 		backgroundColor: "black",
 		color: "pink",
@@ -432,12 +432,12 @@ body > div > div {
 
 In the object below, the full image URL is split into four parts: base URL, `imageId`, `imageSize`, and file extension.
 
-We want the image URL to combine these attributes together: base URL (always `'https://i.imgur.com/'`), `imageId` (`'7vQD0fP'`), `imageSize` (`'s'`), and file extension (always `'.jpg'`). However, something is wrong with how the `<img>` tag specifies its `src`.
+We want the image URL to combine these attributes together: base URL (always `'../../assets/images/demos/'`), `imageId` (`'7vQD0fP'`), `imageSize` (`'s'`), and file extension (always `'.jpg'`). However, something is wrong with how the `<img>` tag specifies its `src`.
 
 Can you fix it?
 
 ```js
-const baseUrl = "https://i.imgur.com/";
+const baseUrl = "../../assets/images/demos/";
 const person = {
 	name: "Gregorio Y. Zara",
 	imageId: "7vQD0fP",
@@ -491,7 +491,7 @@ You can write it as `src={baseUrl + person.imageId + person.imageSize + '.jpg'}`
 3. `}` closes the JavaScript expression
 
 ```js
-const baseUrl = "https://i.imgur.com/";
+const baseUrl = "../../assets/images/demos/";
 const person = {
 	name: "Gregorio Y. Zara",
 	imageId: "7vQD0fP",
@@ -570,7 +570,7 @@ export default function TodoList() {
 
 ```js
 export function getImageUrl(person) {
-	return "https://i.imgur.com/" + person.imageId + person.imageSize + ".jpg";
+	return "../../assets/images/demos/" + person.imageId + person.imageSize + ".jpg";
 }
 ```
 
