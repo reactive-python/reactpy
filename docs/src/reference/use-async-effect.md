@@ -46,7 +46,7 @@ from reactpy import use_async_effect
 
 #### Caveats
 
--   **The effect must take zero arguments.** ReactPy calls `#!python asyncio.create_task(func())` (`core/hooks.py`). The 1.x signature `#!python async def effect(stop):` is therefore broken — and it fails *silently*. Verified: the component renders normally, the model carries no error, the browser shows nothing wrong; the only trace is `Error in effect` / `TypeError: ... missing 1 required positional argument: 'stop'` in the **server** log. If your async effect "does nothing", check the server log first.
+-   **The effect must take zero arguments.** ReactPy calls `#!python asyncio.create_task(func())` (`core/hooks.py`).
 -   There is **no `stop` event** to wait on. Cancellation is ordinary `#!python asyncio.CancelledError`; a long-running effect should loop and break out of it.
 -   Cancelling is one of two clean-up paths: when dependencies change, the running task is cancelled before the new one starts. The other is the function your coroutine returns — see [Cleanup](#cleanup).
 -   The default dependency behaviour is inference, not "every render". See [`use_effect`](./use-effect.md) for the full table.
@@ -97,28 +97,6 @@ To keep work running across renders, loop and honour cancellation. This is what 
 === ":material-play: Run"
 
 The clock advances on its own — verified, one update per second. When `#!python dependencies` change or the component unmounts, ReactPy cancels the task and the loop exits through `#!python CancelledError`.
-
-!!! warning "Do not wait for a `stop` event"
-
-    ReactPy 1.x passed a `#!python stop` event into async effects. That parameter no longer exists, and passing it is **not** reported anywhere the user can see. Write this:
-
-    ```python linenums="0"
-    async def effect():
-        while True:
-            do_work()
-            try:
-                await asyncio.sleep(1)
-            except asyncio.CancelledError:
-                break
-    ```
-
-    Not this:
-
-    ```python linenums="0"
-    async def effect(stop):  # 🚩 silent failure
-        while not stop.is_set():
-            ...
-    ```
 
 ### Shielding an effect from cancellation
 

@@ -55,7 +55,7 @@ Once the component has been initially rendered, you can trigger further renders 
 
 === ":material-play: Run"
 
-Note the difference from a browser-only React app: the state lives on the server. Calling `#!python set_now(...)` schedules a render *on the server*, and the new VDOM reaches the browser a websocket message later. That is why an interaction in ReactPy feels slightly laggy compared to the same UI written in JavaScript, and why holding a lock or sleeping inside an event handler stalls the whole connection.
+Note the difference from a browser-only React app: the state lives on the server. Calling `#!python set_now(...)` schedules a render *on the server*, and the new VDOM reaches the browser a websocket message later. That is why holding a lock or sleeping inside an event handler can stall the whole connection when using ReactPy's server-side executor.
 
 !!! info "Setting the same value does not re-render"
 

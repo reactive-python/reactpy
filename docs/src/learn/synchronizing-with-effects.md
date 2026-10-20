@@ -97,8 +97,7 @@ Two things about timing are worth stating precisely, because they differ from wh
     TypeError: `use_effect` does not support async functions. Use `use_async_effect` instead.
     ```
 
-    The failure is loud with `#!python REACTPY_DEBUG` on: the model comes back as `#!python {"tagName": "", "error": "TypeError: ..."}` and the region renders empty (with debug off you get the empty region and a traceback in the server log only). Anything `#!python await`-based belongs in [`#!python use_async_effect`](../reference/use-async-effect.md), whose effect takes **zero** arguments — the 1.x `#!python async def effect(stop)` shape fails silently there instead.
-
+    The failure is loud with `#!python REACTPY_DEBUG` on: the model comes back as `#!python {"tagName": "", "error": "TypeError: ..."}` and the region renders empty (with debug off you get the empty region and a traceback in the server log only). Anything `#!python await`-based belongs in [`#!python use_async_effect`](../reference/use-async-effect.md), whose effect takes **zero** arguments..
 ### Step 2: Specify the Effect dependencies
 
 Pass the `#!python dependencies` argument to control when the Effect re-runs — and note that ReactPy gives this argument **four** meanings where React has two:
