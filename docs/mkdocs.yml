@@ -43,7 +43,7 @@ nav:
                 - Scaling Up with Reducer and Context: learn/scaling-up-with-reducer-and-context.md
           - Escape Hatches:
                 - Referencing Values with Refs: learn/referencing-values-with-refs.md
-                - Manipulating the DOM with Refs: learn/manipulating-the-dom-with-refs.md
+                # - Manipulating the DOM with Refs 🚫: learn/manipulating-the-dom-with-refs.md
                 - Synchronizing with Effects: learn/synchronizing-with-effects.md
                 - You Might Not Need an Effect: learn/you-might-not-need-an-effect.md
                 - Lifecycle of Reactive Effects: learn/lifecycle-of-reactive-effects.md

@@ -87,9 +87,9 @@ Two things about timing are worth stating precisely, because they differ from wh
 -   An Effect is scheduled **after your component's render is complete**, not after the browser has painted. The task is created at the end of the render (`core/_life_cycle_hook.py`, `affect_layout_did_render`), and the update message has not necessarily reached the socket yet. Measured directly, an Effect's first line ran *before* `#!python layout.render()` returned to the backend. So never assume the user can already see the result.
 -   **The Effect does not delay the render.** `#!python layout.render()` does not await your effect body; the two interleave on the event loop. If you need ordering, express it in state: have the Effect set state and let the next render depend on it.
 
-!!! warning "Effects run on the server"
+!!! warning "SSR executor effects run on the server"
 
-    There is no `#!python document` and no `#!python window`. An Effect cannot measure an element, focus a field, or attach a scroll listener, because there is no DOM where it runs. For browser-side behaviour see [Manipulating the DOM with Refs](./manipulating-the-dom-with-refs.md) and [Creating VDOM Event Handlers](./creating-vdom-event-handlers.md).
+    When using SSR, there is no `#!python document` and no `#!python window`. An Effect cannot measure an element, focus a field, or attach a scroll listener, because there is no DOM where it runs. For browser-side behaviour see [Manipulating the DOM with Refs](./manipulating-the-dom-with-refs.md) and [Creating VDOM Event Handlers](./creating-vdom-event-handlers.md).
 
 !!! warning "`#!python use_effect` rejects `#!python async def`"
 
