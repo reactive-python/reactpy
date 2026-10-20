@@ -331,6 +331,10 @@ known-third-party = ["js"]
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
 "**/tests/**/*" = ["PLR2004", "S101", "TID252"]
+"tests/test_pyscript/test_live_events.py" = [
+  # The fake page keeps the camelCase spelling of the DOM members it stands in for
+  "N815",
+]
 "src/reactpy/_event_proxy.py" = [
   # Live browser object members keep their original camelCase JavaScript names
   "N815",
