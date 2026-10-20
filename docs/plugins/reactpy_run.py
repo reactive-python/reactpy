@@ -291,7 +291,7 @@ def _build_block(
 
     main_file = resolved["main"]
     extra_files = resolved["extra"]
-    merged = _merged_source([main_file, *extra_files])
+    merged = _merged_source([main_file, *extra_files], block_id)
     cache = {str(main_file): merged}
     uuid = uuid4().hex
 
@@ -300,19 +300,25 @@ def _build_block(
         # Script-style examples (they ``print()`` VDOM rather than mount a
         # component) still get a Run tab: their stdout becomes a <pre>.
         root, cache[str(main_file)] = "_console_output", _as_console_script(merged)
-    elif f"def {root}():" not in merged:
-        # The example's outermost component takes props, and ReactPy's
-        # executor only mounts zero-argument ones. Mount it from a wrapper,
-        # passing whatever the page declared (``props: symbol="BTC"``).
-        args = overrides.get("props", "")
-        if not args and _requires_props(merged, root):
-            return {
-                "id": block_id,
-                "label": label,
-                "error": f"{root}() needs props; add a props: line to the fence",
-            }
-        cache[str(main_file)] = merged + _mount_wrapper(root, args)
-        root = "_reactpy_run_root"
+    else:
+        if f"def {root}():" not in merged:
+            # The example's outermost component takes props, and ReactPy's
+            # executor only mounts zero-argument ones. Mount it from a wrapper,
+            # passing whatever the page declared (``props: symbol="BTC"``).
+            args = overrides.get("props", "")
+            if not args and _requires_props(merged, root):
+                return {
+                    "id": block_id,
+                    "label": label,
+                    "error": f"{root}() needs props; add a props: line to the fence",
+                }
+            merged += _mount_wrapper(root, args)
+            root = "_reactpy_run_root"
+        # Examples that mount a component have no <pre> to catch their stdout,
+        # so give ``print()`` somewhere to say itself.
+        cache[str(main_file)] = (
+            f"{_print_shim(block_id)}\n{merged}" if "print(" in merged else merged
+        )
 
     if syntax_error := _nested_syntax_error(cache[str(main_file)]):
         return {"id": block_id, "label": label, "error": syntax_error}
@@ -503,7 +509,7 @@ def _order(files: list[Path]) -> list[Path]:
     return sorted(files, key=rank)
 
 
-def _merged_source(files: list[Path]) -> str:
+def _merged_source(files: list[Path], block_id: str = "") -> str:
     """Concatenate a demo's files, shimming cross-file imports.
 
     PyScript gets one flat script, so ``from data import people`` would raise
@@ -519,6 +525,9 @@ def _merged_source(files: list[Path]) -> str:
     ) + ["import sys, types", ""]
     for path in files[1:]:
         name, source = path.stem, path.read_text(encoding="utf-8")
+        if block_id and "print(" in source:
+            # A sibling that prints needs the same console as the component.
+            source = _print_shim(block_id) + source
         head += [
             f"_{name}_src = {json.dumps(source)}",
             f"_{name}_mod = types.ModuleType({json.dumps(name)})",
@@ -592,6 +601,94 @@ def _mount_wrapper(root: str, args: str = "") -> str:
         "def _reactpy_run_root():\n"
         f"    return {root}({args})\n"
     )
+
+
+def _print_shim(block_id: str) -> str:
+    """Route an example's ``print()`` into a console region of its own.
+
+    Shadowing the builtin inside the example's module — rather than swapping
+    out ``sys.stdout`` — is what makes this work at all:
+
+    * One interpreter runs every demo on the page, so a global redirect would
+      mix their output together with no way to sort it back out.
+    * The prints that teach the most are inside event handlers and effects.
+      They fire long after the example finished executing, which is exactly
+      when a ``redirect_stdout`` block has already been torn down.
+    * Writes to ``sys.stdout`` have no demo to belong to. A module-level
+      ``print`` always resolves to the module that called it, so output from
+      this example can only ever land under this example's panel.
+
+    The example's source lands inside a function (ReactPy's executor wraps it
+    in a ``user_workspace`` callable), so this assignment makes ``print`` a
+    closure cell over the example's own code — which is why the state below
+    lives in a mutable container instead of being rebound with ``global``.
+    Every file of the demo gets its own copy, and they find each other through
+    an attribute on ``builtins`` keyed by the panel.
+    """
+    shim = f'''
+import builtins as _reactpy_builtins
+import sys as _reactpy_sys
+
+try:  # absent outside the browser, e.g. when tests import an example
+    from js import document as _reactpy_document
+except ImportError as _reactpy_exc:  # pragma: no cover
+    _reactpy_document = None
+    _reactpy_sys.stderr.write(f"reactpy-run: no console region ({{_reactpy_exc}})\\n")
+
+_reactpy_console_key = "reactpy_console_{block_id}"
+# Every file of one demo shares a single region, so the state lives somewhere
+# all of the demo's modules can reach. They are exec'd into separate module
+# dicts, which share nothing but the interpreter's builtins.
+_reactpy_console_state = getattr(_reactpy_builtins, _reactpy_console_key, None)
+if _reactpy_console_state is None:
+    _reactpy_console_state = {{"lines": [], "chars": 0, "box": None}}
+    setattr(_reactpy_builtins, _reactpy_console_key, _reactpy_console_state)
+
+
+def _reactpy_console(chunk):
+    """Append to the console region under this example's panel.
+
+    The element is made once and kept, because there is no reliable way to test
+    for its absence: Pyodide hands back a ``JsNull`` proxy for a missing
+    element, which is not ``None`` and quietly accepts attribute assignment. So
+    the panel is looked up only while building the element, and a panel that
+    has gone away just means nowhere to write.
+    """
+    state = _reactpy_console_state
+    box = state["box"]
+    if box is None:
+        try:
+            host = _reactpy_document.querySelector('[data-reactpy-run="{block_id}"]')
+            box = _reactpy_document.createElement("div")
+            box.id = "reactpy-console-{block_id}"
+            box.className = "reactpy-run-console"
+            host.appendChild(box)
+        except Exception:
+            return
+        state["box"] = box
+    state["lines"].append(chunk)
+    state["chars"] += len(chunk)
+    if state["chars"] > 20_000:  # a runaway loop must not freeze the page
+        del state["lines"][:-1]
+        state["lines"][0] = "... (output truncated)\\n" + state["lines"][0][-2_000:]
+        state["chars"] = len(state["lines"][0])
+    box.textContent = "".join(state["lines"])
+    box.scrollTop = box.scrollHeight
+
+
+def print(*args, sep=" ", end="\\n", file=None, flush=False):
+    \"\"\"``print()``, but into this example's console region.\"\"\"
+    if file is not None:
+        return _reactpy_builtins.print(*args, sep=sep, end=end, file=file)
+    text = sep.join(_reactpy_builtins.str(a) for a in args) + end
+    try:
+        _reactpy_console(text)
+    except Exception as _reactpy_exc:  # a console is not a reason to break a demo
+        _reactpy_builtins.print(text, end="")
+        _reactpy_sys.stderr.write(f"reactpy-run: console failed ({{_reactpy_exc!r}})\\n")
+'''
+    compile(shim, "<reactpy-run console>", "exec")
+    return shim
 
 
 def _as_console_script(source: str) -> str:

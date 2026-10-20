@@ -137,9 +137,15 @@ A demo that needs a filesystem, a server, or threads cannot run under Pyodide at
 
 Also list children of a component with `key=` when they come from a list — `html.ul([row(item, key=item["id"]) for item in items])`. Omitting it renders fine and emits a debug-mode warning, which is exactly the lesson the page about keys is trying to teach.
 
+### print() has somewhere to go
+
+An example that prints gets a console region under its own output — Python's equivalent of React's browser console, and the reason the effect-timing lessons (`print("connected")`, `print(f"subscribe {topic}")`) show anything at all.
+
+It belongs to the example rather than the page. One PyScript interpreter runs every demo on a page, so `sys.stdout` is shared and redirecting it would mix the demos together with no way to sort them back out; the runner shadows `print` inside the example instead. That is also what makes a print inside an event handler or an effect land correctly — a `redirect_stdout` wrapped around the example's first execution would be gone by the time those run. Only `print()` is routed, so `sys.stdout` writes are not.
+
 ### Images belong to the docs
 
-Demo images live in `docs/src/assets/images/scientists/`. Every page that shows one sits two levels below the site root — `/learn/rendering-lists/`, `/about/docs/` — so write the path from there, right where the `<img>` needs it:
+Demo images live in `docs/src/assets/images/demos/`. Every page that shows one sits two levels below the site root — `/learn/rendering-lists/`, `/about/docs/` — so write the path from there, right where the `<img>` needs it:
 
 ```python
 html.img({"src": "../../assets/images/demos/yXOvdOSs.jpg", "alt": "Hedy Lamarr"})
