@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+{{ super() }}
+
+{% if git_page_authors %}
+<div class="md-source-date">
+    <small>
+        Authors: {{ git_page_authors | default('enable mkdocs-git-authors-plugin') }}
+    </small>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block outdated %}
+You're not viewing the latest release.
+<a href="{{ '../' ~ base_url }}">
+    <strong>Click here to go to latest.</strong>
+</a>
+{% endblock %}

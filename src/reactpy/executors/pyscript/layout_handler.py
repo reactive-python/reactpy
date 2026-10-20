@@ -8,6 +8,7 @@ from pyodide.ffi.wrappers import add_event_listener
 from pyscript.js_modules import morphdom
 
 from reactpy.core.layout import Layout
+from reactpy.executors.pyscript._live_events import InBrowserEventProxy
 
 
 class ReactPyLayoutHandler:
@@ -21,6 +22,9 @@ class ReactPyLayoutHandler:
     def __init__(self, uuid):
         self.uuid = uuid
         self.running_tasks = set()
+        # The layout runs in the page alongside the objects its handlers read, so this
+        # answers those reads here instead of over a connection.
+        self.event_proxy = InBrowserEventProxy()
 
     @staticmethod
     def update_model(update, root_model):
@@ -101,9 +105,14 @@ class ReactPyLayoutHandler:
         target = event_handler_model["target"]
 
         def event_handler(*args):
+            # Nothing about the object which triggered this goes to the layout - it
+            # stays here and the handler reads it through an id, which is what lets a
+            # handler say `await event.target.value` in the page just as it would on a
+            # server. Whatever was not an object is passed along untouched.
+            data = self.event_proxy.event_data(args, event_handler_model)
             # When the event is triggered, deliver the event to the `Layout` within a background task
             task = asyncio.create_task(
-                layout.deliver({"type": "layout-event", "target": target, "data": args})
+                layout.deliver({"type": "layout-event", "target": target, "data": data})
             )
             # Store the task to prevent automatic garbage collection from killing it
             self.running_tasks.add(task)
@@ -155,6 +164,10 @@ class ReactPyLayoutHandler:
         root_model: dict = {}
 
         async with Layout(workspace_function()) as root_layout:
+            # Ask this layout to come through us for anything it wants to know about a
+            # browser object, the way a server-side layout asks its socket.
+            self.event_proxy.bind(root_layout)
+            root_layout.set_event_proxy_sender(self.event_proxy.send)
             while True:
                 update = await root_layout.render()
                 self.update_model(update, root_model)

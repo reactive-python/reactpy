@@ -1,0 +1,229 @@
+## Overview
+
+<p class="intro" markdown>
+
+An event handler in ReactPy is a **coroutine** you put in an element's attribute dict. ReactPy inspects the value, not the name, decides what it is, and files it under one of three keys in the model — refusing it outright if it cannot be awaited. Most of the surprises on this page come from that one decision point: what counts as a handler, what counts as JavaScript, and what happens to the options you thought you set.
+
+</p>
+
+!!! summary "You will learn"
+
+    -   The three buckets an attribute value lands in, and the rule that sorts them
+    -   Why a handler must be `#!python async def`, and what that rules out
+    -   Why `#!python preventDefault()` sometimes reaches the browser and sometimes does not
+    -   The difference in arguments between a plain callable and an `#!python EventHandler`
+    -   How to set `#!python debounce` and `#!python throttle`, and what values are rejected
+
+## The three buckets
+
+When you call `#!python html.button({...}, ...)`, ReactPy walks the attribute dict once and routes every value by kind — `#!python callable` first, then string-under-`#!python onXxx`, then everything else (`core/vdom.py`, `separate_attributes_handlers_and_inline_javascript`):
+
+=== "app.py"
+
+    ```python
+    {% include "../../examples/creating_vdom_event_handlers/three_buckets.py" start="# start" end="# end" %}
+    ```
+
+=== ":material-play: Run"
+
+The rules, exactly:
+
+| Value | Lands in | Note |
+| --- | --- | --- |
+| Anything `#!python callable` | `#!python eventHandlers` | **under any key name**; anything callable which is not a coroutine raises |
+| A `#!python BaseEventHandler` | `#!python eventHandlers` | stored as-is, untouched |
+| A `#!python str` under a key matching `#!python ^on[A-Z]\w+` | `#!python inlineJavaScript` | `#!python eval`'d in the page |
+| A `#!python reactpy.types.InlineJavaScript` string | `#!python inlineJavaScript` | under any key |
+| Everything else | `#!python attributes` | forwarded verbatim |
+
+Three of those rows have consequences worth spelling out.
+
+**`#!python callable` wins over the key name.** `#!python {"notAnHandler": my_async_function}` registers a real listener whose target ends in `#!python :notAnHandler`. It will never fire, because no DOM event is named that, but it is registered. Conversely `#!python {"onClick": True}` is *not* a handler — a `#!python bool` is not callable, so it becomes an attribute and no listener exists. Neither mistake produces an error. What *does* raise is a callable ReactPy cannot await: the sort step builds an `#!python EventHandler` for every callable value, and that is where the coroutine check lives.
+
+**Calling instead of passing gives you something that is not a handler.** A handler is a coroutine, so `#!python {"onClick": handle_click()}` hands over a **coroutine object**, which is not callable and so falls through to the attributes: the button renders, looks dead, and the failure surfaces later as `#!python TypeError: Type is not JSON serializable: coroutine` when the model is encoded for the wire — plus a `RuntimeWarning: coroutine ... was never awaited` in the log. Calling something that was never a handler (`#!python {"onClick": print("hi")}`) is the `#!python None` case, and that one really is silent on both sides. Either way: pass the function, do not call it. The checklist in [What to check when a control does nothing](#what-to-check-when-a-control-does-nothing) covers all three shapes.
+
+**A `#!python dict` is never a handler.** The React-style `#!python {"function": fn, "preventDefault": True}` becomes an ordinary attribute; no listener is attached. With `#!python REACTPY_DEBUG` on it fails loudly instead — `#!python TypeError: Object of type function is not JSON serializable` — which is the better outcome. Build handlers with `#!python @event` or `#!python EventHandler`, never with a dict.
+
+## Plain coroutines, the shape you want most of the time
+
+Pass a coroutine and ReactPy wraps it. The browser sends a *list* of arguments; a plain coroutine receives it **unpacked positionally** (`core/events.py`, `to_event_handler_function`), which for a DOM event means one argument:
+
+```python linenums="0"
+async def handle_click(event):
+    print(await event.target.value)
+
+
+html.button({"onClick": handle_click}, "Click me")
+```
+
+The parameter name is yours to choose — the value is positional. What is not optional is `#!python async def`: `#!python EventHandler.__init__` and `#!python to_event_handler_function` both run the value through `check_is_async_handler`, and anything that is not awaitable raises there. A coroutine function, a callable object whose `#!python __call__` is a coroutine, and a `#!python functools.partial` or `#!python functools.wraps` wrapper around either all pass. A plain `#!python def` and a `#!python lambda` do not — the latter has no syntax for `#!python await`, which is why the old inline-handler idiom is gone.
+
+The value handed over is a `#!python reactpy.types.Event`: not a dict, but a live proxy onto the browser object, where `#!python await event.target.value` is the read and the property chain matches JavaScript's. See [Responding to Events](./responding-to-events.md#the-event-object) for the payload surface and [Protocol Structure](../reference/protocol-structure.md) for what crosses the wire.
+
+!!! warning "Declare exactly one parameter"
+
+    The list is unpacked onto your signature, so a handler declaring two required parameters fails at the moment of the click with `#!python TypeError: ... missing 1 required positional argument`, logged **server-side only** — the browser stays silent and the button just stops working. Extra context has to be bound in Python, and since a lambda is no longer available that means a named handler or a closure:
+
+    ```python linenums="0"
+    def delete_handler(item_id):
+        async def handle_click(event):
+            await delete(item_id)
+
+        return handle_click
+
+
+    html.button({"onClick": delete_handler(item.id)}, "Delete")
+    ```
+
+    `#!python functools.partial` does the same job, with one catch: the client still hands over the event, so the underlying function must leave exactly one parameter free — `#!python partial(delete, item.id)` over `#!python async def delete(item_id, event)`, not over `#!python async def delete(item_id)`. Binding the leading argument also moves the event off the first parameter, which is what the bytecode detector matches, so see [Be discovered: bytecode inspection](#be-discovered-bytecode-inspection) below: a `#!python preventDefault()` in that handler is **not** detected, and `#!python @event(prevent_default=True)` is the fix.
+
+## `EventHandler`: the pre-built form, and its different argument
+
+`#!python EventHandler` is what the `#!python @event` decorator returns, and you can construct it directly. Two things change when you do.
+
+First, ReactPy stores an `#!python EventHandler` **as-is** rather than wrapping it, so the same object can serve every element that uses it. It does **not** follow that they share a `#!python target`. The target is derived per element: unless the handler carries an explicit `#!python target`, `core/layout.py` builds `#!python target = f"{key_path}:{event}"`, and `#!python @event` leaves `#!python target` as `#!python None`. Verified with one `#!python @event` handler on two buttons: the targets came out `#!python /0/0:onClick` and `#!python /0/1:onClick` — one function object, two targets.
+
+Do not try to force the sharing by setting `#!python target=` yourself. Two elements registered under the same explicit target overwrite each other in the layout's handler table, and the unmount path then tries to `#!python del` that one key twice — verified, the second deletion raises `#!python KeyError` from `Layout._unmount_model_states`.
+
+Second, and this is the trap: an `#!python EventHandler` receives the **list itself**, not the unpacked arguments.
+
+=== "app.py"
+
+    ```python
+    {% include "../../examples/creating_vdom_event_handlers/argument_shape.py" start="# start" end="# end" %}
+    ```
+
+=== ":material-play: Run"
+
+The failure when you get it backwards differs by direction, and the layout swallows either one into a server-side `#!python Failed to execute event handler` line — nothing appears in the browser console, so the UI merely stops responding. Hand the list to a handler written for the event and the first property read raises `#!python AttributeError: 'EventArguments' object has no attribute 'target'` — the list is an `#!python EventArguments`, a `#!python list` subclass, not the event. Hand the unpacked event to a handler written for the list and you get `#!python TypeError: 'Event' object is not subscriptable`. Prefer the plain-coroutine form unless you specifically need to hand-build a handler; `#!python @event` gives you the same options with the friendlier argument shape.
+
+## Setting the five options
+
+Five behaviours run in the browser *before* an event is sent. They are properties on the handler object, never attributes on the element:
+
+| Option | Type | Effect |
+| --- | --- | --- |
+| `#!python prevent_default` | `#!python bool` | calls `#!python preventDefault()` in the page |
+| `#!python stop_propagation` | `#!python bool` | calls `#!python stopPropagation()` in the page |
+| `#!python stop_immediate_propagation` | `#!python bool` | also calls `#!python stopImmediatePropagation()`, blocking sibling listeners |
+| `#!python debounce` | `#!python int` ms | coalesces outgoing events on a trailing edge, so the server sees one event after the user pauses — applied only to `#!html <input>`, `#!html <select>`, and `#!html <textarea>` |
+| `#!python throttle` | `#!python int` ms | rate-limits outgoing events on a leading edge, on any element |
+
+There are two ways to set them, and the difference matters.
+
+### Say it: `#!python @event`
+
+```python linenums="0"
+from reactpy import event
+
+
+@event(
+    prevent_default=True,
+    stop_propagation=True,
+    stop_immediate_propagation=True,
+    debounce=250,
+    throttle=100,
+)
+async def handle_key_down(event_data): ...
+
+
+html.input({"onKeyDown": handle_key_down})
+```
+
+This is explicit and it always works. Reach for it by default.
+
+### Be discovered: bytecode inspection
+
+ReactPy also reads your function's bytecode looking for three specific statements, so you can write them inline instead (`core/_event_inspect.py`, `inspect_event_handler`):
+
+=== "app.py"
+
+    ```python
+    {% include "../../examples/creating_vdom_event_handlers/bytecode_detection.py" start="# start" end="# end" %}
+    ```
+
+=== ":material-play: Run"
+
+This is a source-parsing hack, not a runtime mechanism, and it has limits you should know before relying on it. Detection requires all of the following:
+
+-   The call is written **literally in the handler's own body.** `#!python event.preventDefault()` inside a helper the handler calls is invisible to the inspector — it does not follow calls.
+-   The **first parameter** is the event. The inspector reads `#!python co_varnames[0]` and matches against it.
+-   For `#!python debounce`, the assigned value must be resolvable at inspect time: an integer literal, a compile-time-folded expression like `#!python 100 * 5`, a numeric **default** on a parameter (`#!python async def h(event, ms=350)`), or a numeric closure cell. It cannot resolve a parameter with no default, a module-level global, or an arbitrary expression — all three inspect to `#!python None`. And it stops scanning at the **first** assignment it can settle — resolved or not — so with two assignments to `#!python event.debounce` the result depends on which one the bytecode reaches first. Verified: `#!python if event: event.debounce = 200 / else: event.debounce = len(x)` inspects to `#!python 200`, while the same branches written in the other order inspect to `#!python None`. Write one assignment and the question does not arise; with more than one, check the value you get.
+
+The second rule produces the sharpest bug, so it deserves its own call-out:
+
+!!! warning "Bound methods are not inspected correctly"
+
+    For `#!python async def on_submit(self, event)`, the first parameter is `#!python self`, so the inspector never matches the event variable and reports `#!python prevent_default=False`. The handler is a coroutine, so it passes the check and still *fires* — but your `#!python event.preventDefault()` call is silently discarded:
+
+    === "app.py"
+
+        ```python
+        {% include "../../examples/creating_vdom_event_handlers/bound_method_trap.py" start="# start" end="# end" %}
+        ```
+
+    === ":material-play: Run"
+
+    Attach a plain function defined inside the component instead, or pass `#!python @event(prevent_default=True)` explicitly over the method. A `#!python functools.wraps` decorator is fine — the inspector follows `#!python __wrapped__` to the function you wrote, first parameter and all. A `#!python functools.partial` is unwrappable too, but only half-fixed: once the leading argument is bound, the first parameter the inspector reads is yours, not the event's, so the same silent `#!python False` appears. Same escape hatch: declare the option with `#!python @event`.
+
+!!! warning "An inline-JavaScript handler cannot be inspected at all"
+
+    Detection runs on Python bytecode. `#!python {"onClick": "this.innerText = 'x'"}` has none, so there is no `#!python preventDefault` equivalent in the string form. Call it yourself in the JavaScript: `#!python "event.preventDefault(); doThing()"`.
+
+## Inline JavaScript
+
+A `#!python str` under an `#!python onXxx` key is stored under `#!python inlineJavaScript` and `#!python eval`'d in the page; if it evaluates to a function, that function is called with the event:
+
+```python linenums="0"
+html.button({"onClick": '(event) => (event.target.innerText = "Thank you!")'}, "Click")
+html.button({"onClick": "this.innerText = 'Thank you!'"}, "Click")
+```
+
+This is the way to touch the DOM from ReactPy, and the reason it exists is that the server has no node to hold ([Manipulating the DOM with Refs](./manipulating-the-dom-with-refs.md)). Keep each snippet to a single call, and never interpolate anything you did not write:
+
+!!! danger "Trusted strings only"
+
+    The string runs with your application's privileges, in the page. `#!python f"this.innerText = '{user_input}'"` is an injection point. Build strings from constants, or use a Python handler and pass data through state.
+
+Note also that the pattern is `#!python ^on[A-Z]\w+` — a lowercase `#!python {"onclick": "..."}` matches nothing and becomes a plain attribute that never fires.
+
+## Merging handlers
+
+`#!python reactpy.core.events.merge_event_handlers` combines several handlers into one that runs them concurrently in a task group. It is public API but nothing in the installed package calls it — verified by grepping the whole `reactpy` package, which finds only its own definition — so you will rarely have a reason to call it. Its failure mode is still worth knowing, because it is a `#!python ValueError` at build time:
+
+```python linenums="0"
+merge_event_handlers([a, b])
+# ValueError: Cannot merge handlers - 'stop_propagation', 'prevent_default',
+# 'debounce', 'throttle', 'target', or 'stop_immediate_propagation' mismatch.
+```
+
+Handlers merge only if every option matches. An empty list raises `#!python ValueError: No event handlers to merge`.
+
+## What to check when a control does nothing
+
+Every failure mode on this page is silent in the browser, so work through them in this order:
+
+1.  **Is it declared `#!python async def`?** A `#!python def`, a `#!python lambda`, or a state setter raises while the component renders, and the traceback names the function.
+2.  **Did you pass the function or call it?** A handler is a coroutine, so `#!python {"onClick": handler()}` hands over a coroutine object — not `#!python callable`, so it falls through to the attributes and dies when the model is encoded: `#!python TypeError: Type is not JSON serializable: coroutine` from the send path. A handler which *returns* something instead (`#!python None` from a helper) ships as an inert attribute and never fires. Either way: pass the function, do not call it.
+3.  **Is the key spelled the way the DOM spells its event, with a leading `#!python on` and a capital letter?** ReactPy passes the key straight through, so a `#!python on_click` registers a listener for an event named `#!python _click`, which nothing ever dispatches. Copy the DOM's camelCase spelling (`#!python onClick`, `#!python onDoubleClick`, `#!python onKeyDown`) rather than guessing.
+4.  **Does the handler take exactly one parameter?** Two required parameters means a server-side `#!python TypeError` and a dead button.
+5.  **Is it a bound method?** Then `#!python preventDefault`/`#!python stopPropagation`/`#!python debounce` are not detected — use `#!python @event`.
+6.  **Read the server log.** `#!python Failed to execute event handler` is where swallowed handler errors go; the browser console will show nothing.
+
+## Summary
+
+-   Values are sorted by kind, not name: `#!python callable` → `#!python eventHandlers` (and raises there unless it can be awaited), string under `#!python onXxx` → `#!python inlineJavaScript`, everything else → `#!python attributes`.
+-   `#!python None`, `#!python True`, and `#!python dict` handlers all fail silently as attributes.
+-   A handler is a coroutine — a `#!python def` or a `#!python lambda` is refused with a `#!python TypeError` when the element is built, not when it is clicked.
+-   A plain coroutine receives the argument list **unpacked** (so, the event proxy); an `#!python EventHandler` receives the **list**.
+-   Set options with `#!python @event(prevent_default=..., stop_propagation=..., stop_immediate_propagation=..., debounce=..., throttle=...)`; the bytecode detector is a convenience with real limits, notably bound methods.
+-   Both `#!python debounce` and `#!python throttle` rate-limit **client→server** traffic: `#!python debounce` coalesces outgoing events on a trailing edge and only on user-input elements, `#!python throttle` fires on a leading edge on any element. The server's echo of a new `#!python value` is reconciled by `_reactpy_ack_seq`, not by `#!python debounce`. Invalid values are dropped with a console warning, not an error.
+-   Handler errors surface in the server log only.
+
+## Related
+
+-   [Responding to Events](./responding-to-events.md) — the tutorial treatment, propagation, and the event object
+-   [Common Props](../reference/common-props.md#event-handlers) — the same surface from the reference side, including ReactPy's own options
+-   [Protocol Structure](../reference/protocol-structure.md) — the wire format, `#!python target`, and how `#!python data` is built
+-   [Creating HTML Tags](./creating-html-tags.md) — how the model these handlers live in is built
+-   [Manipulating the DOM with Refs](./manipulating-the-dom-with-refs.md) — the inline-JavaScript escape hatch

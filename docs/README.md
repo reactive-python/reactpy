@@ -1,3 +1,0 @@
-# ReactPy's Documentation
-
-...

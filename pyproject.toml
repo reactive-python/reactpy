@@ -62,7 +62,7 @@ artifacts = ["/src/reactpy/static/"]
 artifacts = ["/src/reactpy/static/"]
 
 [tool.hatch.metadata]
-license-files = { paths = ["LICENSE"] }
+license-files = { paths = ["LICENSE.md"] }
 
 [tool.hatch.publish.index]
 disable = true
@@ -134,31 +134,35 @@ timeout = 120
 #######################################
 [tool.hatch.envs.docs]
 template = "docs"
-dependencies = ["poetry"]
-detached = true
+dependencies = [
+  "mkdocs",
+  "mkdocs-git-revision-date-localized-plugin",
+  "mkdocs-material",
+  "mkdocs-include-markdown-plugin",
+  "mkdocs-spellcheck[all]",
+  "mkdocs-git-authors-plugin",
+  "mkdocs-minify-plugin",
+  "mike",
+  "linkcheckmd",
+  "pyright",
+  "starlette",
+  "orjson",
+  "asgi_tools",
+  "servestatic",
+  "websockets"
+]
 
 [tool.hatch.envs.docs.scripts]
-build = [
-  'cd "{root}/docs" && poetry install',
-  'cd "{root}/docs" && poetry run sphinx-build -a -T -W --keep-going -b doctest "{root}/docs/source" "{root}/docs/build"',
+serve = ["cd docs && mkdocs serve"]
+check = ["hatch check code docs/ && hatch check fmt docs/ && pyright docs/"]
+build = ["cd docs && mkdocs build --strict"]
+linkcheck = [
+  "linkcheckMarkdown docs/ -v -r",
+  "linkcheckMarkdown README.md -v -r",
+  "linkcheckMarkdown CHANGELOG.md -v -r",
 ]
-docker_build = [
-  "hatch run docs:build",
-  'docker build --file "{root}/docs/Dockerfile" --tag reactpy-docs:latest "{root}"',
-]
-docker_serve = [
-  "hatch run docs:docker_build",
-  "docker run --rm -p 5000:5000 reactpy-docs:latest",
-]
-check = [
-  'cd "{root}/docs" && poetry install',
-  'cd "{root}/docs" && poetry run sphinx-build -a -T -W --keep-going -b doctest "{root}/docs/source" "{root}/docs/build"',
-  'docker build --file "{root}/docs/Dockerfile" "{root}"',
-]
-serve = [
-  'cd "{root}/docs" && poetry install',
-  'cd "{root}/docs" && poetry run python "{root}/docs/main.py" --watch="{root}/src" --ignore=**/_auto/* --ignore=**/custom.js --ignore=**/node_modules/* --ignore=**/package-lock.json -a -E -b html "{root}/docs/source" "{root}/docs/build"',
-]
+deploy_latest = ["cd docs && mike deploy --push --update-aliases {args} latest"]
+deploy_develop = ["cd docs && mike deploy --push develop"]
 
 ################################
 # >>> Hatch Python Scripts <<< #
@@ -327,6 +331,10 @@ known-third-party = ["js"]
 [tool.ruff.lint.per-file-ignores]
 # Tests can use magic values, assertions, and relative imports
 "**/tests/**/*" = ["PLR2004", "S101", "TID252"]
+"tests/test_pyscript/test_live_events.py" = [
+  # The fake page keeps the camelCase spelling of the DOM members it stands in for
+  "N815",
+]
 "src/reactpy/_event_proxy.py" = [
   # Live browser object members keep their original camelCase JavaScript names
   "N815",
@@ -340,6 +348,17 @@ known-third-party = ["js"]
   "S102",
   # Allow print
   "T201",
+  # Docs render these files as teaching snippets, not importable modules.
+  # Relative imports (`from .my_button import my_button`) are what the docs
+  # deliberately teach, snippets unpack both halves of `use_state()` to show
+  # the full signature even when one half is unused, and each snippet file is
+  # standalone rather than part of a package.
+  "TID252",
+  "RUF059",
+  "INP001",
+  # "Keeping Components Pure" has to mutate a module-level variable with
+  # `global` in order to demonstrate why that is wrong.
+  "PLW0603",
 ]
 "scripts/**/*.py" = [
   # Allow print

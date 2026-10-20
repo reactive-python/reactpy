@@ -1,0 +1,17 @@
+button {
+    display: inline-block;
+    margin: 10px;
+    font-size: 20px;
+}
+
+h1 {
+    display: inline-block;
+    margin: 10px;
+    text-align: center;
+}
+
+label,
+textarea {
+    display: block;
+    margin-bottom: 10px;
+}

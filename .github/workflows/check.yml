@@ -29,15 +29,28 @@ jobs:
             run-cmd: "hatch test --parallel --retries 10"
             runs-on: '["ubuntu-latest", "macos-latest", "windows-latest"]'
             python-version: '["3.11", "3.12", "3.13", "3.14"]'
-    test-documentation:
-        # Temporarily disabled while we transition from Sphinx to MkDocs
-        # https://github.com/reactive-python/reactpy/pull/1052
-        if: 0
-        uses: ./.github/workflows/.hatch-run.yml
-        with:
-            job-name: "python-{0}"
-            run-cmd: "hatch run docs:check"
-            python-version: '["3.11"]'
+    test-docs:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: 3.x
+            - name: Install Python Dependencies
+              run: pip install --upgrade pip hatch uv
+            # Removed since linkcheck does not support disabling specific domains,
+            # and a handful of the domains have rate-limit issues.
+            # - name: Check documentation links
+            #   run: hatch run docs:linkcheck
+            - name: Check docs build
+              run: hatch run docs:build
+            - name: Check docs examples
+              run: hatch run docs:check
     test-javascript:
         uses: ./.github/workflows/.hatch-run.yml
         with:
@@ -48,3 +61,4 @@ jobs:
         with:
             job-name: "{1}"
             run-cmd: "hatch run javascript:check"
+

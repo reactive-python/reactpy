@@ -1,0 +1,8 @@
+body {
+    min-height: 120px;
+}
+
+.avatar {
+    margin: 20px;
+    border-radius: 50%;
+}

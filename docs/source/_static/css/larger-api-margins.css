@@ -1,7 +1,0 @@
-:is(.data, .function, .class, .exception).py {
-  margin-top: 3em;
-}
-
-:is(.attribute, .method).py {
-  margin-top: 1.8em;
-}

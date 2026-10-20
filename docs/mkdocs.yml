@@ -1,0 +1,205 @@
+---
+nav:
+    - Home: index.md
+    - Get Started:
+          - Overview:
+                - Quick Start: learn/quick-start.md
+                - "Tutorial: Tic-Tac-Toe": learn/tutorial-tic-tac-toe.md
+                - Thinking in React: learn/thinking-in-react.md
+          - Installation:
+                - Creating a Standalone React App: learn/creating-a-react-app.md
+                - Add React to an Existing Project: learn/add-react-to-an-existing-project.md
+          - Setup:
+                - Editor Setup: learn/editor-setup.md
+                - Tools, Libraries, and Packages: learn/tools-and-packages.md
+          # - More Tutorials:
+          #       - "Tutorial: React Bootstrap 🚫": learn/tutorial-react-bootstrap.md
+          #       - "Tutorial: Material UI 🚫": learn/tutorial-material-ui.md
+    - Learn:
+          - Describing the UI:
+                - Your First Component: learn/your-first-component.md
+                - Importing and Exporting Components: learn/importing-and-exporting-components.md
+                # - Writing Markup with PSX 🚫: learn/writing-markup-with-psx.md
+                # - Python in PSX with Curly Braces 🚫: learn/python-in-psx-with-curly-braces.md
+                - Passing Props to a Component: learn/passing-props-to-a-component.md
+                - Conditional Rendering: learn/conditional-rendering.md
+                - Rendering Lists: learn/rendering-lists.md
+                - Keeping Components Pure: learn/keeping-components-pure.md
+          - Adding Interactivity:
+                - Responding to Events: learn/responding-to-events.md
+                - "State: A Component's Memory": learn/state-a-components-memory.md
+                - Render and Commit: learn/render-and-commit.md
+                - State as a Snapshot: learn/state-as-a-snapshot.md
+                - Queueing a Series of State Updates: learn/queueing-a-series-of-state-updates.md
+                - Updating Objects in State: learn/updating-objects-in-state.md
+                - Updating Arrays in State: learn/updating-arrays-in-state.md
+          - Managing State:
+                - Reacting to Input with State: learn/reacting-to-input-with-state.md
+                - Choosing the State Structure: learn/choosing-the-state-structure.md
+                - Sharing State Between Components: learn/sharing-state-between-components.md
+                - Preserving and Resetting State: learn/preserving-and-resetting-state.md
+                - Extracting State Logic into a Reducer: learn/extracting-state-logic-into-a-reducer.md
+                - Passing Data Deeply with Context: learn/passing-data-deeply-with-context.md
+                - Scaling Up with Reducer and Context: learn/scaling-up-with-reducer-and-context.md
+          - Escape Hatches:
+                - Referencing Values with Refs: learn/referencing-values-with-refs.md
+                # - Manipulating the DOM with Refs 🚫: learn/manipulating-the-dom-with-refs.md
+                - Synchronizing with Effects: learn/synchronizing-with-effects.md
+                - You Might Not Need an Effect: learn/you-might-not-need-an-effect.md
+                - Lifecycle of Reactive Effects: learn/lifecycle-of-reactive-effects.md
+                - Separating Events from Effects: learn/separating-events-from-effects.md
+                - Removing Effect Dependencies: learn/removing-effect-dependencies.md
+                - Reusing Logic with Custom Hooks: learn/reusing-logic-with-custom-hooks.md
+                - Communicating Data Between Server and Client: learn/communicate-data-between-server-and-client.md
+                - Convert Between VDOM and HTML: learn/convert-between-vdom-and-html.md
+                - VDOM Mutations: learn/vdom-mutations.md
+                - Creating VDOM Event Handlers: learn/creating-vdom-event-handlers.md
+                - Creating HTML Tags: learn/creating-html-tags.md
+                - Creating Backends: learn/creating-backends.md
+                - Manually Register a Client: learn/manually-register-a-client.md
+    - Reference:
+          - Overview: reference/overview.md
+          - Hooks:
+                - Use State: reference/use-state.md
+                - Use Effect: reference/use-effect.md
+                - Use Async Effect: reference/use-async-effect.md
+                - Use Context: reference/use-context.md
+                - Use Reducer: reference/use-reducer.md
+                - Use Callback: reference/use-callback.md
+                - Use Memo: reference/use-memo.md
+                - Use Ref: reference/use-ref.md
+                - Use Debug Value: reference/use-debug-value.md
+                - Use Connection: reference/use-connection.md
+                - Use Scope: reference/use-scope.md
+                - Use Location: reference/use-location.md
+          - HTML Tags:
+                - Common Props: reference/common-props.md
+                - Usage: reference/usage.md
+          - Executors:
+                - ReactPy: reference/reactpy.md
+                - ReactPyCsr: reference/reactpy-csr.md
+                - ReactPyMiddleware: reference/reactpy-middleware.md
+          - Rules of React:
+                - Overview: reference/rules-of-react.md
+                - Components and Hooks must be pure: reference/components-and-hooks-must-be-pure.md
+                - React calls Components and Hooks: reference/react-calls-components-and-hooks.md
+                - Rules of Hooks: reference/rules-of-hooks.md
+          - Template Tags:
+                - Jinja: reference/jinja.md
+          - Protocol Structure: reference/protocol-structure.md
+          - Client API: reference/client-api.md
+    - About:
+          - Changelog: about/changelog.md
+          - Community: about/community.md
+          - Running Tests: about/running-tests.md
+          - Contributing Code: about/code.md
+          - Contributing Documentation: about/docs.md
+          - Licenses: about/licenses.md
+
+theme:
+    name: material
+    custom_dir: overrides
+    palette:
+        - media: "(prefers-color-scheme: dark)"
+          scheme: slate
+          toggle:
+              icon: material/white-balance-sunny
+              name: Switch to light mode
+          primary: red # We use red to indicate that something is unthemed
+          accent: red
+        - media: "(prefers-color-scheme: light)"
+          scheme: default
+          toggle:
+              icon: material/weather-night
+              name: Switch to dark mode
+          primary: white
+          accent: red
+    features:
+        # - navigation.instant
+        - navigation.tabs
+        - navigation.tabs.sticky
+        - navigation.top
+        - content.code.copy
+        - search.highlight
+    icon:
+        repo: fontawesome/brands/github
+        admonition:
+            note: fontawesome/solid/note-sticky
+    logo: https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg
+    favicon: https://raw.githubusercontent.com/reactive-python/reactpy/main/branding/svg/reactpy-logo-square.svg
+
+markdown_extensions:
+    - toc:
+          permalink: true
+    - pymdownx.emoji:
+          emoji_index: !!python/name:material.extensions.emoji.twemoji
+          emoji_generator: !!python/name:material.extensions.emoji.to_svg
+    - pymdownx.tabbed:
+          alternate_style: true
+    - pymdownx.highlight:
+          linenums: true
+    - pymdownx.superfences
+    - pymdownx.details
+    - pymdownx.inlinehilite
+    - admonition
+    - attr_list
+    - md_in_html
+    - pymdownx.keys
+
+hooks:
+    - plugins/reactpy_run.py
+
+plugins:
+    - search
+    - include-markdown
+    - git-authors
+    - minify:
+          minify_html: true
+          minify_js: true
+          minify_css: true
+          cache_safe: true
+    - git-revision-date-localized:
+          fallback_to_build_date: true
+    # - spellcheck:
+    #       known_words: dictionary.txt
+    #       allow_unicode: no
+
+extra:
+    generator: false
+    version:
+        provider: mike
+    # analytics:
+    #     provider: google
+    #     property: G-xxx
+
+extra_javascript:
+    - assets/js/main.js
+
+extra_css:
+    - assets/css/main.css
+    - assets/css/button.css
+    - assets/css/admonition.css
+    - assets/css/banner.css
+    - assets/css/sidebar.css
+    - assets/css/navbar.css
+    - assets/css/table-of-contents.css
+    - assets/css/code.css
+    - assets/css/footer.css
+    - assets/css/home.css
+
+watch:
+    - "../docs"
+    - ../README.md
+    - ../CHANGELOG.md
+    - ../LICENSE.md
+    - "../src"
+
+site_name: ReactPy
+site_author: Archmonger
+site_description: It's React, but in Python.
+copyright: '&copy;<div id="year"> </div> <script> document.getElementById("year").innerHTML = new Date().getFullYear(); </script>Reactive Python and affiliates.<div class="legal-footer-right">This project has no affiliation to ReactJS or Meta Platforms, Inc.</div>'
+repo_url: https://github.com/reactive-python/reactpy
+site_url: https://reactive-python.github.io/reactpy
+repo_name: ReactPy
+edit_uri: edit/main/docs/src
+docs_dir: src

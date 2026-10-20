@@ -1,0 +1,19 @@
+.contact-list ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 8px;
+}
+
+.chat {
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.chat textarea {
+    display: block;
+    width: 100%;
+    min-height: 60px;
+}
